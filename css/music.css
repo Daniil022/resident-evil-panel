@@ -1,6 +1,188 @@
 /* ============ МУЗЫКА ============ */
-.track-card { transition: all 0.2s; }
-.track-card:hover { transform: translateY(-3px); }
+
+/* Вкладки альбомов */
+.music-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 8px;
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.music-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.music-tab:hover {
+  background: var(--panel-2);
+  color: #fff;
+}
+
+.music-tab.active {
+  background: rgba(0, 200, 212, 0.12);
+  color: var(--cyan);
+  border-color: rgba(0, 200, 212, 0.3);
+}
+
+.tab-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--red);
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.tab-del:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+/* Карточка трека */
+.track-card {
+  transition: all 0.2s;
+}
+.track-card:hover {
+  transform: translateY(-3px);
+}
+.track-current {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px var(--cyan), 0 0 20px rgba(0, 200, 212, 0.2);
+}
 
 .track-head {
-  display: flex
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.track-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+/* Плеер */
+#musicPlayer {
+  margin-bottom: 24px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: none;
+}
+#musicPlayer:not(:empty) {
+  display: block;
+}
+
+.now-playing-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(0, 200, 212, 0.1), var(--panel));
+  border: 1px solid rgba(0, 200, 212, 0.3);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 12px 18px;
+}
+
+.now-playing {
+  color: var(--cyan);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.close-player {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+.close-player:hover {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.track-info {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 16px 18px;
+}
+
+.track-title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.track-artist {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+/* Внешние сервисы */
+.music-external {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.music-external-icon {
+  margin-bottom: 14px;
+}
+
+.music-external-text {
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.music-external-text b {
+  color: var(--cyan);
+}
+
+/* Адаптив */
+@media (max-width: 640px) {
+  .music-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .music-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
