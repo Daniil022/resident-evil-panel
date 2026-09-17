@@ -13,6 +13,8 @@ import { initRules } from "./modules/rules.js";
 import { initAccolades } from "./modules/accolades.js";
 import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
+import { initCaptas } from "./modules/captas.js";
+import { setupAvatarClick, updateHeaderAvatar, updateDashAvatar } from "./modules/profile.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -91,7 +93,16 @@ function enterApp(user) {
     }
   }
 
-  if (avatarEl) avatarEl.textContent = user.login.charAt(0).toUpperCase();
+  // Аватар
+  if (avatarEl) {
+    if (user.avatar) {
+      avatarEl.innerHTML = `<img src="${user.avatar}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      avatarEl.style.padding = "0";
+      avatarEl.style.overflow = "hidden";
+    } else {
+      avatarEl.textContent = user.login.charAt(0).toUpperCase();
+    }
+  }
 
   const navAdmin = document.getElementById("navAdmin");
   const isAdminRole = ["emperor", "lord"].includes(user.role);
@@ -101,13 +112,17 @@ function enterApp(user) {
   initDashboard();
   applyColorsToDOM();
 
+  // Аватар клик
+  setupAvatarClick();
+  if (user.avatar) updateDashAvatar(user);
+
   try { initNicks(); } catch (e) { console.warn("Nicks init failed:", e); }
   try { initRanks(); } catch (e) { console.warn("Ranks init failed:", e); }
 
   const inited = {
     chat: false, admin: false, contracts: false,
     warehouse: false, allies: false, rules: false,
-    accolades: false, music: false, album: false
+    accolades: false, music: false, album: false, captas: false
   };
 
   window.addEventListener("tabChange", (e) => {
@@ -122,9 +137,9 @@ function enterApp(user) {
     if (tab === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
     if (tab === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
     if (tab === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
+    if (tab === "containers" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
   });
 
-  // Открытие по хэшу
   const hash = location.hash.replace("#", "");
   if (hash === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (e) {} }
   if (hash === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (e) {} }
@@ -134,6 +149,7 @@ function enterApp(user) {
   if (hash === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
   if (hash === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (e) {} }
   if (hash === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (e) {} }
+  if (hash === "containers" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
