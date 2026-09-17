@@ -1,4 +1,4 @@
-// js/core/auth.js
+\// js/core/auth.js
 import { db } from "../firebase-init.js";
 import {
   collection, query, where, getDocs, doc, getDoc,
@@ -81,7 +81,8 @@ export async function login(loginName, pin) {
     uid: found.uid,
     login: found.data.login,
     role: found.data.role || "soul",
-    division: found.data.division || null
+    division: found.data.division || null,
+    avatar: found.data.avatar || null
   };
   setCurrentUser(user);
   return { ok: true, user };
@@ -108,6 +109,7 @@ export async function createUser({ login, pin, role, division = null }) {
   const newUser = {
     login, pin, role, division,
     warn: 0, banned: false, contracts: 0,
+    avatar: null,
     createdAt: Date.now()
   };
 
@@ -129,7 +131,7 @@ export async function createUser({ login, pin, role, division = null }) {
 // ==================== СПИСОК ====================
 export async function listUsers(force = false) {
   if (!force) {
-    const cached = cacheGet(CACHE_KEY_USERS, 60000);
+    const cached = cacheGet(CACHE_KEY_USERS, 30000);
     if (cached) return cached;
   }
   try {
@@ -200,6 +202,21 @@ export async function changeDivision(uid, newDivision) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
+// ==================== АВАТАР ====================
+export async function updateAvatar(uid, avatarUrl) {
+  const found = await getUserById(uid);
+  if (!found) throw new Error("Пользователь не найден");
+
+  if (found.source === "firebase") {
+    await updateDoc(found.ref, { avatar: avatarUrl });
+  } else {
+    const demoUsers = getDemoUsers();
+    const idx = demoUsers.findIndex(u => u.uid === uid);
+    if (idx >= 0) { demoUsers[idx].avatar = avatarUrl; saveDemoUsers(demoUsers); }
+  }
+  cacheInvalidate(CACHE_KEY_USERS);
+}
+
 // ==================== WARN ====================
 export async function warnUser(uid, reason = "") {
   const found = await getUserById(uid);
@@ -259,25 +276,6 @@ export async function incrementContracts(uid, by = 1) {
   }
   cacheInvalidate(CACHE_KEY_USERS);
   return newVal;
-}
-
-// ==================== HELPER: обнулить роль при удалении ====================
-export async function clearRoleFromUsers(roleId) {
-  const users = await listUsers(true);
-  for (const u of users) {
-    if (u.role === roleId) {
-      await changeRole(u.uid, "soul"); // сброс на "Тёмную душу"
-    }
-  }
-}
-
-export async function clearDivisionFromUsers(divId) {
-  const users = await listUsers(true);
-  for (const u of users) {
-    if (u.division === divId) {
-      await changeDivision(u.uid, null);
-    }
-  }
 }
 
 export const WARN_LIMIT = MAX_WARN;
