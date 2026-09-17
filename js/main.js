@@ -6,8 +6,10 @@ import { initDashboard } from "./core/dashboard.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
+import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName, getDivisionName, getDivisionColor } from "./core/colorize.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await preloadColorData();
   setupAuthScreen();
   const session = tryRestoreSession();
   if (session) enterApp(session);
@@ -54,20 +56,19 @@ function enterApp(user) {
 
   if (nameEl) nameEl.textContent = user.login;
   if (roleEl) {
-    roleEl.textContent = user.role;
+    roleEl.textContent = getRoleName(user.role);
     roleEl.className = "role-tag";
-    if (user.role === "Император") roleEl.classList.add("gold");
-    if (user.role === "Лорд Тьмы") roleEl.classList.add("red");
-    if (user.role === "Рыцарь Смерти" || user.role === "Скелет Ужаса") roleEl.classList.add("blue");
+    roleEl.style.color = getRoleColor(user.role);
   }
   if (avatarEl) avatarEl.textContent = user.login.charAt(0).toUpperCase();
 
   const navAdmin = document.getElementById("navAdmin");
-  const isAdminRole = ["Император", "Лорд Тьмы"].includes(user.role);
+  const isAdminRole = ["emperor", "lord"].includes(user.role);
   if (navAdmin) navAdmin.classList.toggle("hidden", !isAdminRole);
 
   initRouter();
   initDashboard();
+  applyColorsToDOM();
 
   const inited = { chat: false, admin: false, contracts: false };
 
