@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RESIDENT EVIL // Панель быстрого доступа</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23c1121f'/></svg>">
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/header.css">
+<link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+
+<!-- ============ АВТОРИЗАЦИЯ ============ -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo"><div class="umbrella"></div></div>
+    <div class="auth-title">UMBRELLA CORP</div>
+    <div class="auth-sub">RESIDENT EVIL // ACCESS TERMINAL</div>
+
+    <div class="auth-error" id="authError">Неверный логин или PIN-код</div>
+
+    <label for="loginInput">Логин (Nick_Name)</label>
+    <input type="text" id="loginInput" placeholder="Nick_Name" autocomplete="off" spellcheck="false">
+    <div class="auth-hint">Формат: латиница, цифры, нижнее подчёркивание</div>
+
+    <label for="pinInput">PIN-код / Пароль</label>
+    <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
+
+    <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
+
+    <div class="auth-default" id="authDefaultHint"></div>
+    <div class="auth-footer">T-VIRUS PROTOCOL v2.4 // UNAUTHORIZED ACCESS PROHIBITED</div>
+  </div>
+</div>
+
+<!-- ============ ОСНОВНОЙ ИНТЕРФЕЙС ============ -->
+<div id="app" style="display:none;">
+
+<header>
+  <div class="logo">
+    <div class="umbrella"></div>
+    UMBRELLA CORP // RESIDENT EVIL
+  </div>
+  <div class="header-status">
+    <div class="status-line">СИСТЕМА АКТИВНА</div>
+    <div class="fam-name">ФАМА: <span>RESIDENT EVIL</span></div>
+    <div class="user-info">
+      <span id="userName">—</span>
+      <span class="role-tag" id="userRoleTag">—</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">ВЫЙТИ</button>
+  </div>
+</header>
+
+<nav id="mainNav">
+  <button class="active" data-tab="nicks">👤 Игровые ники</button>
+  <button data-tab="ranks">🎖 Ранги симьи</button>
+  <button data-tab="contracts">📜 Контракты</button>
+  <button data-tab="accolade">🏅 Акколада</button>
+  <button data-tab="containers">📦 Контейнеры</button>
+  <button data-tab="warehouse">🏭 Склад</button>
+  <button data-tab="allies">🤝 Союз симьи</button>
+  <button data-tab="music">🎵 Музыка</button>
+  <button data-tab="rules">📖 Правила</button>
+  <button data-tab="album">📸 Фотоальбом</button>
+  <button data-tab="chat" id="navChat">💬 Общение <span class="badge" id="chatBadge" style="display:none;">0</span></button>
+  <button data-tab="admin" id="navAdmin" class="hidden">⚙ ADMIN</button>
+</nav>
+
+<main>
+
+  <section class="panel active" id="nicks">
+    <h2>Реестр игровых ников</h2>
+    <div class="grid" id="nicksGrid"></div>
+  </section>
+
+  <section class="panel" id="ranks">
+    <h2>Ранги симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">Император</div><div class="role gold">Лидер симьи</div><div class="stat">Высшая власть. Полный доступ ко всем модулям.</div></div>
+      <div class="card"><div class="name">Лорд Тьмы</div><div class="role">Заместитель</div><div class="stat">Второй после Императора. Доступ к ADMIN.</div></div>
+      <div class="card"><div class="name">Рыцарь Смерти</div><div class="role">Офицер</div><div class="stat">Командует бойцами, ведёт контракты.</div></div>
+      <div class="card"><div class="name">Скелет Ужаса</div><div class="role blue">Офицер</div><div class="stat">Разведка, союзы, работа с контейнерами.</div></div>
+      <div class="card"><div class="name">Тёмная душа</div><div class="role gray">Боец</div><div class="stat">Рядовой состав. Базовый доступ.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="contracts">
+    <h2>Контракты симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">Зачистка нефтезавода</div><div class="role">Приоритет: высокий</div><div class="stat">Награда: <span class="val">50 000 ₽</span></div><div class="bar"><span style="width:66%"></span></div></div>
+      <div class="card"><div class="name">Оборона базы</div><div class="role danger">Приоритет: критический</div><div class="stat">До атаки: <span class="danger">00:45:12</span></div><div class="bar"><span style="width:80%"></span></div></div>
+      <div class="card"><div class="name">Охота на босса</div><div class="role">Приоритет: средний</div><div class="stat">Награда: <span class="val">25 000 ₽</span></div><div class="bar"><span style="width:50%"></span></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="accolade">
+    <h2>Акколада — заслуги симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">🏅 Легенда T-Virus</div><div class="role gold">Высшая награда</div><div class="stat">Получили: <span class="val">2</span></div></div>
+      <div class="card"><div class="name">⚔ Мастер войны</div><div class="role">Боевая награда</div><div class="stat">Получили: <span class="val">5</span></div></div>
+      <div class="card"><div class="name">💰 Хранитель казны</div><div class="role green">Экономическая</div><div class="stat">Получили: <span class="val">3</span></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="containers">
+    <h2>Контейнеры симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">Контейнер #001</div><div class="role">Общий</div><div class="stat">Оружие: <span class="val">24</span> | Боеприпасы: <span class="val">1 200</span></div></div>
+      <div class="card"><div class="name">Контейнер #002</div><div class="role gold">Лидерский</div><div class="stat">T-Virus образцы: <span class="val">3</span></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="warehouse">
+    <h2>Склад симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">Аптечка</div><div class="role">Медикаменты</div><div class="stat">Кол-во: <span class="val">48</span></div></div>
+      <div class="card"><div class="name">Пистолет M92F</div><div class="role">Оружие</div><div class="stat">Кол-во: <span class="val">15</span></div></div>
+      <div class="card"><div class="name">Дробовик</div><div class="role">Тяжёлое</div><div class="stat">Кол-во: <span class="val">6</span></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="allies">
+    <h2>Союзы симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">[ФАМА_Х]</div><div class="role ally">Союз</div><div class="stat">Совместных операций: <span class="val">14</span></div></div>
+      <div class="card"><div class="name">[ФАМА_Y]</div><div class="role danger">Война</div><div class="stat">Счёт побед: <span class="val">3 : 2</span></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="music">
+    <h2>Музыка симьи</h2>
+    <div class="music-player">
+      <div class="now-playing">Сейчас играет</div>
+      <div class="track-title">Umbrella Theme</div>
+      <div class="track-artist">Resident Evil OST</div>
+      <div class="music-controls">
+        <button>⏮</button>
+        <button class="play">▶</button>
+        <button>⏭</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="rules">
+    <h2>Правила симьи</h2>
+    <div class="grid">
+      <div class="card"><div class="name">1. Верность</div><div class="stat">Не предавать интересы симьи.</div></div>
+      <div class="card"><div class="name">2. Уважение</div><div class="stat">Уважать всех участников.</div></div>
+      <div class="card"><div class="name">3. Дисциплина</div><div class="stat">Выполнять приказы лидера и зама.</div></div>
+      <div class="card"><div class="name">4. Активность</div><div class="stat">Участвовать в контрактах и войнах.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="album">
+    <h2>Фотоальбом</h2>
+    <div class="album">
+      <div class="photo">Слот 1</div>
+      <div class="photo">Слот 2</div>
+      <div class="photo">Слот 3</div>
+      <div class="photo">Слот 4</div>
+    </div>
+  </section>
+
+  <section class="panel" id="chat">
+    <h2>Общение симьи</h2>
+    <div class="chat-wrap">
+      <div class="chat-pinned">
+        <span class="pin-icon">📌</span>
+        <span class="pin-text">Добро пожаловать в беседу RESIDENT EVIL. Соблюдайте правила симьи.</span>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <button class="chat-new-btn" id="chatNewBtn">↓ Новые сообщения</button>
+      <div class="chat-typing" id="chatTyping"></div>
+      <div class="chat-input-wrap">
+        <div class="chat-reply-bar" id="chatReplyBar">
+          <div class="reply-line">
+            <div class="reply-to">Ответ <span id="replyToName">—</span></div>
+            <div class="reply-text" id="replyToText">—</div>
+          </div>
+          <button class="close-reply" onclick="window.__clearReply && window.__clearReply()">✕</button>
+        </div>
+        <div class="chat-input">
+          <button class="emoji-btn" id="emojiBtn">☺</button>
+          <input type="text" id="chatInput" placeholder="Написать сообщение..." autocomplete="off">
+          <button class="send-btn" id="chatSend">➤</button>
+        </div>
+        <div class="emoji-picker" id="emojiPicker"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="admin">
+    <h2>⚙ Панель администратора // Приватный доступ</h2>
+    <div class="grid">
+      <div class="card clickable" onclick="openModal({title:'СОЗДАТЬ АККАУНТ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Создать аккаунт</div><div class="role gold">Регистрация</div><div class="stat">Завести нового участника</div></div>
+      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ PIN',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Сменить PIN</div><div class="role">Безопасность</div><div class="stat">Изменить PIN участника</div></div>
+      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ РОЛЬ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Сменить роль</div><div class="role">Иерархия</div><div class="stat">Перевести на другую должность</div></div>
+      <div class="card clickable" onclick="openModal({title:'ВЫДАТЬ WARN',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Выдать Warn</div><div class="role danger">Наказание</div><div class="stat">Предупреждение участнику</div></div>
+      <div class="card clickable" onclick="openModal({title:'УДАЛИТЬ АККАУНТ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Удалить аккаунт</div><div class="role danger">Опасно</div><div class="stat">Полное удаление</div></div>
+    </div>
+
+    <h2 class="sub">📋 Реестр участников</h2>
+    <div style="overflow-x:auto;">
+      <table class="users-table" id="usersTable">
+        <thead>
+          <tr><th>Логин</th><th>Роль</th><th>Warn</th><th>Действия</th></tr>
+        </thead>
+        <tbody id="usersTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="log" id="adminLog">
+      <div class="log-line"><span class="ts">[—]</span>Лог административных действий</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>UMBRELLA CORP © 1998—2026 // T-VIRUS PROTOCOL v2.4</footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">ПОДТВЕРЖДЕНИЕ</h3>
+    <div id="modalBody"><p id="modalText">Вы уверены?</p></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">ОТМЕНА</button>
+      <button class="btn" id="modalConfirm" onclick="confirmModal()">ПОДТВЕРДИТЬ</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
