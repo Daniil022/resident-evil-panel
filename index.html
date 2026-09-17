@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LIVE RUSSIA // Панель симьи RESIDENT EVIL</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 90,85 10,85' fill='%2300c8d4'/></svg>">
+
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/auth.css">
@@ -12,6 +13,7 @@
 <link rel="stylesheet" href="css/panels.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/chat.css">
+<link rel="stylesheet" href="css/contracts.css">
 </head>
 <body>
 
@@ -28,7 +30,7 @@
     <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
     <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
     <div class="auth-default" id="authDefaultHint"></div>
-    <div class="auth-footer">T-VIRUS PROTOCOL v2.4 // UNAUTHORIZED ACCESS PROHIBITED</div>
+    <div class="auth-footer">PANEL RESIDENT EVIL v.0.0.1</div>
   </div>
 </div>
 
@@ -118,7 +120,14 @@
     </div>
   </section>
 
-  <section class="panel" id="contracts"><h2>Контракты симьи</h2><div class="grid" id="contractsGrid"></div></section>
+  <section class="panel" id="contracts">
+    <div class="contracts-head">
+      <h2>Контракты симьи</h2>
+      <button class="btn" id="createContractBtn">+ Создать контракт</button>
+    </div>
+    <div id="contractProgress"></div>
+    <div class="grid" id="contractsGrid"></div>
+  </section>
 
   <section class="panel" id="accolade">
     <h2>Акколада — заслуги симьи</h2>
