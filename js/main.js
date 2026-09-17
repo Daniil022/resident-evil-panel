@@ -6,6 +6,7 @@ import { initDashboard } from "./core/dashboard.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
+import { initNicks, initRanks } from "./modules/nicks.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 // ==================== ЗАПУСК ====================
@@ -56,13 +57,7 @@ function setupAuthScreen() {
         return;
       }
 
-      // Догружаем роли перед входом в интерфейс
-      try {
-        await preloadColorData();
-      } catch (e) {
-        console.warn("Color preload failed, using fallback");
-      }
-
+      try { await preloadColorData(); } catch (e) { console.warn("Color preload failed"); }
       enterApp(res.user);
     } catch (e) {
       btn.disabled = false;
@@ -107,6 +102,10 @@ function enterApp(user) {
   initRouter();
   initDashboard();
   applyColorsToDOM();
+
+  // Ники и Ранги — грузим сразу (в фоне)
+  try { initNicks(); } catch (e) { console.warn("Nicks init failed:", e); }
+  try { initRanks(); } catch (e) { console.warn("Ranks init failed:", e); }
 
   const inited = { chat: false, admin: false, contracts: false };
 
