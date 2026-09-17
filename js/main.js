@@ -7,16 +7,16 @@ import { initAdmin } from "./admin/admin-panel.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
 import { initNicks, initRanks } from "./modules/nicks.js";
+import { initWarehouse } from "./modules/warehouse.js";
+import { initAllies } from "./modules/allies.js";
+import { initRules } from "./modules/rules.js";
+import { initAccolades } from "./modules/accolades.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 // ==================== ЗАПУСК ====================
 document.addEventListener("DOMContentLoaded", () => {
   setupAuthScreen();
-
-  // Предзагрузка ролей В ФОНЕ — не блокирует вход
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
-
-  // Проверка сессии
   const session = tryRestoreSession();
   if (session) enterApp(session);
   else showAuthScreen();
@@ -57,7 +57,7 @@ function setupAuthScreen() {
         return;
       }
 
-      try { await preloadColorData(); } catch (e) { console.warn("Color preload failed"); }
+      try { await preloadColorData(); } catch (e) {}
       enterApp(res.user);
     } catch (e) {
       btn.disabled = false;
@@ -94,7 +94,6 @@ function enterApp(user) {
 
   if (avatarEl) avatarEl.textContent = user.login.charAt(0).toUpperCase();
 
-  // ADMIN виден только Императору и Лорду Тьмы
   const navAdmin = document.getElementById("navAdmin");
   const isAdminRole = ["emperor", "lord"].includes(user.role);
   if (navAdmin) navAdmin.classList.toggle("hidden", !isAdminRole);
@@ -107,7 +106,10 @@ function enterApp(user) {
   try { initNicks(); } catch (e) { console.warn("Nicks init failed:", e); }
   try { initRanks(); } catch (e) { console.warn("Ranks init failed:", e); }
 
-  const inited = { chat: false, admin: false, contracts: false };
+  const inited = {
+    chat: false, admin: false, contracts: false,
+    warehouse: false, allies: false, rules: false, accolades: false
+  };
 
   window.addEventListener("tabChange", (e) => {
     const tab = e.detail.tab;
@@ -124,29 +126,4 @@ function enterApp(user) {
 
     if (tab === "contracts" && !inited.contracts) {
       inited.contracts = true;
-      try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
-    }
-  });
-
-  // Если открыли по хэшу — инициализируем сразу
-  if (location.hash === "#chat" && !inited.chat) {
-    inited.chat = true;
-    try { initChat(); } catch (err) { console.warn("Chat init failed:", err); }
-  }
-  if (location.hash === "#contracts" && !inited.contracts) {
-    inited.contracts = true;
-    try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
-  }
-
-  // Кнопка «Создать контракт»
-  const createBtn = document.getElementById("createContractBtn");
-  if (createBtn) createBtn.addEventListener("click", openCreateContract);
-
-  toast(`Добро пожаловать, ${user.login}`, "ok");
-}
-
-// ==================== ВЫХОД ====================
-window.addEventListener("beforeunload", () => {
-  try { destroyChat(); } catch (e) {}
-  try { destroyContracts(); } catch (e) {}
-});
+      try { init
