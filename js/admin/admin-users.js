@@ -1,6 +1,9 @@
 // js/admin/admin-users.js
-import { listUsers, deleteUser, changePin, changeRole, warnUser, unwarnUser, setRoleColor, WARN_LIMIT }
+import { listUsers, deleteUser, changePin, changeRole, warnUser, unwarnUser }
   from "../core/auth.js";
+import { listRoles } from "../core/roles.js";
+import { getRoleColor, getRoleName, getDivisionColor, getDivisionName }
+  from "../core/colorize.js";
 import { toast } from "../core/utils.js";
 import { raf } from "../core/perf.js";
 
@@ -17,8 +20,8 @@ export async function renderUsersTable(force = false) {
 
   raf(() => {
     if (users.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">
-        Участников нет. Создайте первого через «Создать аккаунт».
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">
+        Участников нет. Создайте первого через кнопку «Создать аккаунт».
       </td></tr>`;
       renderScheduled = false;
       return;
@@ -33,15 +36,15 @@ export async function renderUsersTable(force = false) {
 
     const html = sorted.map(u => {
       const w = u.warn || 0;
-      const banned = u.banned || w >= WARN_LIMIT;
+      const banned = u.banned || w >= 3;
       const wCls = banned ? "danger" : w > 0 ? "warn" : "";
       const lockIcon = banned ? " 🔒" : "";
       const banLabel = banned ? `<span style="color:var(--red);font-size:10px;margin-left:6px;">ЗАБАНЕН</span>` : "";
-      const rCls = u.role === "Император" ? "gold"
-                : u.role === "Лорд Тьмы" ? "red"
-                : (u.role === "Рыцарь Смерти" || u.role === "Скелет Ужаса") ? "blue"
-                : "";
-      const colorStyle = u.roleColor ? `style="color:${u.roleColor};"` : "";
+
+      const roleColor = getRoleColor(u.role);
+      const roleName = getRoleName(u.role);
+      const divColor = getDivisionColor(u.division);
+      const divName = getDivisionName(u.division);
 
       const plusWBtn = banned
         ? `<button class="btn small secondary" disabled style="opacity:0.4;cursor:not-allowed;">+W</button>`
@@ -50,13 +53,14 @@ export async function renderUsersTable(force = false) {
       return `
         <tr>
           <td><b style="color:#fff;">${u.login}</b>${lockIcon}${banLabel}</td>
-          <td class="role-cell ${rCls}" ${colorStyle}>${u.role}</td>
-          <td class="${wCls}">${w} / ${WARN_LIMIT}</td>
+          <td><span class="role-badge" style="background:${hexRgba(roleColor,0.15)};color:${roleColor};border:1px solid ${hexRgba(roleColor,0.3)};">${roleName}</span></td>
+          <td>${u.division ? `<span class="division-badge" style="background:${hexRgba(divColor,0.15)};color:${divColor};border:1px solid ${hexRgba(divColor,0.3)};">${divName}</span>` : '<span style="color:#666;font-size:11px;">—</span>'}</td>
+          <td class="${wCls}">${w} / 3</td>
           <td>
             <div class="actions">
               <button class="btn small secondary" onclick="window.__adminChangePin('${u.uid}')">PIN</button>
               <button class="btn small secondary" onclick="window.__adminChangeRole('${u.uid}')">Роль</button>
-              <button class="btn small secondary" onclick="window.__adminRoleColor('${u.uid}')">🎨</button>
+              <button class="btn small secondary" onclick="window.__adminChangeDivision('${u.uid}')">Отряд</button>
               ${plusWBtn}
               <button class="btn small secondary" onclick="window.__adminUnwarn('${u.uid}')">−W</button>
               <button class="btn small danger" onclick="window.__adminDelete('${u.uid}')">✕</button>
@@ -71,15 +75,24 @@ export async function renderUsersTable(force = false) {
   });
 }
 
+function hexRgba(hex, alpha) {
+  const c = hex.replace("#", "");
+  const r = parseInt(c.substring(0,2), 16);
+  const g = parseInt(c.substring(2,4), 16);
+  const b = parseInt(c.substring(4,6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ==================== ДЕЙСТВИЯ ====================
 window.__adminChangePin = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-  const newPin = prompt(`Новый PIN для ${u.login} (4-8 цифр):`);
+  const newPin = prompt(`Новый PIN для ${u.login}:`);
   if (newPin === null) return;
   try {
     await changePin(uid, newPin);
-    toast(`PIN ${u.login} обновлён`, "ok");
+    toast("PIN обновлён", "ok");
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -88,31 +101,39 @@ window.__adminChangeRole = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-  const newRole = prompt(
-    `Новая роль для ${u.login}:\n\nИмператор\nЛорд Тьмы\nРыцарь Смерти\nСкелет Ужаса\nТёмная душа`,
-    u.role
-  );
-  if (newRole === null) return;
+  const roles = await listRoles();
+  const menu = roles.map((r, i) => `${i + 1}. ${r.name}`).join("\n");
+  const num = prompt(`Роль для ${u.login}:\n\n${menu}\n\nВведи номер:`, "1");
+  if (num === null) return;
+  const idx = parseInt(num) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= roles.length) {
+    return toast("Неверный номер", "warn");
+  }
   try {
-    await changeRole(uid, newRole.trim());
-    toast(`${u.login} → ${newRole.trim()}`, "ok");
+    await changeRole(uid, roles[idx].id);
+    toast("Роль изменена", "ok");
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
 
-window.__adminRoleColor = async function(uid) {
+window.__adminChangeDivision = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-  const color = prompt(`HEX-цвет для роли ${u.login} (например #00c8d4):`, u.roleColor || "#00c8d4");
-  if (color === null) return;
-  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
-    toast("Неверный HEX. Пример: #00c8d4", "warn");
-    return;
+  const { listDivisions } = await import("../core/divisions.js");
+  const divisions = await listDivisions();
+  const menu = ["0. — без подразделения —", ...divisions.map((d, i) => `${i + 1}. ${d.name}`)].join("\n");
+  const num = prompt(`Подразделение для ${u.login}:\n\n${menu}\n\nВведи номер:`, "0");
+  if (num === null) return;
+  const idx = parseInt(num);
+  if (isNaN(idx) || idx < 0 || idx > divisions.length) {
+    return toast("Неверный номер", "warn");
   }
+  const division = idx === 0 ? null : divisions[idx - 1].id;
   try {
-    await setRoleColor(uid, color);
-    toast(`Цвет роли ${u.login} обновлён`, "ok");
+    const { changeDivision } = await import("../core/auth.js");
+    await changeDivision(uid, division);
+    toast("Подразделение обновлено", "ok");
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -121,69 +142,37 @@ window.__adminWarn = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-
   const w = u.warn || 0;
-  if (w >= WARN_LIMIT || u.banned) {
-    toast(`${u.login} уже забанен (${w}/${WARN_LIMIT})`, "warn");
-    return;
-  }
-
-  const reason = prompt(`Причина Warn для ${u.login} (${w}/${WARN_LIMIT} → ${w+1}/${WARN_LIMIT}):`, "");
+  if (w >= 3 || u.banned) return toast(`${u.login} уже забанен`, "warn");
+  const reason = prompt(`Причина Warn для ${u.login}:`, "");
   if (reason === null) return;
-
   try {
     const res = await warnUser(uid, reason.trim());
-    if (res.banned) {
-      toast(`⚠ ${u.login} ЗАБАНЕН (${res.warn}/${WARN_LIMIT})`, "warn");
-    } else {
-      toast(`${u.login} — Warn (${res.warn}/${WARN_LIMIT})`, "warn");
-    }
+    toast(res.banned ? `${u.login} ЗАБАНЕН` : `Warn (${res.warn}/3)`, "warn");
     await renderUsersTable(true);
-  } catch (e) {
-    toast(e.message, "warn");
-  }
+  } catch (e) { toast(e.message, "warn"); }
 };
 
 window.__adminUnwarn = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-
-  const w = u.warn || 0;
-  if (w === 0) {
-    toast("У пользователя нет Warn", "warn");
-    return;
-  }
-
-  if (!confirm(`Снять 1 Warn с ${u.login}? (${w}/${WARN_LIMIT} → ${w-1}/${WARN_LIMIT})`)) return;
-
+  if (!confirm(`Снять Warn с ${u.login}?`)) return;
   try {
     const res = await unwarnUser(uid);
-    if (!res.banned && w >= WARN_LIMIT) {
-      toast(`Warn снят. ${u.login} разбанен! (${res.warn}/${WARN_LIMIT})`, "ok");
-    } else {
-      toast(`Warn снят (${res.warn}/${WARN_LIMIT})`, "ok");
-    }
+    toast(`Warn снят (${res.warn}/3)`, "ok");
     await renderUsersTable(true);
-  } catch (e) {
-    toast(e.message, "warn");
-  }
+  } catch (e) { toast(e.message, "warn"); }
 };
 
 window.__adminDelete = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
-  if (!u) {
-    toast("Пользователь не найден", "warn");
-    return;
-  }
-  if (!confirm(`УДАЛИТЬ ${u.login}? Действие необратимо.`)) return;
-
+  if (!u) return;
+  if (!confirm(`УДАЛИТЬ ${u.login}?`)) return;
   try {
     await deleteUser(uid);
     toast(`${u.login} удалён`, "ok");
     await renderUsersTable(true);
-  } catch (e) {
-    toast("Ошибка удаления: " + e.message, "warn");
-  }
+  } catch (e) { toast(e.message, "warn"); }
 };
