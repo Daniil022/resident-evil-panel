@@ -6,8 +6,11 @@ import { uploadMedia } from "./contracts-upload.js";
 import { getNextReward, getEarnedRewards } from "./contracts-rewards.js";
 
 const DEMO_KEY = "re_demo_contracts";
-let demoMode = false;
+let demoMode = true;
 let currentContracts = [];
+
+// ⚠️ Роли, которым разрешено управлять контрактами
+const ADMIN_ROLES = ["emperor", "lord"];
 
 export async function initContracts() {
   const grid = document.getElementById("contractsGrid");
@@ -21,9 +24,8 @@ export async function initContracts() {
     progressEl.innerHTML = renderProgress(fullMe || me);
   }
 
-  demoMode = true;
   currentContracts = getDemoContracts();
-  renderAll();
+  await renderAll();
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn && !createBtn.__bound) {
@@ -88,7 +90,8 @@ async function renderAll() {
 
 function renderCard(c, users, me) {
   const author = users.find(u => u.uid === c.authorId);
-  const isAdmin = ["Император", "Лорд Тьмы"].includes(me.role);
+  // ✅ ИСПРАВЛЕНО: проверка по id роли, а не по названию
+  const isAdmin = ADMIN_ROLES.includes(me.role);
 
   const statusMap = {
     open: { text: "Открыт", cls: "green" },
@@ -145,7 +148,8 @@ function formatDate(ts) {
 // ==================== СОЗДАНИЕ ====================
 export function openCreateContract() {
   const me = getCurrentUser();
-  if (!["Император", "Лорд Тьмы"].includes(me.role)) {
+  // ✅ ИСПРАВЛЕНО: проверка по id
+  if (!ADMIN_ROLES.includes(me.role)) {
     return toast("Только Император и Лорд Тьмы могут создавать", "warn");
   }
 
@@ -215,7 +219,7 @@ window.__contractSubmit = function(contractId) {
         <div class="form-field" style="grid-column:1/-1;">
           <label>Фото/видео доказательство</label>
           <input type="file" id="rMedia" accept="image/*,video/*" multiple>
-          <div class="form-hint">До 50 МБ. JPG/PNG/WEBP/GIF или MP4/WEBM/MOV.</div>
+          <div class="form-hint">До 50 МБ.</div>
         </div>
         <div class="form-field" style="grid-column:1/-1;">
           <label>Комментарий (опционально)</label>
