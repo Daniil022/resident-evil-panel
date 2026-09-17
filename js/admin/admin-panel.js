@@ -8,6 +8,7 @@ import { listDivisions } from "../core/divisions.js";
 import { renderUsersTable } from "./admin-users.js";
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
+import { initAdminApplications } from "./admin-applications.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
 let initialized = false;
@@ -20,6 +21,7 @@ export async function initAdmin() {
   }
   await initAdminRoles();
   await initAdminDivisions();
+  await initAdminApplications();
   await renderUsersTable(true);
 }
 
@@ -122,7 +124,7 @@ async function openChangePin() {
       try {
         await changePin(uid, pin);
         toast("PIN обновлён", "ok");
-        addLog(`PIN изменён`, "ok");
+        addLog("PIN изменён", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) {
@@ -164,7 +166,7 @@ async function openChangeRole() {
       try {
         await changeRole(uid, role);
         toast("Роль изменена", "ok");
-        addLog(`Роль изменена`, "ok");
+        addLog("Роль изменена", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -203,7 +205,7 @@ async function openChangeDivision() {
       try {
         await changeDivision(uid, division);
         toast("Подразделение обновлено", "ok");
-        addLog(`Подразделение изменено`, "ok");
+        addLog("Подразделение изменено", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -239,8 +241,8 @@ async function openWarn() {
       try {
         const res = await warnUser(uid, reason);
         if (res.banned) {
-          toast(`ЗАБАНЕН (3/3)`, "warn");
-          addLog(`Забанен (3/3)`, "crit");
+          toast("ЗАБАНЕН (3/3)", "warn");
+          addLog("Забанен (3/3)", "crit");
         } else {
           toast(`Warn (${res.warn}/3)`, "warn");
           addLog(`Warn (${res.warn}/3)`, "warn");
