@@ -1,6 +1,8 @@
 // js/core/dashboard.js
 import { getCurrentUser } from "./state.js";
 
+let clockInterval = null;
+
 export function initDashboard() {
   const user = getCurrentUser();
   if (!user) return;
@@ -24,11 +26,12 @@ export function initDashboard() {
     }
   }
 
-  // Часы
+  // Часы — очищаем старый интервал, если был
+  if (clockInterval) clearInterval(clockInterval);
   updateClock();
-  setInterval(updateClock, 1000);
+  clockInterval = setInterval(updateClock, 1000);
 
-  // Обнуляем счётчики (пока нет реальных данных)
+  // Обнуляем все счётчики
   setCounter("dashTreasury", 0);
   setCounter("dashWars", 0);
   setCounter("dashMembers", 0);
@@ -36,21 +39,8 @@ export function initDashboard() {
   setCounter("dashContracts", 0);
   setCounter("dashMessages", 0);
 
-  // Топ участников — пусто
-  renderTop([]);
-
-  // Лента событий — пустая
-  renderFeedEmpty();
-
-  // Слушаем события от модулей
-  window.addEventListener("chatMessageCount", (e) => {
-    setCounter("dashMessages", e.detail.count);
-  });
-
-  window.addEventListener("presenceUpdate", (e) => {
-    setCounter("dashOnline", e.detail.online);
-    setCounter("dashMembers", e.detail.total);
-  });
+  // Топ участников — заглушка уже в HTML, JS не трогает
+  // Лента событий — заглушка уже в HTML, JS не трогает
 }
 
 // ==================== ХЕЛПЕРЫ ====================
@@ -69,56 +59,14 @@ function updateClock() {
     String(d.getSeconds()).padStart(2, "0");
 }
 
-// ==================== ТОП УЧАСТНИКОВ ====================
-function renderTop(list) {
-  const el = document.getElementById("dashTop");
-  if (!el) return;
-
-  if (!list || list.length === 0) {
-    el.innerHTML = `
-      <div class="dash-top-item" style="border-left-color: var(--muted); opacity: 0.6;">
-        <div class="rank">—</div>
-        <div class="who">
-          <div class="nick">Пока нет данных</div>
-          <div class="role">Топ сформируется по мере активности</div>
-        </div>
-        <div class="val">0 ₽</div>
-      </div>
-    `;
-    return;
-  }
-
-  el.innerHTML = list.map(t => `
-    <div class="dash-top-item">
-      <div class="rank">#${t.rank}</div>
-      <div class="who">
-        <div class="nick">${t.nick}</div>
-        <div class="role">${t.role}</div>
-      </div>
-      <div class="val">${t.val}</div>
-    </div>
-  `).join("");
-}
-
-// ==================== ЛЕНТА СОБЫТИЙ ====================
-function renderFeedEmpty() {
-  const feed = document.getElementById("dashFeed");
-  if (!feed) return;
-  feed.innerHTML = `
-    <div class="dash-event" style="opacity: 0.5;">
-      <span class="dash-event-icon">⏳</span>
-      <span class="dash-event-time">—</span>
-      <span class="dash-event-text">Событий пока нет</span>
-    </div>
-  `;
-}
-
+// ==================== СОБЫТИЯ ====================
+// Используется извне (например, при отправке сообщения в чат)
 export function addDashEvent(icon, text) {
   const feed = document.getElementById("dashFeed");
   if (!feed) return;
 
-  // Если в ленте только заглушка — убираем её
-  const placeholder = feed.querySelector(".dash-event[style*='opacity: 0.5']");
+  // Если в ленте заглушка — убираем её
+  const placeholder = feed.querySelector(".dash-event[style*='opacity']");
   if (placeholder) feed.innerHTML = "";
 
   const now = new Date();
