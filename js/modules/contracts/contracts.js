@@ -1,51 +1,35 @@
 // js/modules/contracts/contracts.js
-import { db, storage } from "../../firebase-init.js";
-import {
-  collection, addDoc, query, orderBy, onSnapshot,
-  doc, getDoc, updateDoc, deleteDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getCurrentUser } from "../../core/state.js";
 import { listUsers, incrementContracts } from "../../core/auth.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
-import { renderContractCard, renderMyProgress } from "./contracts-render.js";
 import { uploadMedia } from "./contracts-upload.js";
+import { getNextReward, getEarnedRewards } from "./contracts-rewards.js";
 
-let unsubscribe = null;
-let currentContracts = [];
-let demoMode = false;
 const DEMO_KEY = "re_demo_contracts";
+let demoMode = false;
+let currentContracts = [];
 
 export async function initContracts() {
   const grid = document.getElementById("contractsGrid");
   const progressEl = document.getElementById("contractProgress");
   if (!grid) return;
 
-  // Мой прогресс
   const me = getCurrentUser();
   if (progressEl && me) {
     const users = await listUsers();
     const fullMe = users.find(u => u.uid === me.uid);
-    progressEl.innerHTML = renderMyProgress(fullMe || me);
+    progressEl.innerHTML = renderProgress(fullMe || me);
   }
 
-  // Список контрактов
-  try {
-    const q = query(collection(db, "contracts"), orderBy("createdAt", "desc"));
-    unsubscribe = onSnapshot(q, async (snap) => {
-      currentContracts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      await renderAll();
-    }, () => {
-      enableDemo();
-    });
-  } catch (e) {
-    enableDemo();
-  }
-}
-
-function enableDemo() {
   demoMode = true;
   currentContracts = getDemoContracts();
   renderAll();
+
+  const createBtn = document.getElementById("createContractBtn");
+  if (createBtn && !createBtn.__bound) {
+    createBtn.__bound = true;
+    createBtn.addEventListener("click", openCreateContract);
+  }
 }
 
 function getDemoContracts() {
@@ -55,6 +39,28 @@ function getDemoContracts() {
 
 function saveDemoContracts() {
   localStorage.setItem(DEMO_KEY, JSON.stringify(currentContracts));
+}
+
+function renderProgress(user) {
+  const done = user.contracts || 0;
+  const next = getNextReward(done);
+  const earned = getEarnedRewards(done);
+
+  return `
+    <div class="contract-progress">
+      <div class="contract-progress-head">
+        <div>
+          <div class="contract-progress-title">Твой прогресс контрактов</div>
+          <div class="contract-progress-sub">${done} выполнено</div>
+        </div>
+        ${next.done ? `<div class="contract-progress-max">🏆 МАКСИМУМ</div>`
+                    : `<div class="contract-progress-next">До «${next.label}»: ${next.target - done} шт.</div>`}
+      </div>
+      ${!next.done ? `<div class="bar"><span style="width:${next.progress}%"></span></div>
+                      <div class="contract-progress-hint">Награда: ${next.reward}</div>` : ""}
+      ${earned.length ? `<div class="contract-earned">${earned.map(e => `<span class="contract-badge">🏅 ${e.label} — ${e.reward}</span>`).join("")}</div>` : ""}
+    </div>
+  `;
 }
 
 async function renderAll() {
@@ -76,15 +82,71 @@ async function renderAll() {
   const me = getCurrentUser();
 
   grid.innerHTML = currentContracts
-    .map(c => renderContractCard(c, users, me))
+    .map(c => renderCard(c, users, me))
     .join("");
+}
+
+function renderCard(c, users, me) {
+  const author = users.find(u => u.uid === c.authorId);
+  const isAdmin = ["Император", "Лорд Тьмы"].includes(me.role);
+
+  const statusMap = {
+    open: { text: "Открыт", cls: "green" },
+    review: { text: "На проверке", cls: "gold" },
+    approved: { text: "Выполнен", cls: "blue" },
+    rejected: { text: "Отклонён", cls: "red" }
+  };
+  const status = statusMap[c.status] || statusMap.open;
+
+  return `
+    <div class="card contract-card" data-id="${c.id}">
+      <div class="contract-head">
+        <div>
+          <div class="name">${escapeHtml(c.title)}</div>
+          <div class="role">Награда: <span class="val">${c.reward} ₽</span></div>
+        </div>
+        <span class="contract-status ${status.cls}">${status.text}</span>
+      </div>
+      <div class="stat">${escapeHtml(c.description || "Без описания")}</div>
+      <div class="contract-meta">
+        <span>👤 Автор: <b>${escapeHtml(author?.login || "—")}</b></span>
+        <span>📅 ${formatDate(c.createdAt)}</span>
+      </div>
+      ${c.media && c.media.length ? `
+        <div class="contract-media">
+          ${c.media.map(m => m.type === "image"
+            ? `<img src="${m.url}" onclick="window.__openMedia('${m.url}','image')">`
+            : `<div style="padding:8px;background:#000;color:#0f0;font-size:11px;border-radius:6px;">📹 ${m.name}</div>`).join("")}
+        </div>
+      ` : ""}
+      ${c.status === "open" ? `<button class="btn small" onclick="window.__contractSubmit('${c.id}')">Сдать отчёт</button>` : ""}
+      ${c.status === "review" && isAdmin ? `
+        <div class="contract-review-actions">
+          <button class="btn small" onclick="window.__contractApprove('${c.id}')">✓ Одобрить</button>
+          <button class="btn small secondary" onclick="window.__contractReject('${c.id}')">✕ Отклонить</button>
+        </div>
+      ` : ""}
+      ${isAdmin ? `<button class="btn small danger" style="margin-top:8px;" onclick="window.__contractDelete('${c.id}')">🗑 Удалить контракт</button>` : ""}
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function formatDate(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 // ==================== СОЗДАНИЕ ====================
 export function openCreateContract() {
   const me = getCurrentUser();
   if (!["Император", "Лорд Тьмы"].includes(me.role)) {
-    return toast("Только Император и Лорд Тьмы могут создавать контракты", "warn");
+    return toast("Только Император и Лорд Тьмы могут создавать", "warn");
   }
 
   openModal({
@@ -104,7 +166,7 @@ export function openCreateContract() {
           <textarea id="cDesc" placeholder="Что нужно сделать..."></textarea>
         </div>
       </div>
-      <div id="cError" style="color:var(--red); font-size:12px; display:none;"></div>
+      <div id="cError" style="color:var(--red);font-size:12px;display:none;"></div>
     `,
     confirmText: "СОЗДАТЬ",
     onConfirm: async () => {
@@ -113,38 +175,24 @@ export function openCreateContract() {
       const description = document.getElementById("cDesc").value.trim();
       const err = document.getElementById("cError");
 
-      if (!title) {
-        err.textContent = "Введите название";
-        err.style.display = "block";
-        return;
-      }
+      if (!title) { err.textContent = "Введите название"; err.style.display = "block"; return; }
 
       const contract = {
+        id: "demo-c-" + Date.now(),
         title, reward, description,
-        authorId: me.uid,
-        authorLogin: me.login,
-        status: "open",
-        media: [],
-        submittedBy: null,
-        createdAt: demoMode ? Date.now() : serverTimestamp()
+        authorId: me.uid, authorLogin: me.login,
+        status: "open", media: [],
+        createdAt: Date.now()
       };
 
-      try {
-        if (demoMode) throw new Error("demo");
-        await addDoc(collection(db, "contracts"), contract);
-        toast("Контракт создан", "ok");
-        closeModal();
-      } catch {
-        contract.id = "demo-c-" + Date.now();
-        contract.createdAt = Date.now();
-        currentContracts.unshift(contract);
-        saveDemoContracts();
-        renderAll();
-        toast("Контракт создан (демо)", "ok");
-        closeModal();
-      }
+      currentContracts.unshift(contract);
+      saveDemoContracts();
+      await renderAll();
+      toast("Контракт создан", "ok");
+      closeModal();
     }
   });
+  setTimeout(() => document.getElementById("cTitle")?.focus(), 80);
 }
 
 // ==================== ОТЧЁТ ====================
@@ -174,7 +222,7 @@ window.__contractSubmit = function(contractId) {
           <textarea id="rComment" placeholder="Кратко о выполнении..."></textarea>
         </div>
       </div>
-      <div id="rError" style="color:var(--red); font-size:12px; display:none;"></div>
+      <div id="rError" style="color:var(--red);font-size:12px;display:none;"></div>
     `,
     confirmText: "ОТПРАВИТЬ",
     onConfirm: async () => {
@@ -191,8 +239,10 @@ window.__contractSubmit = function(contractId) {
       }
 
       err.style.display = "none";
+      err.textContent = "Загрузка...";
+      err.style.display = "block";
+      err.style.color = "var(--cyan)";
 
-      // Загружаем медиа
       const media = [];
       for (const file of Array.from(files).slice(0, 5)) {
         try {
@@ -200,34 +250,22 @@ window.__contractSubmit = function(contractId) {
           media.push(result);
         } catch (e) {
           err.textContent = e.message;
-          err.style.display = "block";
+          err.style.color = "var(--red)";
           return;
         }
       }
 
-      // Обновляем контракт
-      const update = {
-        status: "review",
-        submittedBy: { uid: getCurrentUser().uid, login: nick, count, comment },
-        media,
-        submittedAt: demoMode ? Date.now() : serverTimestamp()
-      };
-
-      try {
-        if (demoMode) throw new Error("demo");
-        await updateDoc(doc(db, "contracts", contractId), update);
-        toast("Отчёт отправлен на проверку", "ok");
-        closeModal();
-      } catch {
-        const idx = currentContracts.findIndex(x => x.id === contractId);
-        if (idx >= 0) {
-          currentContracts[idx] = { ...currentContracts[idx], ...update, submittedAt: Date.now() };
-          saveDemoContracts();
-          renderAll();
-        }
-        toast("Отчёт отправлен (демо)", "ok");
-        closeModal();
+      const idx = currentContracts.findIndex(x => x.id === contractId);
+      if (idx >= 0) {
+        currentContracts[idx].status = "review";
+        currentContracts[idx].submittedBy = { uid: getCurrentUser().uid, login: nick, count, comment };
+        currentContracts[idx].media = media;
+        currentContracts[idx].submittedAt = Date.now();
+        saveDemoContracts();
+        await renderAll();
       }
+      toast("Отчёт отправлен на проверку", "ok");
+      closeModal();
     }
   });
 };
@@ -236,69 +274,55 @@ window.__contractSubmit = function(contractId) {
 window.__contractApprove = async function(contractId) {
   const c = currentContracts.find(x => x.id === contractId);
   if (!c || !c.submittedBy) return;
-
   const count = c.submittedBy.count || 1;
-
-  // Увеличиваем счётчик контрактов у автора отчёта
   await incrementContracts(c.submittedBy.uid, count);
 
-  const update = { status: "approved", approvedAt: Date.now() };
-
-  try {
-    if (demoMode) throw new Error("demo");
-    await updateDoc(doc(db, "contracts", contractId), update);
-    toast(`Одобрено: +${count} контрактов для ${c.submittedBy.login}`, "ok");
-  } catch {
-    const idx = currentContracts.findIndex(x => x.id === contractId);
-    if (idx >= 0) {
-      currentContracts[idx] = { ...currentContracts[idx], ...update };
-      saveDemoContracts();
-      renderAll();
-    }
-    toast(`Одобрено: +${count} контрактов`, "ok");
+  const idx = currentContracts.findIndex(x => x.id === contractId);
+  if (idx >= 0) {
+    currentContracts[idx].status = "approved";
+    currentContracts[idx].approvedAt = Date.now();
+    saveDemoContracts();
+    await renderAll();
   }
 
-  // Обновить прогресс
   const me = getCurrentUser();
   const users = await listUsers(true);
   const fullMe = users.find(u => u.uid === me.uid);
   const progressEl = document.getElementById("contractProgress");
-  if (progressEl && fullMe) progressEl.innerHTML = renderMyProgress(fullMe);
+  if (progressEl && fullMe) progressEl.innerHTML = renderProgress(fullMe);
+
+  toast(`Одобрено: +${count} контрактов для ${c.submittedBy.login}`, "ok");
 };
 
 window.__contractReject = async function(contractId) {
-  const c = currentContracts.find(x => x.id === contractId);
-  if (!c) return;
   if (!confirm("Отклонить отчёт?")) return;
-
-  const update = { status: "rejected", rejectedAt: Date.now() };
-  try {
-    if (demoMode) throw new Error("demo");
-    await updateDoc(doc(db, "contracts", contractId), update);
-    toast("Отчёт отклонён", "warn");
-  } catch {
-    const idx = currentContracts.findIndex(x => x.id === contractId);
-    if (idx >= 0) {
-      currentContracts[idx] = { ...currentContracts[idx], ...update };
-      saveDemoContracts();
-      renderAll();
-    }
-    toast("Отчёт отклонён (демо)", "warn");
+  const idx = currentContracts.findIndex(x => x.id === contractId);
+  if (idx >= 0) {
+    currentContracts[idx].status = "rejected";
+    currentContracts[idx].rejectedAt = Date.now();
+    saveDemoContracts();
+    await renderAll();
   }
+  toast("Отчёт отклонён", "warn");
 };
 
-// ==================== ПРОСМОТР МЕДИА ====================
+window.__contractDelete = async function(contractId) {
+  if (!confirm("Удалить контракт?")) return;
+  currentContracts = currentContracts.filter(c => c.id !== contractId);
+  saveDemoContracts();
+  await renderAll();
+  toast("Контракт удалён", "ok");
+};
+
 window.__openMedia = function(url, type) {
   openModal({
     title: type === "video" ? "ВИДЕО" : "ФОТО",
     html: type === "video"
-      ? `<video src="${url}" controls style="width:100%; border-radius:8px;"></video>`
-      : `<img src="${url}" style="width:100%; border-radius:8px;">`,
+      ? `<video src="${url}" controls style="width:100%;border-radius:8px;"></video>`
+      : `<img src="${url}" style="width:100%;border-radius:8px;">`,
     confirmText: "ЗАКРЫТЬ",
     onConfirm: () => closeModal()
   });
 };
 
-export function destroyContracts() {
-  if (unsubscribe) unsubscribe();
-}
+export function destroyContracts() {}
