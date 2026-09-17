@@ -9,6 +9,7 @@ import { renderUsersTable } from "./admin-users.js";
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
 import { initAdminApplications } from "./admin-applications.js";
+import { initAdminNickApplications } from "./admin-nick-applications.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
 let initialized = false;
@@ -22,6 +23,7 @@ export async function initAdmin() {
   await initAdminRoles();
   await initAdminDivisions();
   await initAdminApplications();
+  await initAdminNickApplications();
   await renderUsersTable(true);
 }
 
@@ -40,7 +42,6 @@ function setupCards() {
   });
 }
 
-// ==================== СОЗДАНИЕ ЮЗЕРА ====================
 async function openCreateUser() {
   const roles = await listRoles();
   const divisions = await listDivisions();
@@ -95,7 +96,6 @@ async function openCreateUser() {
   setTimeout(() => document.getElementById("newLogin")?.focus(), 80);
 }
 
-// ==================== СМЕНА PIN ====================
 async function openChangePin() {
   const users = await listUsers();
   if (!users.length) return toast("Нет участников", "warn");
@@ -135,7 +135,6 @@ async function openChangePin() {
   });
 }
 
-// ==================== СМЕНА РОЛИ ====================
 async function openChangeRole() {
   const users = await listUsers();
   const roles = await listRoles();
@@ -174,7 +173,6 @@ async function openChangeRole() {
   });
 }
 
-// ==================== СМЕНА ПОДРАЗДЕЛЕНИЯ ====================
 async function openChangeDivision() {
   const users = await listUsers();
   const divisions = await listDivisions();
@@ -213,7 +211,6 @@ async function openChangeDivision() {
   });
 }
 
-// ==================== WARN ====================
 async function openWarn() {
   const users = await listUsers();
   if (!users.length) return toast("Нет участников", "warn");
@@ -254,7 +251,6 @@ async function openWarn() {
   });
 }
 
-// ==================== УДАЛЕНИЕ ====================
 async function openDeleteUser() {
   const users = await listUsers();
   if (!users.length) return toast("Нет участников", "warn");
@@ -284,7 +280,6 @@ async function openDeleteUser() {
   });
 }
 
-// ==================== ЛОГ ====================
 export function addLog(message, type = "info") {
   const log = document.getElementById("adminLog");
   if (!log) return;
