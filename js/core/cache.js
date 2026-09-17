@@ -17,7 +17,7 @@ export function cacheSet(key, value) {
 
 export function cacheInvalidate(key) {
   if (key) store.delete(key);
-  else store.clear();
+  else store.clear();ы
 }
 
 export function cacheInvalidatePrefix(prefix) {
