@@ -18,11 +18,11 @@ function getDemoUsers() {
     try { return JSON.parse(raw); } catch {}
   }
   const defaults = [
-    { uid: "demo-emperor",  login: "Emperor",         pin: "1111", role: "Император",     warn: 0, banned: false, contracts: 0, createdAt: Date.now() - 86400000 * 30 },
-    { uid: "demo-lord",     login: "Lord_Darkness",   pin: "2222", role: "Лорд Тьмы",     warn: 0, banned: false, contracts: 0, createdAt: Date.now() - 86400000 * 25 },
-    { uid: "demo-knight",   login: "Death_Knight",    pin: "3333", role: "Рыцарь Смерти", warn: 0, banned: false, contracts: 0, createdAt: Date.now() - 86400000 * 20 },
-    { uid: "demo-skeleton", login: "Horror_Skeleton", pin: "4444", role: "Скелет Ужаса",  warn: 0, banned: false, contracts: 0, createdAt: Date.now() - 86400000 * 15 },
-    { uid: "demo-soul",     login: "Dark_Soul",       pin: "5555", role: "Тёмная душа",   warn: 0, banned: false, contracts: 0, createdAt: Date.now() - 86400000 * 10 }
+    { uid: "demo-emperor",  login: "Emperor",         pin: "1111", role: "emperor",  division: "leader",     warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
+    { uid: "demo-lord",     login: "Lord_Darkness",   pin: "2222", role: "lord",     division: "black_lord", warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
+    { uid: "demo-knight",   login: "Death_Knight",    pin: "3333", role: "knight",   division: "shooter",    warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
+    { uid: "demo-skeleton", login: "Horror_Skeleton", pin: "4444", role: "skeleton", division: "guard",      warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
+    { uid: "demo-soul",     login: "Dark_Soul",       pin: "5555", role: "soul",     division: "mechanic",   warn: 0, banned: false, contracts: 0, createdAt: Date.now() }
   ];
   localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(defaults));
   return defaults;
@@ -80,7 +80,8 @@ export async function login(loginName, pin) {
   const user = {
     uid: found.uid,
     login: found.data.login,
-    role: found.data.role || "Тёмная душа"
+    role: found.data.role || "soul",
+    division: found.data.division || null
   };
   setCurrentUser(user);
   return { ok: true, user };
@@ -97,14 +98,18 @@ export function tryRestoreSession() {
 }
 
 // ==================== СОЗДАНИЕ ====================
-export async function createUser({ login, pin, role }) {
+export async function createUser({ login, pin, role, division = null }) {
   if (!/^[A-Za-z0-9_]{3,32}$/.test(login)) throw new Error("Неверный формат логина");
   if (!/^\d{4,8}$/.test(pin)) throw new Error("PIN: 4-8 цифр");
 
   const existing = await findUserByLogin(login);
   if (existing) throw new Error("Логин уже занят");
 
-  const newUser = { login, pin, role, warn: 0, banned: false, contracts: 0, createdAt: Date.now() };
+  const newUser = {
+    login, pin, role, division,
+    warn: 0, banned: false, contracts: 0,
+    createdAt: Date.now()
+  };
 
   try {
     const newRef = doc(collection(db, "users"));
@@ -142,33 +147,18 @@ export async function listUsers(force = false) {
 
 // ==================== УДАЛЕНИЕ ====================
 export async function deleteUser(uid) {
-  let ok = false;
-  try {
-    const ref = doc(db, "users", uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      await deleteDoc(ref);
-      ok = true;
-    }
-  } catch (e) {}
-
-  const demoUsers = getDemoUsers();
-  const before = demoUsers.length;
-  const after = demoUsers.filter(u => u.uid !== uid);
-  if (after.length !== before) {
-    saveDemoUsers(after);
-    ok = true;
-  }
+  try { await deleteDoc(doc(db, "users", uid)); } catch (e) {}
+  const demoUsers = getDemoUsers().filter(u => u.uid !== uid);
+  saveDemoUsers(demoUsers);
   cacheInvalidate(CACHE_KEY_USERS);
-  if (!ok) throw new Error("Пользователь не найден");
-  return true;
 }
 
-// ==================== PIN / РОЛЬ / ЦВЕТ ====================
+// ==================== PIN ====================
 export async function changePin(uid, newPin) {
   if (!/^\d{4,8}$/.test(newPin)) throw new Error("PIN: 4-8 цифр");
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
+
   if (found.source === "firebase") {
     await updateDoc(found.ref, { pin: newPin });
   } else {
@@ -179,12 +169,12 @@ export async function changePin(uid, newPin) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-export const VALID_ROLES = ["Император", "Лорд Тьмы", "Рыцарь Смерти", "Скелет Ужаса", "Тёмная душа"];
-
+// ==================== РОЛЬ ====================
 export async function changeRole(uid, newRole) {
-  if (!VALID_ROLES.includes(newRole)) throw new Error("Неверная роль");
+  if (!newRole) throw new Error("Роль не выбрана");
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
+
   if (found.source === "firebase") {
     await updateDoc(found.ref, { role: newRole });
   } else {
@@ -195,16 +185,17 @@ export async function changeRole(uid, newRole) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-export async function setRoleColor(uid, hexColor) {
-  if (!/^#[0-9a-fA-F]{6}$/.test(hexColor)) throw new Error("Неверный HEX");
+// ==================== ПОДРАЗДЕЛЕНИЕ ====================
+export async function changeDivision(uid, newDivision) {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
+
   if (found.source === "firebase") {
-    await updateDoc(found.ref, { roleColor: hexColor });
+    await updateDoc(found.ref, { division: newDivision });
   } else {
     const demoUsers = getDemoUsers();
     const idx = demoUsers.findIndex(u => u.uid === uid);
-    if (idx >= 0) { demoUsers[idx].roleColor = hexColor; saveDemoUsers(demoUsers); }
+    if (idx >= 0) { demoUsers[idx].division = newDivision; saveDemoUsers(demoUsers); }
   }
   cacheInvalidate(CACHE_KEY_USERS);
 }
@@ -215,14 +206,11 @@ export async function warnUser(uid, reason = "") {
   if (!found) throw new Error("Пользователь не найден");
 
   const current = found.data.warn || 0;
-  if (current >= MAX_WARN) throw new Error(`Максимум ${MAX_WARN} Warn. Аккаунт забанен.`);
+  if (current >= MAX_WARN) throw new Error(`Максимум ${MAX_WARN} Warn`);
 
   const newWarn = current + 1;
   const updates = { warn: newWarn, lastWarnReason: reason, lastWarnAt: Date.now() };
-  if (newWarn >= MAX_WARN) {
-    updates.banned = true;
-    updates.bannedAt = Date.now();
-  }
+  if (newWarn >= MAX_WARN) { updates.banned = true; updates.bannedAt = Date.now(); }
 
   if (found.source === "firebase") {
     await updateDoc(found.ref, updates);
@@ -238,9 +226,8 @@ export async function warnUser(uid, reason = "") {
 export async function unwarnUser(uid) {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
-
   const current = found.data.warn || 0;
-  if (current === 0) throw new Error("У пользователя нет Warn");
+  if (current === 0) throw new Error("Нет Warn");
 
   const newWarn = Math.max(0, current - 1);
   const updates = { warn: newWarn, banned: newWarn >= MAX_WARN };
@@ -262,6 +249,7 @@ export async function incrementContracts(uid, by = 1) {
   if (!found) throw new Error("Пользователь не найден");
   const current = found.data.contracts || 0;
   const newVal = current + by;
+
   if (found.source === "firebase") {
     await updateDoc(found.ref, { contracts: newVal });
   } else {
@@ -271,6 +259,25 @@ export async function incrementContracts(uid, by = 1) {
   }
   cacheInvalidate(CACHE_KEY_USERS);
   return newVal;
+}
+
+// ==================== HELPER: обнулить роль при удалении ====================
+export async function clearRoleFromUsers(roleId) {
+  const users = await listUsers(true);
+  for (const u of users) {
+    if (u.role === roleId) {
+      await changeRole(u.uid, "soul"); // сброс на "Тёмную душу"
+    }
+  }
+}
+
+export async function clearDivisionFromUsers(divId) {
+  const users = await listUsers(true);
+  for (const u of users) {
+    if (u.division === divId) {
+      await changeDivision(u.uid, null);
+    }
+  }
 }
 
 export const WARN_LIMIT = MAX_WARN;
