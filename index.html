@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RESIDENT EVIL // Панель быстрого доступа</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23c1121f'/></svg>">
+<title>LIVE RUSSIA // Панель симьи RESIDENT EVIL</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 90,85 10,85' fill='%2300c8d4'/></svg>">
 
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
@@ -22,7 +22,7 @@
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo"><div class="umbrella"></div></div>
-    <div class="auth-title">UMBRELLA CORP</div>
+    <div class="auth-title">LIVE <span>RUSSIA</span></div>
     <div class="auth-sub">RESIDENT EVIL // ACCESS TERMINAL</div>
 
     <div class="auth-error" id="authError">Неверный логин или PIN-код</div>
@@ -50,14 +50,23 @@
 <header>
   <div class="logo">
     <div class="umbrella"></div>
-    UMBRELLA CORP // RESIDENT EVIL
+    <div class="logo-text">
+      <span class="l1">LIVE</span>
+      <span class="l2">RUSSIA</span>
+      <span class="logo-sub">RESIDENT EVIL PANEL</span>
+    </div>
   </div>
   <div class="header-status">
-    <div class="status-line">СИСТЕМА АКТИВНА</div>
-    <div class="fam-name">ФАМА: <span>RESIDENT EVIL</span></div>
+    <div class="header-info">
+      <div class="status-line">СИСТЕМА АКТИВНА</div>
+      <div class="fam-name">СИМЬЯ: <span>RESIDENT EVIL</span></div>
+    </div>
     <div class="user-info">
-      <span id="userName">—</span>
-      <span class="role-tag" id="userRoleTag">—</span>
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-meta">
+        <span class="nick" id="userName">—</span>
+        <span class="role-tag" id="userRoleTag">—</span>
+      </div>
     </div>
     <button class="logout-btn" onclick="logout()">ВЫЙТИ</button>
   </div>
@@ -196,12 +205,12 @@
       </div>
       <div class="card">
         <div class="name">Лорд Тьмы</div>
-        <div class="role">Заместитель</div>
+        <div class="role red">Заместитель</div>
         <div class="stat">Второй после Императора. Доступ к ADMIN.</div>
       </div>
       <div class="card">
         <div class="name">Рыцарь Смерти</div>
-        <div class="role">Офицер</div>
+        <div class="role blue">Офицер</div>
         <div class="stat">Командует бойцами, ведёт контракты.</div>
       </div>
       <div class="card">
@@ -524,7 +533,7 @@
 
 </main>
 
-<footer>UMBRELLA CORP © 1998—2026 // ALL RIGHTS RESERVED // T-VIRUS PROTOCOL v2.4</footer>
+<footer>LIVE RUSSIA // RESIDENT EVIL © 2026 // T-VIRUS PROTOCOL v2.4</footer>
 </div>
 
 <!-- ==================================================
