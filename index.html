@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/chat.css">
 <link rel="stylesheet" href="css/contracts.css">
+<link rel="stylesheet" href="css/roles.css">
 </head>
 <body>
 
@@ -30,7 +31,7 @@
     <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
     <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
     <div class="auth-default" id="authDefaultHint"></div>
-    <div class="auth-footer">PANEL RESIDENT EVIL v.0.0.1</div>
+    <div class="auth-footer">T-VIRUS PROTOCOL v2.4 // UNAUTHORIZED ACCESS PROHIBITED</div>
   </div>
 </div>
 
@@ -111,13 +112,7 @@
 
   <section class="panel" id="ranks">
     <h2>Ранги симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">Император</div><div class="role gold">Лидер симьи</div><div class="stat">Высшая власть. Полный доступ ко всем модулям.</div></div>
-      <div class="card"><div class="name">Лорд Тьмы</div><div class="role red">Заместитель</div><div class="stat">Второй после Императора. Доступ к ADMIN.</div></div>
-      <div class="card"><div class="name">Рыцарь Смерти</div><div class="role blue">Офицер</div><div class="stat">Командует бойцами, ведёт контракты.</div></div>
-      <div class="card"><div class="name">Скелет Ужаса</div><div class="role blue">Офицер</div><div class="stat">Разведка, союзы, работа с контейнерами.</div></div>
-      <div class="card"><div class="name">Тёмная душа</div><div class="role gray">Боец</div><div class="stat">Рядовой состав. Базовый доступ.</div></div>
-    </div>
+    <div class="grid" id="ranksGrid"></div>
   </section>
 
   <section class="panel" id="contracts">
@@ -234,17 +229,56 @@
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора</h2>
     <div class="grid">
-      <div class="card clickable"><div class="name">Создать аккаунт</div><div class="role gold">Регистрация</div><div class="stat">Завести нового участника</div></div>
-      <div class="card clickable"><div class="name">Сменить PIN</div><div class="role">Безопасность</div><div class="stat">Изменить PIN участника</div></div>
-      <div class="card clickable"><div class="name">Сменить роль</div><div class="role">Иерархия</div><div class="stat">Перевести на другую должность</div></div>
-      <div class="card clickable"><div class="name">Выдать Warn</div><div class="role danger">Наказание</div><div class="stat">Предупреждение участнику</div></div>
-      <div class="card clickable"><div class="name">Удалить аккаунт</div><div class="role danger">Опасно</div><div class="stat">Полное удаление</div></div>
+      <div class="card clickable" data-admin-action="createUser">
+        <div class="name">Создать аккаунт</div>
+        <div class="role gold">Регистрация</div>
+        <div class="stat">Завести нового участника</div>
+      </div>
+      <div class="card clickable" data-admin-action="changePin">
+        <div class="name">Сменить PIN</div>
+        <div class="role">Безопасность</div>
+        <div class="stat">Изменить PIN участника</div>
+      </div>
+      <div class="card clickable" data-admin-action="changeRole">
+        <div class="name">Сменить роль</div>
+        <div class="role">Иерархия</div>
+        <div class="stat">Перевести на другую должность</div>
+      </div>
+      <div class="card clickable" data-admin-action="changeDivision">
+        <div class="name">Сменить подразделение</div>
+        <div class="role blue">Отряд</div>
+        <div class="stat">Назначить в отряд</div>
+      </div>
+      <div class="card clickable" data-admin-action="warn">
+        <div class="name">Выдать Warn</div>
+        <div class="role danger">Наказание</div>
+        <div class="stat">Предупреждение участнику</div>
+      </div>
+      <div class="card clickable" data-admin-action="deleteUser">
+        <div class="name">Удалить аккаунт</div>
+        <div class="role danger">Опасно</div>
+        <div class="stat">Полное удаление</div>
+      </div>
     </div>
+
+    <h2 class="sub">🎖 Редактор ролей</h2>
+    <div class="roles-toolbar">
+      <div style="color:var(--muted);font-size:12.5px;">Изменяй название, цвет и порядок ролей</div>
+      <button class="btn" id="addRoleBtn">+ Создать роль</button>
+    </div>
+    <div class="roles-list" id="rolesList"></div>
+
+    <h2 class="sub">🎯 Редактор подразделений</h2>
+    <div class="roles-toolbar">
+      <div style="color:var(--muted);font-size:12.5px;">Управляй подразделениями симьи</div>
+      <button class="btn" id="addDivisionBtn">+ Создать подразделение</button>
+    </div>
+    <div class="roles-list" id="divisionsList"></div>
 
     <h2 class="sub">📋 Реестр участников</h2>
     <div style="overflow-x:auto;">
       <table class="users-table" id="usersTable">
-        <thead><tr><th>Логин</th><th>Роль</th><th>Warn</th><th>Действия</th></tr></thead>
+        <thead><tr><th>Логин</th><th>Роль</th><th>Подразделение</th><th>Warn</th><th>Действия</th></tr></thead>
         <tbody id="usersTbody"></tbody>
       </table>
     </div>
