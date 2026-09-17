@@ -1,23 +1,24 @@
 // js/modules/nicks.js
 import { db } from "../firebase-init.js";
 import {
-  collection, addDoc, getDocs, doc, deleteDoc, updateDoc
+  collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { listUsers, changeRole } from "../core/auth.js";
+import { listUsers } from "../core/auth.js";
 import { listRoles } from "../core/roles.js";
 import { listDivisions } from "../core/divisions.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName }
   from "../core/colorize.js";
 import { openModal, closeModal, toast } from "../core/utils.js";
-import { escapeHtml, hexRgba, formatDate } from "./gestion.js";
+import { escapeHtml, hexRgba } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
+
+const DEMO_NICK_APPS = "re_demo_nick_applications";
 
 // ==================== ИГРОВЫЕ НИКИ ====================
 export async function initNicks() {
   const grid = document.getElementById("nicksGrid");
   if (!grid) return;
 
-  // Toolbar
   const toolbar = document.getElementById("nicksToolbar");
   if (toolbar && !toolbar.__bound) {
     toolbar.__bound = true;
@@ -41,7 +42,6 @@ export async function initNicks() {
     const roleName = getRoleName(u.role);
     const divColor = getDivisionColor(u.division);
     const divName = getDivisionName(u.division);
-    const contracts = u.contracts || 0;
     const banned = u.banned ? `<span style="color:var(--red);font-size:10px;margin-left:6px;">ЗАБАНЕН</span>` : "";
 
     return `
@@ -52,83 +52,96 @@ export async function initNicks() {
           ${u.division ? `<span class="division-badge" style="background:${hexRgba(divColor,0.15)};color:${divColor};border:1px solid ${hexRgba(divColor,0.3)};margin-left:6px;">${divName}</span>` : ""}
         </div>
         ${u.age ? `<div class="stat">Возраст: <span class="val">${u.age}</span></div>` : ""}
-        ${u.about ? `<div class="stat">${escapeHtml(u.about)}</div>` : ""}
-        <div class="stat">Контрактов: <span class="val">${contracts}</span></div>
+        ${u.voice ? `<div class="stat">ГС: <span class="val">${u.voice === "yes" ? "✓ есть" : "✕ нет"}</span></div>` : ""}
+        ${u.about ? `<div class="stat">О себе: ${escapeHtml(u.about)}</div>` : ""}
+        ${u.plans ? `<div class="stat">Планы: ${escapeHtml(u.plans)}</div>` : ""}
+        <div class="stat">Контрактов: <span class="val">${u.contracts || 0}</span></div>
         <div class="stat">Warn: <span class="val">${u.warn || 0} / 3</span></div>
       </div>
     `;
   }).join("");
 }
 
+// ==================== ФОРМА ЗАЯВКИ НА НИК ====================
 function openNickModal() {
   const me = getCurrentUser();
   if (!me) return;
 
   openModal({
-    title: "ДОБАВИТЬ СВОЙ НИК",
+    title: "ЗАЯВКА: ДОБАВИТЬ СВОЙ НИК",
     html: `
       <div class="form-grid">
-        <div class="form-field">
+        <div class="form-field" style="grid-column:1/-1;">
           <label>Игровой ник</label>
-          <input type="text" id="nkNick" value="${escapeHtml(me.login)}" placeholder="Nick_Name" autocomplete="off">
-        </div>
-        <div class="form-field">
-          <label>Реальное имя (опционально)</label>
-          <input type="text" id="nkName" placeholder="Даниил" autocomplete="off">
+          <input type="text" id="nkNick" value="${escapeHtml(me.login)}" placeholder="Nick_Name" readonly>
+          <div class="form-hint">Это твой логин в системе</div>
         </div>
         <div class="form-field">
           <label>Возраст</label>
           <input type="number" id="nkAge" placeholder="18" min="10" max="99">
         </div>
+        <div class="form-field">
+          <label>Есть ли ГС (голосовой чат)?</label>
+          <select id="nkVoice" class="role-select">
+            <option value="yes">Да</option>
+            <option value="no">Нет</option>
+          </select>
+        </div>
         <div class="form-field" style="grid-column:1/-1;">
           <label>О себе</label>
-          <textarea id="nkAbout" placeholder="Пара слов о себе..."></textarea>
+          <textarea id="nkAbout" placeholder="Пара слов о себе..." maxlength="500"></textarea>
+        </div>
+        <div class="form-field" style="grid-column:1/-1;">
+          <label>Какие планы на симью?</label>
+          <textarea id="nkPlans" placeholder="Чем хочешь заниматься в симье..." maxlength="500"></textarea>
         </div>
       </div>
+      <p style="color:var(--muted);font-size:11.5px;margin-top:8px;">
+        Заявка уйдёт лидеру и заму. После одобрения твой ник появится в реестре.
+      </p>
       <div id="nkError" style="color:var(--red);font-size:12px;display:none;"></div>
     `,
-    confirmText: "ОТПРАВИТЬ",
-    onConfirm: () => saveNick()
+    confirmText: "ОТПРАВИТЬ ЗАЯВКУ",
+    onConfirm: () => submitNickApplication()
   });
-  setTimeout(() => document.getElementById("nkNick")?.focus(), 80);
+  setTimeout(() => document.getElementById("nkAge")?.focus(), 80);
 }
 
-async function saveNick() {
+async function submitNickApplication() {
   const me = getCurrentUser();
   if (!me) return;
 
-  const nick = document.getElementById("nkNick").value.trim();
-  const name = document.getElementById("nkName").value.trim();
-  const age = parseInt(document.getElementById("nkAge").value) || null;
+  const age = parseInt(document.getElementById("nkAge").value) || 0;
+  const voice = document.getElementById("nkVoice").value;
   const about = document.getElementById("nkAbout").value.trim();
+  const plans = document.getElementById("nkPlans").value.trim();
   const err = document.getElementById("nkError");
 
   err.style.display = "none";
-  if (!nick) { err.textContent = "Введите ник"; err.style.display = "block"; return; }
+  if (age < 10 || age > 99) { err.textContent = "Укажите возраст (10-99)"; err.style.display = "block"; return; }
+  if (!about) { err.textContent = "Заполните «О себе»"; err.style.display = "block"; return; }
+  if (!plans) { err.textContent = "Заполните «Планы на симью»"; err.style.display = "block"; return; }
 
-  // Обновляем юзера: добавляем поля name, age, about
+  const data = {
+    uid: me.uid,
+    nick: me.login,
+    age,
+    voice,
+    about,
+    plans,
+    status: "pending",
+    createdAt: Date.now()
+  };
+
   try {
-    const { updateDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    await updateDoc(doc(db, "users", me.uid), {
-      realName: name,
-      age,
-      about,
-      nickAddedAt: Date.now()
-    });
+    await addDoc(collection(db, "applications_nicks"), data);
+    toast("Заявка отправлена лидеру", "ok");
   } catch (e) {
-    // демо
-    const demoUsers = JSON.parse(localStorage.getItem("re_panel_demo_users") || "[]");
-    const idx = demoUsers.findIndex(u => u.uid === me.uid);
-    if (idx >= 0) {
-      demoUsers[idx].realName = name;
-      demoUsers[idx].age = age;
-      demoUsers[idx].about = about;
-      localStorage.setItem("re_panel_demo_users", JSON.stringify(demoUsers));
-    }
+    const demo = JSON.parse(localStorage.getItem(DEMO_NICK_APPS) || "[]");
+    demo.push({ id: "demo-nk-" + Date.now(), ...data });
+    localStorage.setItem(DEMO_NICK_APPS, JSON.stringify(demo));
+    toast("Заявка отправлена (демо)", "ok");
   }
-
-  toast("Ник добавлен в реестр", "ok");
-  await initNicks();
   closeModal();
 }
 
