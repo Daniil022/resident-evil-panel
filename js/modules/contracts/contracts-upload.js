@@ -3,13 +3,6 @@
 // ==== URL API Vercel ====
 const API_URL = "https://resident-evil-panel.vercel.app/api/upload";
 
-/**
- * Загружает файл в ВК через Vercel API
- * @param {File} file
- * @param {string} contractId
- * @param {string} userLogin
- * @param {string} message
- */
 export async function uploadMedia(file, contractId, userLogin, message = "") {
   if (!file) throw new Error("Файл не выбран");
 
