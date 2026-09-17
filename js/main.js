@@ -11,9 +11,10 @@ import { initWarehouse } from "./modules/warehouse.js";
 import { initAllies } from "./modules/allies.js";
 import { initRules } from "./modules/rules.js";
 import { initAccolades } from "./modules/accolades.js";
+import { initMusic } from "./modules/music.js";
+import { initAlbum } from "./modules/album.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
-// ==================== ЗАПУСК ====================
 document.addEventListener("DOMContentLoaded", () => {
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
@@ -27,7 +28,6 @@ function showAuthScreen() {
   document.getElementById("app").style.display = "none";
 }
 
-// ==================== ЭКРАН АВТОРИЗАЦИИ ====================
 function setupAuthScreen() {
   const btn = document.getElementById("loginBtn");
   const loginInput = document.getElementById("loginInput");
@@ -71,7 +71,6 @@ function setupAuthScreen() {
   loginInput.focus();
 }
 
-// ==================== ВХОД В ПРИЛОЖЕНИЕ ====================
 function enterApp(user) {
   document.getElementById("authScreen").classList.add("hidden");
   document.getElementById("app").style.display = "block";
@@ -102,79 +101,39 @@ function enterApp(user) {
   initDashboard();
   applyColorsToDOM();
 
-  // Ники и Ранги — грузим сразу (в фоне)
   try { initNicks(); } catch (e) { console.warn("Nicks init failed:", e); }
   try { initRanks(); } catch (e) { console.warn("Ranks init failed:", e); }
 
   const inited = {
     chat: false, admin: false, contracts: false,
-    warehouse: false, allies: false, rules: false, accolades: false
+    warehouse: false, allies: false, rules: false,
+    accolades: false, music: false, album: false
   };
 
   window.addEventListener("tabChange", (e) => {
     const tab = e.detail.tab;
 
-    if (tab === "chat" && !inited.chat) {
-      inited.chat = true;
-      try { initChat(); } catch (err) { console.warn("Chat init failed:", err); }
-    }
-
-    if (tab === "admin" && isAdminRole && !inited.admin) {
-      inited.admin = true;
-      try { initAdmin(); } catch (err) { console.warn("Admin init failed:", err); }
-    }
-
-    if (tab === "contracts" && !inited.contracts) {
-      inited.contracts = true;
-      try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
-    }
-
-    if (tab === "warehouse" && !inited.warehouse) {
-      inited.warehouse = true;
-      try { initWarehouse(); } catch (err) { console.warn("Warehouse init failed:", err); }
-    }
-
-    if (tab === "allies" && !inited.allies) {
-      inited.allies = true;
-      try { initAllies(); } catch (err) { console.warn("Allies init failed:", err); }
-    }
-
-    if (tab === "rules" && !inited.rules) {
-      inited.rules = true;
-      try { initRules(); } catch (err) { console.warn("Rules init failed:", err); }
-    }
-
-    if (tab === "accolade" && !inited.accolades) {
-      inited.accolades = true;
-      try { initAccolades(); } catch (err) { console.warn("Accolades init failed:", err); }
-    }
+    if (tab === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (err) {} }
+    if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
+    if (tab === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
+    if (tab === "warehouse" && !inited.warehouse) { inited.warehouse = true; try { initWarehouse(); } catch (err) {} }
+    if (tab === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
+    if (tab === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
+    if (tab === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
+    if (tab === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
+    if (tab === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
   });
 
-  // Если открыли по хэшу — инициализируем сразу
-  if (location.hash === "#chat" && !inited.chat) {
-    inited.chat = true;
-    try { initChat(); } catch (err) {}
-  }
-  if (location.hash === "#contracts" && !inited.contracts) {
-    inited.contracts = true;
-    try { initContracts(); } catch (err) {}
-  }
-  if (location.hash === "#warehouse" && !inited.warehouse) {
-    inited.warehouse = true;
-    try { initWarehouse(); } catch (err) {}
-  }
-  if (location.hash === "#allies" && !inited.allies) {
-    inited.allies = true;
-    try { initAllies(); } catch (err) {}
-  }
-  if (location.hash === "#rules" && !inited.rules) {
-    inited.rules = true;
-    try { initRules(); } catch (err) {}
-  }
-  if (location.hash === "#accolade" && !inited.accolades) {
-    inited.accolades = true;
-    try { initAccolades(); } catch (err) {}
-  }
+  // Открытие по хэшу
+  const hash = location.hash.replace("#", "");
+  if (hash === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (e) {} }
+  if (hash === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (e) {} }
+  if (hash === "warehouse" && !inited.warehouse) { inited.warehouse = true; try { initWarehouse(); } catch (e) {} }
+  if (hash === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (e) {} }
+  if (hash === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (e) {} }
+  if (hash === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
+  if (hash === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (e) {} }
+  if (hash === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
@@ -182,7 +141,6 @@ function enterApp(user) {
   toast(`Добро пожаловать, ${user.login}`, "ok");
 }
 
-// ==================== ВЫХОД ====================
 window.addEventListener("beforeunload", () => {
   try { destroyChat(); } catch (e) {}
   try { destroyContracts(); } catch (e) {}
