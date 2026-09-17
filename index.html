@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RESIDENT EVIL // Панель быстрого доступа</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23c1121f'/></svg>">
+
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/auth.css">
 <link rel="stylesheet" href="css/header.css">
 <link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/chat.css">
 </head>
 <body>
 
-<!-- ============ АВТОРИЗАЦИЯ ============ -->
+<!-- ==================================================
+     ЭКРАН АВТОРИЗАЦИИ
+================================================== -->
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo"><div class="umbrella"></div></div>
@@ -37,9 +41,12 @@
   </div>
 </div>
 
-<!-- ============ ОСНОВНОЙ ИНТЕРФЕЙС ============ -->
+<!-- ==================================================
+     ОСНОВНОЙ ИНТЕРФЕЙС
+================================================== -->
 <div id="app" style="display:none;">
 
+<!-- ============ ШАПКА ============ -->
 <header>
   <div class="logo">
     <div class="umbrella"></div>
@@ -56,8 +63,10 @@
   </div>
 </header>
 
+<!-- ============ НАВИГАЦИЯ ============ -->
 <nav id="mainNav">
-  <button class="active" data-tab="nicks">👤 Игровые ники</button>
+  <button class="active" data-tab="dashboard">📊 Дашборд</button>
+  <button data-tab="nicks">👤 Игровые ники</button>
   <button data-tab="ranks">🎖 Ранги симьи</button>
   <button data-tab="contracts">📜 Контракты</button>
   <button data-tab="accolade">🏅 Акколада</button>
@@ -73,65 +82,297 @@
 
 <main>
 
-  <section class="panel active" id="nicks">
-    <h2>Реестр игровых ников</h2>
-    <div class="grid" id="nicksGrid"></div>
+  <!-- ==================================================
+       ДАШБОРД
+  ================================================== -->
+  <section class="panel active" id="dashboard">
+    <h2>Командный центр симьи</h2>
+
+    <div class="dash-welcome">
+      <div class="dash-avatar" id="dashAvatar">?</div>
+      <div class="dash-info">
+        <div class="dash-greet">Добро пожаловать, <span id="dashUser">—</span></div>
+        <div class="dash-role" id="dashRole">—</div>
+        <div class="dash-sub">RESIDENT EVIL // симья активна</div>
+      </div>
+      <div class="dash-clock" id="dashClock">--:--:--</div>
+    </div>
+
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <div class="dash-stat-icon">👥</div>
+        <div class="dash-stat-value" id="dashMembers">5</div>
+        <div class="dash-stat-label">Участников</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">🟢</div>
+        <div class="dash-stat-value online" id="dashOnline">3</div>
+        <div class="dash-stat-label">Онлайн</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">💰</div>
+        <div class="dash-stat-value" id="dashTreasury">1.25M</div>
+        <div class="dash-stat-label">Казна, ₽</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">⚔</div>
+        <div class="dash-stat-value" id="dashWars">3</div>
+        <div class="dash-stat-label">Активных войн</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">📜</div>
+        <div class="dash-stat-value" id="dashContracts">4</div>
+        <div class="dash-stat-label">Контрактов</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">💬</div>
+        <div class="dash-stat-value" id="dashMessages">0</div>
+        <div class="dash-stat-label">Сообщений</div>
+      </div>
+    </div>
+
+    <h2 class="sub">📋 Последние события</h2>
+    <div class="dash-feed" id="dashFeed">
+      <div class="dash-event">
+        <span class="dash-event-icon">⚙</span>
+        <span class="dash-event-time">только что</span>
+        <span class="dash-event-text">Система инициализирована</span>
+      </div>
+    </div>
+
+    <h2 class="sub">🏆 Топ участников</h2>
+    <div class="dash-top" id="dashTop"></div>
   </section>
 
+  <!-- ==================================================
+       ИГРОВЫЕ НИКИ
+  ================================================== -->
+  <section class="panel" id="nicks">
+    <h2>Реестр игровых ников</h2>
+    <div class="grid" id="nicksGrid">
+      <div class="card">
+        <div class="name">Emperor</div>
+        <div class="role gold">Император</div>
+        <div class="stat"><span class="online">● ОНЛАЙН</span> | Репутация: <span class="val">12 450</span></div>
+        <div class="bar"><span style="width:92%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Lord_Darkness</div>
+        <div class="role red">Лорд Тьмы</div>
+        <div class="stat"><span class="online">● ОНЛАЙН</span> | Репутация: <span class="val">8 200</span></div>
+        <div class="bar"><span style="width:74%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Death_Knight</div>
+        <div class="role blue">Рыцарь Смерти</div>
+        <div class="stat"><span class="offline">○ ОФЛАЙН</span> | Репутация: <span class="val">5 100</span></div>
+        <div class="bar"><span style="width:48%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Horror_Skeleton</div>
+        <div class="role blue">Скелет Ужаса</div>
+        <div class="stat"><span class="online">● ОНЛАЙН</span> | Репутация: <span class="val">3 400</span></div>
+        <div class="bar"><span style="width:36%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Dark_Soul</div>
+        <div class="role gray">Тёмная душа</div>
+        <div class="stat"><span class="offline">○ ОФЛАЙН</span> | Репутация: <span class="val">2 100</span></div>
+        <div class="bar"><span style="width:24%"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================
+       РАНГИ
+  ================================================== -->
   <section class="panel" id="ranks">
     <h2>Ранги симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">Император</div><div class="role gold">Лидер симьи</div><div class="stat">Высшая власть. Полный доступ ко всем модулям.</div></div>
-      <div class="card"><div class="name">Лорд Тьмы</div><div class="role">Заместитель</div><div class="stat">Второй после Императора. Доступ к ADMIN.</div></div>
-      <div class="card"><div class="name">Рыцарь Смерти</div><div class="role">Офицер</div><div class="stat">Командует бойцами, ведёт контракты.</div></div>
-      <div class="card"><div class="name">Скелет Ужаса</div><div class="role blue">Офицер</div><div class="stat">Разведка, союзы, работа с контейнерами.</div></div>
-      <div class="card"><div class="name">Тёмная душа</div><div class="role gray">Боец</div><div class="stat">Рядовой состав. Базовый доступ.</div></div>
+      <div class="card">
+        <div class="name">Император</div>
+        <div class="role gold">Лидер симьи</div>
+        <div class="stat">Высшая власть. Полный доступ ко всем модулям.</div>
+      </div>
+      <div class="card">
+        <div class="name">Лорд Тьмы</div>
+        <div class="role">Заместитель</div>
+        <div class="stat">Второй после Императора. Доступ к ADMIN.</div>
+      </div>
+      <div class="card">
+        <div class="name">Рыцарь Смерти</div>
+        <div class="role">Офицер</div>
+        <div class="stat">Командует бойцами, ведёт контракты.</div>
+      </div>
+      <div class="card">
+        <div class="name">Скелет Ужаса</div>
+        <div class="role blue">Офицер</div>
+        <div class="stat">Разведка, союзы, работа с контейнерами.</div>
+      </div>
+      <div class="card">
+        <div class="name">Тёмная душа</div>
+        <div class="role gray">Боец</div>
+        <div class="stat">Рядовой состав. Базовый доступ.</div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       КОНТРАКТЫ
+  ================================================== -->
   <section class="panel" id="contracts">
     <h2>Контракты симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">Зачистка нефтезавода</div><div class="role">Приоритет: высокий</div><div class="stat">Награда: <span class="val">50 000 ₽</span></div><div class="bar"><span style="width:66%"></span></div></div>
-      <div class="card"><div class="name">Оборона базы</div><div class="role danger">Приоритет: критический</div><div class="stat">До атаки: <span class="danger">00:45:12</span></div><div class="bar"><span style="width:80%"></span></div></div>
-      <div class="card"><div class="name">Охота на босса</div><div class="role">Приоритет: средний</div><div class="stat">Награда: <span class="val">25 000 ₽</span></div><div class="bar"><span style="width:50%"></span></div></div>
+      <div class="card">
+        <div class="name">Зачистка нефтезавода</div>
+        <div class="role">Приоритет: высокий</div>
+        <div class="stat">Награда: <span class="val">50 000 ₽</span></div>
+        <div class="stat">Исполнители: <span class="val">Рыцарь Смерти, Скелет Ужаса</span></div>
+        <div class="bar"><span style="width:66%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Оборона базы</div>
+        <div class="role danger">Приоритет: критический</div>
+        <div class="stat">До атаки: <span class="danger">00:45:12</span></div>
+        <div class="bar"><span style="width:80%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Охота на босса</div>
+        <div class="role">Приоритет: средний</div>
+        <div class="stat">Награда: <span class="val">25 000 ₽</span></div>
+        <div class="bar"><span style="width:50%"></span></div>
+      </div>
+      <div class="card">
+        <div class="name">Разведка территории</div>
+        <div class="role">Приоритет: низкий</div>
+        <div class="stat">Собрано данных: <span class="val">12 / 20</span></div>
+        <div class="bar"><span style="width:60%"></span></div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       АККОЛАДА
+  ================================================== -->
   <section class="panel" id="accolade">
     <h2>Акколада — заслуги симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">🏅 Легенда T-Virus</div><div class="role gold">Высшая награда</div><div class="stat">Получили: <span class="val">2</span></div></div>
-      <div class="card"><div class="name">⚔ Мастер войны</div><div class="role">Боевая награда</div><div class="stat">Получили: <span class="val">5</span></div></div>
-      <div class="card"><div class="name">💰 Хранитель казны</div><div class="role green">Экономическая</div><div class="stat">Получили: <span class="val">3</span></div></div>
+      <div class="card">
+        <div class="name">🏅 Легенда T-Virus</div>
+        <div class="role gold">Высшая награда</div>
+        <div class="stat">Вручается за вклад в развитие симьи. Получили: <span class="val">2</span></div>
+      </div>
+      <div class="card">
+        <div class="name">⚔ Мастер войны</div>
+        <div class="role">Боевая награда</div>
+        <div class="stat">За победы в военных протоколах. Получили: <span class="val">5</span></div>
+      </div>
+      <div class="card">
+        <div class="name">💰 Хранитель казны</div>
+        <div class="role green">Экономическая</div>
+        <div class="stat">За вклад в казну свыше 100 000 ₽. Получили: <span class="val">3</span></div>
+      </div>
+      <div class="card">
+        <div class="name">🛡 Верный страж</div>
+        <div class="role blue">Защита</div>
+        <div class="stat">За оборону базы. Получили: <span class="val">8</span></div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       КОНТЕЙНЕРЫ
+  ================================================== -->
   <section class="panel" id="containers">
     <h2>Контейнеры симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">Контейнер #001</div><div class="role">Общий</div><div class="stat">Оружие: <span class="val">24</span> | Боеприпасы: <span class="val">1 200</span></div></div>
-      <div class="card"><div class="name">Контейнер #002</div><div class="role gold">Лидерский</div><div class="stat">T-Virus образцы: <span class="val">3</span></div></div>
+      <div class="card">
+        <div class="name">Контейнер #001</div>
+        <div class="role">Общий</div>
+        <div class="stat">Оружие: <span class="val">24</span> | Боеприпасы: <span class="val">1 200</span></div>
+        <div class="stat">Статус: <span class="online">открыт</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Контейнер #002</div>
+        <div class="role gold">Лидерский</div>
+        <div class="stat">T-Virus образцы: <span class="val">3</span> | Артефакты: <span class="val">12</span></div>
+        <div class="stat">Доступ: <span class="danger">только Император</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Контейнер #003</div>
+        <div class="role blue">Разведка</div>
+        <div class="stat">Карты: <span class="val">8</span> | Документы: <span class="val">15</span></div>
+        <div class="stat">Доступ: <span class="val">Скелет Ужаса+</span></div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       СКЛАД
+  ================================================== -->
   <section class="panel" id="warehouse">
     <h2>Склад симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">Аптечка</div><div class="role">Медикаменты</div><div class="stat">Кол-во: <span class="val">48</span></div></div>
-      <div class="card"><div class="name">Пистолет M92F</div><div class="role">Оружие</div><div class="stat">Кол-во: <span class="val">15</span></div></div>
-      <div class="card"><div class="name">Дробовик</div><div class="role">Тяжёлое</div><div class="stat">Кол-во: <span class="val">6</span></div></div>
+      <div class="card">
+        <div class="name">Аптечка</div>
+        <div class="role">Медикаменты</div>
+        <div class="stat">Кол-во: <span class="val">48</span> | Резерв: <span class="val">12</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Пистолет M92F</div>
+        <div class="role">Оружие</div>
+        <div class="stat">Кол-во: <span class="val">15</span> | Патроны: <span class="val">340</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Дробовик</div>
+        <div class="role">Тяжёлое</div>
+        <div class="stat">Кол-во: <span class="val">6</span> | Патроны: <span class="val">90</span></div>
+      </div>
+      <div class="card">
+        <div class="name">T-Virus образец</div>
+        <div class="role danger">⚠ Опасно</div>
+        <div class="stat">Кол-во: <span class="val">3</span> | Допуск: <span class="danger">ЛИДЕР</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Бронежилет</div>
+        <div class="role">Защита</div>
+        <div class="stat">Кол-во: <span class="val">22</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Травяной сбор</div>
+        <div class="role">Медикаменты</div>
+        <div class="stat">Кол-во: <span class="val">60</span></div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       СОЮЗЫ
+  ================================================== -->
   <section class="panel" id="allies">
     <h2>Союзы симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">[ФАМА_Х]</div><div class="role ally">Союз</div><div class="stat">Совместных операций: <span class="val">14</span></div></div>
-      <div class="card"><div class="name">[ФАМА_Y]</div><div class="role danger">Война</div><div class="stat">Счёт побед: <span class="val">3 : 2</span></div></div>
+      <div class="card">
+        <div class="name">[ФАМА_Х]</div>
+        <div class="role ally">Союз</div>
+        <div class="stat">Совместных операций: <span class="val">14</span></div>
+      </div>
+      <div class="card">
+        <div class="name">[ФАМА_Y]</div>
+        <div class="role danger">Война</div>
+        <div class="stat">Счёт побед: <span class="val">3 : 2</span></div>
+      </div>
+      <div class="card">
+        <div class="name">[ФАМА_Z]</div>
+        <div class="role">Нейтралитет</div>
+        <div class="stat">Переговоры: <span class="val">в процессе</span></div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       МУЗЫКА
+  ================================================== -->
   <section class="panel" id="music">
     <h2>Музыка симьи</h2>
     <div class="music-player">
@@ -146,16 +387,42 @@
     </div>
   </section>
 
+  <!-- ==================================================
+       ПРАВИЛА
+  ================================================== -->
   <section class="panel" id="rules">
     <h2>Правила симьи</h2>
     <div class="grid">
-      <div class="card"><div class="name">1. Верность</div><div class="stat">Не предавать интересы симьи.</div></div>
-      <div class="card"><div class="name">2. Уважение</div><div class="stat">Уважать всех участников.</div></div>
-      <div class="card"><div class="name">3. Дисциплина</div><div class="stat">Выполнять приказы лидера и зама.</div></div>
-      <div class="card"><div class="name">4. Активность</div><div class="stat">Участвовать в контрактах и войнах.</div></div>
+      <div class="card">
+        <div class="name">1. Верность</div>
+        <div class="stat">Не предавать интересы симьи. Любые действия против своих — исключение.</div>
+      </div>
+      <div class="card">
+        <div class="name">2. Уважение</div>
+        <div class="stat">Уважать всех участников, независимо от ранга.</div>
+      </div>
+      <div class="card">
+        <div class="name">3. Дисциплина</div>
+        <div class="stat">Выполнять приказы Императора и Лорда Тьмы.</div>
+      </div>
+      <div class="card">
+        <div class="name">4. Активность</div>
+        <div class="stat">Участвовать в контрактах, войнах и сборах.</div>
+      </div>
+      <div class="card">
+        <div class="name">5. Тайна</div>
+        <div class="stat">Не разглашать внутреннюю информацию симьи третьим лицам.</div>
+      </div>
+      <div class="card">
+        <div class="name">6. Наказания</div>
+        <div class="stat">3 предупреждения (Warn) — автоматическое исключение.</div>
+      </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       ФОТОАЛЬБОМ
+  ================================================== -->
   <section class="panel" id="album">
     <h2>Фотоальбом</h2>
     <div class="album">
@@ -163,19 +430,29 @@
       <div class="photo">Слот 2</div>
       <div class="photo">Слот 3</div>
       <div class="photo">Слот 4</div>
+      <div class="photo">Слот 5</div>
+      <div class="photo">Слот 6</div>
     </div>
   </section>
 
+  <!-- ==================================================
+       ЧАТ
+  ================================================== -->
   <section class="panel" id="chat">
     <h2>Общение симьи</h2>
     <div class="chat-wrap">
+
       <div class="chat-pinned">
         <span class="pin-icon">📌</span>
         <span class="pin-text">Добро пожаловать в беседу RESIDENT EVIL. Соблюдайте правила симьи.</span>
       </div>
+
       <div class="chat-messages" id="chatMessages"></div>
+
       <button class="chat-new-btn" id="chatNewBtn">↓ Новые сообщения</button>
+
       <div class="chat-typing" id="chatTyping"></div>
+
       <div class="chat-input-wrap">
         <div class="chat-reply-bar" id="chatReplyBar">
           <div class="reply-line">
@@ -184,24 +461,50 @@
           </div>
           <button class="close-reply" onclick="window.__clearReply && window.__clearReply()">✕</button>
         </div>
+
         <div class="chat-input">
           <button class="emoji-btn" id="emojiBtn">☺</button>
           <input type="text" id="chatInput" placeholder="Написать сообщение..." autocomplete="off">
           <button class="send-btn" id="chatSend">➤</button>
         </div>
+
         <div class="emoji-picker" id="emojiPicker"></div>
       </div>
     </div>
   </section>
 
+  <!-- ==================================================
+       ADMIN
+  ================================================== -->
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора // Приватный доступ</h2>
+
     <div class="grid">
-      <div class="card clickable" onclick="openModal({title:'СОЗДАТЬ АККАУНТ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Создать аккаунт</div><div class="role gold">Регистрация</div><div class="stat">Завести нового участника</div></div>
-      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ PIN',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Сменить PIN</div><div class="role">Безопасность</div><div class="stat">Изменить PIN участника</div></div>
-      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ РОЛЬ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Сменить роль</div><div class="role">Иерархия</div><div class="stat">Перевести на другую должность</div></div>
-      <div class="card clickable" onclick="openModal({title:'ВЫДАТЬ WARN',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Выдать Warn</div><div class="role danger">Наказание</div><div class="stat">Предупреждение участнику</div></div>
-      <div class="card clickable" onclick="openModal({title:'УДАЛИТЬ АККАУНТ',html:'<p>Форма появится на Этапе 3</p>'})"><div class="name">Удалить аккаунт</div><div class="role danger">Опасно</div><div class="stat">Полное удаление</div></div>
+      <div class="card clickable" onclick="openModal({title:'СОЗДАТЬ АККАУНТ',html:'<p>Форма будет в Этапе 3</p>'})">
+        <div class="name">Создать аккаунт</div>
+        <div class="role gold">Регистрация</div>
+        <div class="stat">Завести нового участника</div>
+      </div>
+      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ PIN',html:'<p>Форма будет в Этапе 3</p>'})">
+        <div class="name">Сменить PIN</div>
+        <div class="role">Безопасность</div>
+        <div class="stat">Изменить PIN участника</div>
+      </div>
+      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ РОЛЬ',html:'<p>Форма будет в Этапе 3</p>'})">
+        <div class="name">Сменить роль</div>
+        <div class="role">Иерархия</div>
+        <div class="stat">Перевести на другую должность</div>
+      </div>
+      <div class="card clickable" onclick="openModal({title:'ВЫДАТЬ WARN',html:'<p>Форма будет в Этапе 3</p>'})">
+        <div class="name">Выдать Warn</div>
+        <div class="role danger">Наказание</div>
+        <div class="stat">Предупреждение участнику</div>
+      </div>
+      <div class="card clickable" onclick="openModal({title:'УДАЛИТЬ АККАУНТ',html:'<p>Форма будет в Этапе 3</p>'})">
+        <div class="name">Удалить аккаунт</div>
+        <div class="role danger">Опасно</div>
+        <div class="stat">Полное удаление</div>
+      </div>
     </div>
 
     <h2 class="sub">📋 Реестр участников</h2>
@@ -221,9 +524,12 @@
 
 </main>
 
-<footer>UMBRELLA CORP © 1998—2026 // T-VIRUS PROTOCOL v2.4</footer>
+<footer>UMBRELLA CORP © 1998—2026 // ALL RIGHTS RESERVED // T-VIRUS PROTOCOL v2.4</footer>
 </div>
 
+<!-- ==================================================
+     МОДАЛКА
+================================================== -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 id="modalTitle">ПОДТВЕРЖДЕНИЕ</h3>
