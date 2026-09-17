@@ -1,11 +1,12 @@
 // js/core/dashboard.js
 import { getCurrentUser } from "./state.js";
 
+let clockInterval = null;
+
 export function initDashboard() {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Приветствие
   const dashUser = document.getElementById("dashUser");
   const dashRole = document.getElementById("dashRole");
   const dashAvatar = document.getElementById("dashAvatar");
@@ -19,31 +20,26 @@ export function initDashboard() {
   if (dashAvatar) {
     dashAvatar.textContent = user.login.charAt(0).toUpperCase();
     if (user.role === "Император") {
-      dashAvatar.style.borderColor = "var(--gold)";
-      dashAvatar.style.boxShadow = "0 0 25px rgba(255,179,71,0.5)";
+      dashAvatar.style.background = "linear-gradient(135deg, var(--gold), #f59e0b)";
+      dashAvatar.style.boxShadow = "0 0 30px rgba(251,191,36,0.4)";
     }
   }
 
-  // Часы
+  if (clockInterval) clearInterval(clockInterval);
   updateClock();
-  setInterval(updateClock, 1000);
+  clockInterval = setInterval(updateClock, 1000);
 
-  // Топ участников (демо)
-  renderTop();
+  setCounter("dashTreasury", 0);
+  setCounter("dashWars", 0);
+  setCounter("dashMembers", 0);
+  setCounter("dashOnline", 0);
+  setCounter("dashContracts", 0);
+  setCounter("dashMessages", 0);
+}
 
-  // Счётчик сообщений — обновляется из chat.js через событие
-  window.addEventListener("chatMessageCount", (e) => {
-    const el = document.getElementById("dashMessages");
-    if (el) el.textContent = e.detail.count;
-  });
-
-  // Онлайн — из presence
-  window.addEventListener("presenceUpdate", (e) => {
-    const el = document.getElementById("dashOnline");
-    if (el) el.textContent = e.detail.online;
-    const membersEl = document.getElementById("dashMembers");
-    if (membersEl) membersEl.textContent = e.detail.total;
-  });
+function setCounter(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
 function updateClock() {
@@ -56,29 +52,11 @@ function updateClock() {
     String(d.getSeconds()).padStart(2, "0");
 }
 
-function renderTop() {
-  const el = document.getElementById("dashTop");
-  if (!el) return;
-  const top = [
-    { rank: 1, nick: "Emperor", role: "Император", val: "120 000 ₽" },
-    { rank: 2, nick: "Lord_Darkness", role: "Лорд Тьмы", val: "85 000 ₽" },
-    { rank: 3, nick: "Death_Knight", role: "Рыцарь Смерти", val: "42 000 ₽" }
-  ];
-  el.innerHTML = top.map(t => `
-    <div class="dash-top-item">
-      <div class="rank">#${t.rank}</div>
-      <div class="who">
-        <div class="nick">${t.nick}</div>
-        <div class="role">${t.role}</div>
-      </div>
-      <div class="val">${t.val}</div>
-    </div>
-  `).join("");
-}
-
 export function addDashEvent(icon, text) {
   const feed = document.getElementById("dashFeed");
   if (!feed) return;
+  const placeholder = feed.querySelector(".dash-event[style*='opacity']");
+  if (placeholder) feed.innerHTML = "";
   const now = new Date();
   const time = String(now.getHours()).padStart(2, "0") + ":" +
                String(now.getMinutes()).padStart(2, "0");
@@ -90,6 +68,5 @@ export function addDashEvent(icon, text) {
     <span class="dash-event-text">${text}</span>
   `;
   feed.insertBefore(event, feed.firstChild);
-  // Держим максимум 30 событий
   while (feed.children.length > 30) feed.removeChild(feed.lastChild);
 }
