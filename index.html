@@ -108,7 +108,10 @@
     </div>
   </section>
 
-  <section class="panel" id="nicks"><h2>Реестр игровых ников</h2><div class="grid" id="nicksGrid"></div></section>
+  <section class="panel" id="nicks">
+    <h2>Реестр игровых ников</h2>
+    <div class="grid" id="nicksGrid"></div>
+  </section>
 
   <section class="panel" id="ranks">
     <h2>Ранги симьи</h2>
@@ -125,13 +128,11 @@
   </section>
 
   <section class="panel" id="accolade">
-    <h2>Акколада — заслуги симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">🏅 Легенда T-Virus</div><div class="role gold">Высшая награда</div><div class="stat">Вручается за вклад. Получили: <span class="val">2</span></div></div>
-      <div class="card"><div class="name">⚔ Мастер войны</div><div class="role">Боевая награда</div><div class="stat">За победы. Получили: <span class="val">5</span></div></div>
-      <div class="card"><div class="name">💰 Хранитель казны</div><div class="role green">Экономическая</div><div class="stat">За вклад в казну. Получили: <span class="val">3</span></div></div>
-      <div class="card"><div class="name">🛡 Верный страж</div><div class="role blue">Защита</div><div class="stat">За оборону. Получили: <span class="val">8</span></div></div>
+    <div class="contracts-head">
+      <h2>Акколада — заслуги симьи</h2>
+      <div id="accoladeToolbar"></div>
     </div>
+    <div class="grid" id="accoladeGrid"></div>
   </section>
 
   <section class="panel" id="containers">
@@ -144,24 +145,19 @@
   </section>
 
   <section class="panel" id="warehouse">
-    <h2>Склад симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">Аптечка</div><div class="role">Медикаменты</div><div class="stat">Кол-во: <span class="val">48</span></div></div>
-      <div class="card"><div class="name">Пистолет M92F</div><div class="role">Оружие</div><div class="stat">Кол-во: <span class="val">15</span> | Патроны: <span class="val">340</span></div></div>
-      <div class="card"><div class="name">Дробовик</div><div class="role">Тяжёлое</div><div class="stat">Кол-во: <span class="val">6</span></div></div>
-      <div class="card"><div class="name">T-Virus образец</div><div class="role danger">⚠ Опасно</div><div class="stat">Кол-во: <span class="val">3</span></div></div>
-      <div class="card"><div class="name">Бронежилет</div><div class="role">Защита</div><div class="stat">Кол-во: <span class="val">22</span></div></div>
-      <div class="card"><div class="name">Травяной сбор</div><div class="role">Медикаменты</div><div class="stat">Кол-во: <span class="val">60</span></div></div>
+    <div class="contracts-head">
+      <h2>Склад симьи</h2>
+      <div id="warehouseToolbar"></div>
     </div>
+    <div class="grid" id="warehouseGrid"></div>
   </section>
 
   <section class="panel" id="allies">
-    <h2>Союзы симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">[ФАМА_Х]</div><div class="role ally">Союз</div><div class="stat">Операций: <span class="val">14</span></div></div>
-      <div class="card"><div class="name">[ФАМА_Y]</div><div class="role danger">Война</div><div class="stat">Счёт: <span class="val">3 : 2</span></div></div>
-      <div class="card"><div class="name">[ФАМА_Z]</div><div class="role">Нейтралитет</div><div class="stat">Переговоры: <span class="val">в процессе</span></div></div>
+    <div class="contracts-head">
+      <h2>Союзы симьи</h2>
+      <div id="alliesToolbar"></div>
     </div>
+    <div class="grid" id="alliesGrid"></div>
   </section>
 
   <section class="panel" id="music">
@@ -175,15 +171,11 @@
   </section>
 
   <section class="panel" id="rules">
-    <h2>Правила симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">1. Верность</div><div class="stat">Не предавать интересы симьи.</div></div>
-      <div class="card"><div class="name">2. Уважение</div><div class="stat">Уважать всех участников.</div></div>
-      <div class="card"><div class="name">3. Дисциплина</div><div class="stat">Выполнять приказы.</div></div>
-      <div class="card"><div class="name">4. Активность</div><div class="stat">Участвовать в контрактах.</div></div>
-      <div class="card"><div class="name">5. Тайна</div><div class="stat">Не разглашать внутреннюю информацию.</div></div>
-      <div class="card"><div class="name">6. Наказания</div><div class="stat">3 Warn — автоматическое исключение.</div></div>
+    <div class="contracts-head">
+      <h2>Правила симьи</h2>
+      <div id="rulesToolbar"></div>
     </div>
+    <div class="grid" id="rulesGrid"></div>
   </section>
 
   <section class="panel" id="album">
@@ -260,6 +252,9 @@
         <div class="stat">Полное удаление</div>
       </div>
     </div>
+
+    <h2 class="sub">📥 Заявки на аттестацию</h2>
+    <div class="grid" id="applicationsList"></div>
 
     <h2 class="sub">🎖 Редактор ролей</h2>
     <div class="roles-toolbar">
