@@ -1,0 +1,81 @@
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse at top, rgba(0,200,212,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(59,130,246,0.04) 0%, transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--bg-2);}
+::-webkit-scrollbar-thumb{
+  background:var(--panel-3);
+  border-radius:5px;
+  border:2px solid var(--bg-2);
+}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan-dark);}
+
+/* Кнопки базовые */
+button{
+  font-family:inherit;
+  cursor:pointer;
+  border:none;
+  transition:all 0.15s ease;
+}
+
+/* Ссылки */
+a{color:var(--cyan);text-decoration:none;transition:color 0.15s;}
+a:hover{color:#fff;}
+
+/* Утилиты */
+.text-muted{color:var(--muted);}
+.text-cyan{color:var(--cyan);}
+.text-gold{color:var(--gold);}
+.text-green{color:var(--green);}
+.text-red{color:var(--red);}
+
+/* Toast */
+.toast{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  background:var(--panel-2);
+  border:1px solid var(--border-light);
+  border-left:3px solid var(--cyan);
+  color:var(--text);
+  padding:14px 20px;
+  font-size:13.5px;
+  border-radius:var(--radius);
+  z-index:10002;
+  box-shadow:var(--shadow-lg);
+  animation:slideIn 0.3s ease;
+  max-width:340px;
+}
+.toast.ok{border-left-color:var(--green);}
+.toast.warn{border-left-color:var(--gold);}
+.toast.error{border-left-color:var(--red);}
+
+@keyframes slideIn{
+  from{transform:translateX(120%);opacity:0;}
+  to{transform:translateX(0);opacity:1;}
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes spin{to{transform:rotate(360deg);}}
