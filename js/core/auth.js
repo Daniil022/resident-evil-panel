@@ -5,7 +5,7 @@ import {
   setDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { setCurrentUser, restoreSession, clearSession } from "./state.js";
-import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidatePrefix } from "./cache.js";
+import { cacheGet, cacheSet, cacheInvalidate } from "./cache.js";
 
 const DEMO_USERS_KEY = "re_panel_demo_users";
 const CACHE_KEY_USERS = "users_list";
@@ -45,8 +45,7 @@ export async function login(loginName, pin) {
       const d = snap.docs[0];
       const data = d.data();
       if (data.pin !== pin) return { ok: false, error: "Неверный PIN-код" };
-      if (data.banned) return { ok: false, error: "Аккаунт забанен (3/3 Warn)" };
-
+      if (data.banned) return { ok: false, error: "АККАУНТ ЗАБАНЕН (3/3 Warn). Обратитесь к лидеру." };
       const user = { uid: d.id, login: data.login, role: data.role || "Тёмная душа" };
       setCurrentUser(user);
       return { ok: true, user };
@@ -59,7 +58,7 @@ export async function login(loginName, pin) {
   const found = demoUsers.find(u => u.login === loginName);
   if (!found) return { ok: false, error: "Пользователь не найден" };
   if (found.pin !== pin) return { ok: false, error: "Неверный PIN-код" };
-  if (found.banned) return { ok: false, error: "Аккаунт забанен (3/3 Warn)" };
+  if (found.banned) return { ok: false, error: "АККАУНТ ЗАБАНЕН (3/3 Warn). Обратитесь к лидеру." };
 
   const user = { uid: found.uid, login: found.login, role: found.role };
   setCurrentUser(user);
@@ -103,10 +102,10 @@ export async function createUser({ login, pin, role }) {
   return user;
 }
 
-// ==================== СПИСОК (С КЭШЕМ) ====================
+// ==================== СПИСОК ====================
 export async function listUsers(force = false) {
   if (!force) {
-    const cached = cacheGet(CACHE_KEY_USERS, 60000); // 60 сек
+    const cached = cacheGet(CACHE_KEY_USERS, 60000);
     if (cached) return cached;
   }
 
@@ -130,9 +129,9 @@ export async function listUsers(force = false) {
 export async function deleteUser(uid) {
   try {
     await deleteDoc(doc(db, "users", uid));
-    cacheInvalidate(CACHE_KEY_USERS);
-    return;
-  } catch {}
+  } catch (e) {
+    console.warn("Firebase delete failed:", e.message);
+  }
   const demoUsers = getDemoUsers().filter(u => u.uid !== uid);
   saveDemoUsers(demoUsers);
   cacheInvalidate(CACHE_KEY_USERS);
@@ -170,36 +169,51 @@ export async function changeRole(uid, newRole) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
+// ==================== ЦВЕТ РОЛИ ====================
+export async function setRoleColor(uid, hexColor) {
+  try {
+    await updateDoc(doc(db, "users", uid), { roleColor: hexColor });
+    cacheInvalidate(CACHE_KEY_USERS);
+    return;
+  } catch {}
+  const demoUsers = getDemoUsers();
+  const idx = demoUsers.findIndex(u => u.uid === uid);
+  if (idx >= 0) { demoUsers[idx].roleColor = hexColor; saveDemoUsers(demoUsers); }
+  cacheInvalidate(CACHE_KEY_USERS);
+}
+
 // ==================== WARN ====================
 export async function warnUser(uid, reason = "") {
+  let newWarn = 0;
   try {
     const userRef = doc(db, "users", uid);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
       const current = snap.data().warn || 0;
-      const newWarn = current + 1;
-      await updateDoc(userRef, {
-        warn: newWarn,
-        lastWarnReason: reason,
-        lastWarnAt: Date.now(),
-        banned: newWarn >= 3
-      });
+      newWarn = current + 1;
+      const updates = { warn: newWarn, lastWarnReason: reason, lastWarnAt: Date.now() };
+      if (newWarn >= 3) { updates.banned = true; updates.bannedAt = Date.now(); }
+      await updateDoc(userRef, updates);
       cacheInvalidate(CACHE_KEY_USERS);
       return newWarn;
     }
-  } catch {}
+  } catch (e) { console.warn("Firebase warn failed"); }
+
   const demoUsers = getDemoUsers();
   const idx = demoUsers.findIndex(u => u.uid === uid);
   if (idx >= 0) {
     demoUsers[idx].warn = (demoUsers[idx].warn || 0) + 1;
     demoUsers[idx].lastWarnReason = reason;
     demoUsers[idx].lastWarnAt = Date.now();
-    if (demoUsers[idx].warn >= 3) demoUsers[idx].banned = true;
+    if (demoUsers[idx].warn >= 3) {
+      demoUsers[idx].banned = true;
+      demoUsers[idx].bannedAt = Date.now();
+    }
+    newWarn = demoUsers[idx].warn;
     saveDemoUsers(demoUsers);
     cacheInvalidate(CACHE_KEY_USERS);
-    return demoUsers[idx].warn;
   }
-  return 0;
+  return newWarn;
 }
 
 export async function unwarnUser(uid) {
@@ -209,7 +223,7 @@ export async function unwarnUser(uid) {
     if (snap.exists()) {
       const current = snap.data().warn || 0;
       const newWarn = Math.max(0, current - 1);
-      await updateDoc(userRef, { warn: newWarn, banned: false });
+      await updateDoc(userRef, { warn: newWarn, banned: newWarn >= 3 });
       cacheInvalidate(CACHE_KEY_USERS);
       return newWarn;
     }
@@ -218,7 +232,7 @@ export async function unwarnUser(uid) {
   const idx = demoUsers.findIndex(u => u.uid === uid);
   if (idx >= 0) {
     demoUsers[idx].warn = Math.max(0, (demoUsers[idx].warn || 0) - 1);
-    demoUsers[idx].banned = false;
+    demoUsers[idx].banned = demoUsers[idx].warn >= 3;
     saveDemoUsers(demoUsers);
     cacheInvalidate(CACHE_KEY_USERS);
     return demoUsers[idx].warn;
@@ -226,7 +240,7 @@ export async function unwarnUser(uid) {
   return 0;
 }
 
-// ==================== + КОНТРАКТ ====================
+// ==================== КОНТРАКТЫ ====================
 export async function incrementContracts(uid, by = 1) {
   try {
     const userRef = doc(db, "users", uid);
