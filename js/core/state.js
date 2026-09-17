@@ -6,11 +6,13 @@ export function setCurrentUser(user) {
   currentUser = user;
   if (user) {
     localStorage.setItem(STATE_KEY, JSON.stringify({
-      uid: user.uid,
-      login: user.login,
-      role: user.role,
-      sessionAt: Date.now()
-    }));
+  uid: user.uid,
+  login: user.login,
+  role: user.role,
+  division: user.division,
+  avatar: user.avatar,
+  sessionAt: Date.now()
+}));
   } else {
     localStorage.removeItem(STATE_KEY);
   }
