@@ -1,5 +1,5 @@
 // js/admin/admin-users.js
-import { listUsers, deleteUser, changePin, changeRole, warnUser, unwarnUser }
+import { listUsers, deleteUser, changePin, changeRole, warnUser, unwarnUser, setRoleColor }
   from "../core/auth.js";
 import { toast } from "../core/utils.js";
 import { raf } from "../core/perf.js";
@@ -16,41 +16,47 @@ export async function renderUsersTable(force = false) {
   const users = await listUsers(force);
 
   raf(() => {
-    const html = users.length === 0
-      ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">
-           Участников нет. Создайте первого через «Создать аккаунт».
-         </td></tr>`
-      : users.sort((a, b) => (b.warn || 0) - (a.warn || 0)).map(u => {
-          const w = u.warn || 0;
-          const wCls = w >= 3 ? "danger" : w > 0 ? "warn" : "";
-          const rCls = u.role === "Император" ? "gold"
-                    : u.role === "Лорд Тьмы" ? "red"
-                    : (u.role === "Рыцарь Смерти" || u.role === "Скелет Ужаса") ? "blue"
-                    : "";
-          return `
-            <tr>
-              <td><b style="color:#fff;">${u.login}</b></td>
-              <td class="role-cell ${rCls}">${u.role}</td>
-              <td class="${wCls}">${w} / 3</td>
-              <td>
-                <div class="actions">
-                  <button class="btn small secondary" onclick="window.__adminChangePin('${u.uid}')">PIN</button>
-                  <button class="btn small secondary" onclick="window.__adminChangeRole('${u.uid}')">Роль</button>
-                  <button class="btn small secondary" onclick="window.__adminWarn('${u.uid}')">+W</button>
-                  <button class="btn small secondary" onclick="window.__adminUnwarn('${u.uid}')">−W</button>
-                  <button class="btn small danger" onclick="window.__adminDelete('${u.uid}')">✕</button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join("");
+    if (users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">
+        Участников нет. Создайте первого через «Создать аккаунт».
+      </td></tr>`;
+      renderScheduled = false;
+      return;
+    }
+
+    const html = users.sort((a, b) => (b.warn || 0) - (a.warn || 0)).map(u => {
+      const w = u.warn || 0;
+      const wCls = w >= 3 ? "danger" : w > 0 ? "warn" : "";
+      const banned = u.banned ? " 🔒" : "";
+      const rCls = u.role === "Император" ? "gold"
+                : u.role === "Лорд Тьмы" ? "red"
+                : (u.role === "Рыцарь Смерти" || u.role === "Скелет Ужаса") ? "blue"
+                : "";
+      const colorStyle = u.roleColor ? `style="color:${u.roleColor};"` : "";
+      return `
+        <tr>
+          <td><b style="color:#fff;">${u.login}</b>${banned}</td>
+          <td class="role-cell ${rCls}" ${colorStyle}>${u.role}</td>
+          <td class="${wCls}">${w} / 3</td>
+          <td>
+            <div class="actions">
+              <button class="btn small secondary" onclick="window.__adminChangePin('${u.uid}')">PIN</button>
+              <button class="btn small secondary" onclick="window.__adminChangeRole('${u.uid}')">Роль</button>
+              <button class="btn small secondary" onclick="window.__adminRoleColor('${u.uid}')">🎨</button>
+              <button class="btn small secondary" onclick="window.__adminWarn('${u.uid}')">+W</button>
+              <button class="btn small secondary" onclick="window.__adminUnwarn('${u.uid}')">−W</button>
+              <button class="btn small danger" onclick="window.__adminDelete('${u.uid}')">✕</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
 
     tbody.innerHTML = html;
     renderScheduled = false;
   });
 }
 
-// Глобальные действия (для inline onclick)
 window.__adminChangePin = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
@@ -77,6 +83,21 @@ window.__adminChangeRole = async function(uid) {
   } catch (e) { toast(e.message, "warn"); }
 };
 
+window.__adminRoleColor = async function(uid) {
+  const users = await listUsers();
+  const u = users.find(x => x.uid === uid);
+  if (!u) return;
+  const color = prompt(`Цвет для роли ${u.login} (HEX, например #00c8d4):`, u.roleColor || "#00c8d4");
+  if (color === null) return;
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+    toast("Неверный HEX", "warn");
+    return;
+  }
+  await setRoleColor(uid, color);
+  toast(`Цвет роли ${u.login} обновлён`, "ok");
+  await renderUsersTable(true);
+};
+
 window.__adminWarn = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
@@ -84,7 +105,7 @@ window.__adminWarn = async function(uid) {
   const reason = prompt(`Причина Warn для ${u.login}:`, "");
   if (reason === null) return;
   const n = await warnUser(uid, reason.trim());
-  if (n >= 3) toast(`${u.login} ЗАБАНЕН`, "warn");
+  if (n >= 3) toast(`${u.login} ЗАБАНЕН (3/3)`, "warn");
   else toast(`${u.login} — Warn (${n}/3)`, "warn");
   await renderUsersTable(true);
 };
@@ -103,8 +124,12 @@ window.__adminDelete = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
   if (!u) return;
-  if (!confirm(`УДАЛИТЬ ${u.login}?`)) return;
-  await deleteUser(uid);
-  toast(`${u.login} удалён`, "ok");
-  await renderUsersTable(true);
+  if (!confirm(`УДАЛИТЬ ${u.login}? Действие необратимо.`)) return;
+  try {
+    await deleteUser(uid);
+    toast(`${u.login} удалён`, "ok");
+    await renderUsersTable(true);
+  } catch (e) {
+    toast("Ошибка удаления: " + e.message, "warn");
+  }
 };
