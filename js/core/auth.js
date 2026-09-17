@@ -1,4 +1,4 @@
-\// js/core/auth.js
+// js/core/auth.js
 import { db } from "../firebase-init.js";
 import {
   collection, query, where, getDocs, doc, getDoc,
@@ -11,18 +11,13 @@ const DEMO_USERS_KEY = "re_panel_demo_users";
 const CACHE_KEY_USERS = "users_list";
 const MAX_WARN = 3;
 
-// ==================== ДЕМО ====================
 function getDemoUsers() {
   const raw = localStorage.getItem(DEMO_USERS_KEY);
   if (raw) {
     try { return JSON.parse(raw); } catch {}
   }
   const defaults = [
-    { uid: "demo-emperor",  login: "Emperor",         pin: "1111", role: "emperor",  division: "leader",     warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
-    { uid: "demo-lord",     login: "Lord_Darkness",   pin: "2222", role: "lord",     division: "black_lord", warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
-    { uid: "demo-knight",   login: "Death_Knight",    pin: "3333", role: "knight",   division: "shooter",    warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
-    { uid: "demo-skeleton", login: "Horror_Skeleton", pin: "4444", role: "skeleton", division: "guard",      warn: 0, banned: false, contracts: 0, createdAt: Date.now() },
-    { uid: "demo-soul",     login: "Dark_Soul",       pin: "5555", role: "soul",     division: "mechanic",   warn: 0, banned: false, contracts: 0, createdAt: Date.now() }
+    { uid: "demo-emperor", login: "Emperor", pin: "1111", role: "emperor", division: "leader", warn: 0, banned: false, contracts: 0, createdAt: Date.now() }
   ];
   localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(defaults));
   return defaults;
@@ -32,7 +27,6 @@ function saveDemoUsers(users) {
   localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
 }
 
-// ==================== ПОИСК ====================
 async function findUserByLogin(loginName) {
   try {
     const q = query(collection(db, "users"), where("login", "==", loginName));
@@ -61,7 +55,6 @@ async function getUserById(uid) {
   return null;
 }
 
-// ==================== ЛОГИН ====================
 export async function login(loginName, pin) {
   if (!loginName || !pin) return { ok: false, error: "Заполните все поля" };
   if (!/^[A-Za-z0-9_]{3,32}$/.test(loginName)) {
@@ -70,11 +63,11 @@ export async function login(loginName, pin) {
 
   const found = await findUserByLogin(loginName);
   if (!found) return { ok: false, error: "Пользователь не найден" };
-  if (found.data.pin !== pin) return { ok: false, error: "Неверный PIN-код" };
+  if (String(found.data.pin) !== String(pin)) return { ok: false, error: "Неверный PIN-код" };
 
   const warnCount = found.data.warn || 0;
   if (warnCount >= MAX_WARN || found.data.banned) {
-    return { ok: false, error: `АККАУНТ ЗАБАНЕН (${warnCount}/${MAX_WARN} Warn)` };
+    return { ok: false, error: "АККАУНТ ЗАБАНЕН (" + warnCount + "/" + MAX_WARN + " Warn)" };
   }
 
   const user = {
@@ -98,17 +91,21 @@ export function tryRestoreSession() {
   return restoreSession();
 }
 
-// ==================== СОЗДАНИЕ ====================
 export async function createUser({ login, pin, role, division = null }) {
   if (!/^[A-Za-z0-9_]{3,32}$/.test(login)) throw new Error("Неверный формат логина");
-  if (!/^\d{4,8}$/.test(pin)) throw new Error("PIN: 4-8 цифр");
+  if (!/^[0-9]{4,8}$/.test(pin)) throw new Error("PIN: 4-8 цифр");
 
   const existing = await findUserByLogin(login);
   if (existing) throw new Error("Логин уже занят");
 
   const newUser = {
-    login, pin, role, division,
-    warn: 0, banned: false, contracts: 0,
+    login: login,
+    pin: pin,
+    role: role,
+    division: division,
+    warn: 0,
+    banned: false,
+    contracts: 0,
     avatar: null,
     createdAt: Date.now()
   };
@@ -128,7 +125,6 @@ export async function createUser({ login, pin, role, division = null }) {
   return user;
 }
 
-// ==================== СПИСОК ====================
 export async function listUsers(force = false) {
   if (!force) {
     const cached = cacheGet(CACHE_KEY_USERS, 30000);
@@ -147,7 +143,6 @@ export async function listUsers(force = false) {
   return users;
 }
 
-// ==================== УДАЛЕНИЕ ====================
 export async function deleteUser(uid) {
   try { await deleteDoc(doc(db, "users", uid)); } catch (e) {}
   const demoUsers = getDemoUsers().filter(u => u.uid !== uid);
@@ -155,9 +150,8 @@ export async function deleteUser(uid) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-// ==================== PIN ====================
 export async function changePin(uid, newPin) {
-  if (!/^\d{4,8}$/.test(newPin)) throw new Error("PIN: 4-8 цифр");
+  if (!/^[0-9]{4,8}$/.test(newPin)) throw new Error("PIN: 4-8 цифр");
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
 
@@ -171,7 +165,6 @@ export async function changePin(uid, newPin) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-// ==================== РОЛЬ ====================
 export async function changeRole(uid, newRole) {
   if (!newRole) throw new Error("Роль не выбрана");
   const found = await getUserById(uid);
@@ -187,7 +180,6 @@ export async function changeRole(uid, newRole) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-// ==================== ПОДРАЗДЕЛЕНИЕ ====================
 export async function changeDivision(uid, newDivision) {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
@@ -202,7 +194,6 @@ export async function changeDivision(uid, newDivision) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-// ==================== АВАТАР ====================
 export async function updateAvatar(uid, avatarUrl) {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
@@ -217,17 +208,19 @@ export async function updateAvatar(uid, avatarUrl) {
   cacheInvalidate(CACHE_KEY_USERS);
 }
 
-// ==================== WARN ====================
 export async function warnUser(uid, reason = "") {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
 
   const current = found.data.warn || 0;
-  if (current >= MAX_WARN) throw new Error(`Максимум ${MAX_WARN} Warn`);
+  if (current >= MAX_WARN) throw new Error("Максимум " + MAX_WARN + " Warn");
 
   const newWarn = current + 1;
   const updates = { warn: newWarn, lastWarnReason: reason, lastWarnAt: Date.now() };
-  if (newWarn >= MAX_WARN) { updates.banned = true; updates.bannedAt = Date.now(); }
+  if (newWarn >= MAX_WARN) {
+    updates.banned = true;
+    updates.bannedAt = Date.now();
+  }
 
   if (found.source === "firebase") {
     await updateDoc(found.ref, updates);
@@ -260,7 +253,6 @@ export async function unwarnUser(uid) {
   return { warn: newWarn, banned: updates.banned };
 }
 
-// ==================== КОНТРАКТЫ ====================
 export async function incrementContracts(uid, by = 1) {
   const found = await getUserById(uid);
   if (!found) throw new Error("Пользователь не найден");
