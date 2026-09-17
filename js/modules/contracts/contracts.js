@@ -6,10 +6,9 @@ import { uploadMedia } from "./contracts-upload.js";
 import { getNextReward, getEarnedRewards } from "./contracts-rewards.js";
 
 const DEMO_KEY = "re_demo_contracts";
-let demoMode = true;
 let currentContracts = [];
 
-// ⚠️ Роли, которым разрешено управлять контрактами
+// Роли, которым разрешено управлять контрактами
 const ADMIN_ROLES = ["emperor", "lord"];
 
 export async function initContracts() {
@@ -90,7 +89,6 @@ async function renderAll() {
 
 function renderCard(c, users, me) {
   const author = users.find(u => u.uid === c.authorId);
-  // ✅ ИСПРАВЛЕНО: проверка по id роли, а не по названию
   const isAdmin = ADMIN_ROLES.includes(me.role);
 
   const statusMap = {
@@ -122,6 +120,12 @@ function renderCard(c, users, me) {
             : `<div style="padding:8px;background:#000;color:#0f0;font-size:11px;border-radius:6px;">📹 ${m.name}</div>`).join("")}
         </div>
       ` : ""}
+      ${c.submittedBy ? `
+        <div class="contract-meta" style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px;">
+          <span>📤 Сдал: <b>${escapeHtml(c.submittedBy.login)}</b></span>
+          <span>Кол-во: <b>${c.submittedBy.count}</b></span>
+        </div>
+      ` : ""}
       ${c.status === "open" ? `<button class="btn small" onclick="window.__contractSubmit('${c.id}')">Сдать отчёт</button>` : ""}
       ${c.status === "review" && isAdmin ? `
         <div class="contract-review-actions">
@@ -129,7 +133,12 @@ function renderCard(c, users, me) {
           <button class="btn small secondary" onclick="window.__contractReject('${c.id}')">✕ Отклонить</button>
         </div>
       ` : ""}
-      ${isAdmin ? `<button class="btn small danger" style="margin-top:8px;" onclick="window.__contractDelete('${c.id}')">🗑 Удалить контракт</button>` : ""}
+      ${isAdmin ? `
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn small secondary" onclick="window.__contractEdit('${c.id}')">✏️ Редактировать</button>
+          <button class="btn small danger" onclick="window.__contractDelete('${c.id}')">🗑 Удалить</button>
+        </div>
+      ` : ""}
     </div>
   `;
 }
@@ -148,7 +157,6 @@ function formatDate(ts) {
 // ==================== СОЗДАНИЕ ====================
 export function openCreateContract() {
   const me = getCurrentUser();
-  // ✅ ИСПРАВЛЕНО: проверка по id
   if (!ADMIN_ROLES.includes(me.role)) {
     return toast("Только Император и Лорд Тьмы могут создавать", "warn");
   }
@@ -199,6 +207,68 @@ export function openCreateContract() {
   setTimeout(() => document.getElementById("cTitle")?.focus(), 80);
 }
 
+// ==================== РЕДАКТИРОВАНИЕ ====================
+window.__contractEdit = function(contractId) {
+  const c = currentContracts.find(x => x.id === contractId);
+  if (!c) return;
+  const me = getCurrentUser();
+  if (!ADMIN_ROLES.includes(me.role)) return toast("Нет прав", "warn");
+
+  openModal({
+    title: "РЕДАКТИРОВАТЬ КОНТРАКТ",
+    html: `
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Название</label>
+          <input type="text" id="ceTitle" value="${escapeHtml(c.title)}" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label>Награда, ₽</label>
+          <input type="number" id="ceReward" value="${c.reward}" min="0">
+        </div>
+        <div class="form-field" style="grid-column:1/-1;">
+          <label>Описание</label>
+          <textarea id="ceDesc">${escapeHtml(c.description || "")}</textarea>
+        </div>
+        <div class="form-field">
+          <label>Статус</label>
+          <select id="ceStatus" class="role-select">
+            <option value="open" ${c.status === "open" ? "selected" : ""}>Открыт</option>
+            <option value="review" ${c.status === "review" ? "selected" : ""}>На проверке</option>
+            <option value="approved" ${c.status === "approved" ? "selected" : ""}>Выполнен</option>
+            <option value="rejected" ${c.status === "rejected" ? "selected" : ""}>Отклонён</option>
+          </select>
+        </div>
+      </div>
+      <div id="ceError" style="color:var(--red);font-size:12px;display:none;"></div>
+    `,
+    confirmText: "СОХРАНИТЬ",
+    onConfirm: async () => {
+      const title = document.getElementById("ceTitle").value.trim();
+      const reward = parseInt(document.getElementById("ceReward").value) || 0;
+      const description = document.getElementById("ceDesc").value.trim();
+      const status = document.getElementById("ceStatus").value;
+      const err = document.getElementById("ceError");
+
+      if (!title) { err.textContent = "Введите название"; err.style.display = "block"; return; }
+
+      const idx = currentContracts.findIndex(x => x.id === contractId);
+      if (idx >= 0) {
+        currentContracts[idx].title = title;
+        currentContracts[idx].reward = reward;
+        currentContracts[idx].description = description;
+        currentContracts[idx].status = status;
+        currentContracts[idx].editedAt = Date.now();
+        saveDemoContracts();
+        await renderAll();
+      }
+      toast("Контракт обновлён", "ok");
+      closeModal();
+    }
+  });
+  setTimeout(() => document.getElementById("ceTitle")?.focus(), 80);
+};
+
 // ==================== ОТЧЁТ ====================
 window.__contractSubmit = function(contractId) {
   const c = currentContracts.find(x => x.id === contractId);
@@ -219,7 +289,7 @@ window.__contractSubmit = function(contractId) {
         <div class="form-field" style="grid-column:1/-1;">
           <label>Фото/видео доказательство</label>
           <input type="file" id="rMedia" accept="image/*,video/*" multiple>
-          <div class="form-hint">До 50 МБ.</div>
+          <div class="form-hint">До 50 МБ. JPG/PNG/WEBP/GIF или MP4/WEBM/MOV.</div>
         </div>
         <div class="form-field" style="grid-column:1/-1;">
           <label>Комментарий (опционально)</label>
