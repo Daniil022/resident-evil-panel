@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/panels.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/chat.css">
+<link rel="stylesheet" href="css/contracts.css">
 </head>
 <body>
 
@@ -208,34 +209,14 @@
        КОНТРАКТЫ
   ================================================== -->
   <section class="panel" id="contracts">
-    <h2>Контракты симьи</h2>
-    <div class="grid">
-      <div class="card">
-        <div class="name">Зачистка нефтезавода</div>
-        <div class="role">Приоритет: высокий</div>
-        <div class="stat">Награда: <span class="val">50 000 ₽</span></div>
-        <div class="stat">Исполнители: <span class="val">Рыцарь Смерти, Скелет Ужаса</span></div>
-        <div class="bar"><span style="width:66%"></span></div>
-      </div>
-      <div class="card">
-        <div class="name">Оборона базы</div>
-        <div class="role danger">Приоритет: критический</div>
-        <div class="stat">До атаки: <span class="danger">00:45:12</span></div>
-        <div class="bar"><span style="width:80%"></span></div>
-      </div>
-      <div class="card">
-        <div class="name">Охота на босса</div>
-        <div class="role">Приоритет: средний</div>
-        <div class="stat">Награда: <span class="val">25 000 ₽</span></div>
-        <div class="bar"><span style="width:50%"></span></div>
-      </div>
-      <div class="card">
-        <div class="name">Разведка территории</div>
-        <div class="role">Приоритет: низкий</div>
-        <div class="stat">Собрано данных: <span class="val">12 / 20</span></div>
-        <div class="bar"><span style="width:60%"></span></div>
-      </div>
+    <div class="contracts-head">
+      <h2>Контракты симьи</h2>
+      <button class="btn" id="createContractBtn">+ Создать контракт</button>
     </div>
+
+    <div id="contractProgress"></div>
+
+    <div class="grid" id="contractsGrid"></div>
   </section>
 
   <!-- ==================================================
@@ -467,27 +448,27 @@
     <h2>⚙ Панель администратора // Приватный доступ</h2>
 
     <div class="grid">
-      <div class="card clickable" onclick="openModal({title:'СОЗДАТЬ АККАУНТ',html:'<p>Форма будет в Этапе 3</p>'})">
+      <div class="card clickable">
         <div class="name">Создать аккаунт</div>
         <div class="role gold">Регистрация</div>
         <div class="stat">Завести нового участника</div>
       </div>
-      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ PIN',html:'<p>Форма будет в Этапе 3</p>'})">
+      <div class="card clickable">
         <div class="name">Сменить PIN</div>
         <div class="role">Безопасность</div>
         <div class="stat">Изменить PIN участника</div>
       </div>
-      <div class="card clickable" onclick="openModal({title:'СМЕНИТЬ РОЛЬ',html:'<p>Форма будет в Этапе 3</p>'})">
+      <div class="card clickable">
         <div class="name">Сменить роль</div>
         <div class="role">Иерархия</div>
         <div class="stat">Перевести на другую должность</div>
       </div>
-      <div class="card clickable" onclick="openModal({title:'ВЫДАТЬ WARN',html:'<p>Форма будет в Этапе 3</p>'})">
+      <div class="card clickable">
         <div class="name">Выдать Warn</div>
         <div class="role danger">Наказание</div>
         <div class="stat">Предупреждение участнику</div>
       </div>
-      <div class="card clickable" onclick="openModal({title:'УДАЛИТЬ АККАУНТ',html:'<p>Форма будет в Этапе 3</p>'})">
+      <div class="card clickable">
         <div class="name">Удалить аккаунт</div>
         <div class="role danger">Опасно</div>
         <div class="stat">Полное удаление</div>
