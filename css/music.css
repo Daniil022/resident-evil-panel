@@ -1,0 +1,6 @@
+/* ============ МУЗЫКА ============ */
+.track-card { transition: all 0.2s; }
+.track-card:hover { transform: translateY(-3px); }
+
+.track-head {
+  display: flex
