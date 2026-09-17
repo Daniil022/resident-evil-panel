@@ -1,224 +1,139 @@
-/* ============ ДАШБОРД ============ */
-.dash-welcome{
-  background:linear-gradient(135deg,var(--panel) 0%,var(--panel-2) 100%);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:28px;
-  display:flex;
-  align-items:center;
-  gap:22px;
-  margin-bottom:24px;
-  position:relative;
-  overflow:hidden;
-}
-.dash-welcome::before{
-  content:'';
-  position:absolute;
-  top:-50%;right:-50%;
-  width:200%;height:200%;
-  background:radial-gradient(circle at 70% 30%,rgba(0,200,212,0.08) 0%,transparent 40%);
-  pointer-events:none;
+// js/core/dashboard.js
+import { getCurrentUser } from "./state.js";
+
+export function initDashboard() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  // Приветствие
+  const dashUser = document.getElementById("dashUser");
+  const dashRole = document.getElementById("dashRole");
+  const dashAvatar = document.getElementById("dashAvatar");
+
+  if (dashUser) dashUser.textContent = user.login;
+  if (dashRole) {
+    dashRole.textContent = user.role;
+    dashRole.className = "dash-role";
+    if (user.role === "Император") dashRole.classList.add("gold");
+  }
+  if (dashAvatar) {
+    dashAvatar.textContent = user.login.charAt(0).toUpperCase();
+    if (user.role === "Император") {
+      dashAvatar.style.background = "linear-gradient(135deg, var(--gold), #f59e0b)";
+      dashAvatar.style.boxShadow = "0 0 30px rgba(251,191,36,0.4)";
+    }
+  }
+
+  // Часы
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Обнуляем счётчики (пока нет реальных данных)
+  setCounter("dashTreasury", 0);
+  setCounter("dashWars", 0);
+  setCounter("dashMembers", 0);
+  setCounter("dashOnline", 0);
+  setCounter("dashContracts", 0);
+  setCounter("dashMessages", 0);
+
+  // Топ участников — пусто
+  renderTop([]);
+
+  // Лента событий — пустая
+  renderFeedEmpty();
+
+  // Слушаем события от модулей
+  window.addEventListener("chatMessageCount", (e) => {
+    setCounter("dashMessages", e.detail.count);
+  });
+
+  window.addEventListener("presenceUpdate", (e) => {
+    setCounter("dashOnline", e.detail.online);
+    setCounter("dashMembers", e.detail.total);
+  });
 }
 
-.dash-avatar{
-  width:76px;
-  height:76px;
-  min-width:76px;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--cyan),var(--blue));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  font-size:28px;
-  font-weight:700;
-  box-shadow:0 0 30px rgba(0,200,212,0.4);
-  position:relative;
-  z-index:1;
+// ==================== ХЕЛПЕРЫ ====================
+function setCounter(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
-.dash-info{flex:1;min-width:0;position:relative;z-index:1;}
-.dash-greet{
-  color:#fff;
-  font-size:18px;
-  font-weight:600;
-  margin-bottom:8px;
-}
-.dash-greet span{color:var(--cyan);}
-.dash-role{
-  display:inline-block;
-  padding:3px 12px;
-  background:rgba(0,200,212,0.1);
-  border:1px solid rgba(0,200,212,0.3);
-  color:var(--cyan);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  border-radius:4px;
-  margin-bottom:8px;
-}
-.dash-role.gold{
-  background:rgba(251,191,36,0.1);
-  border-color:rgba(251,191,36,0.3);
-  color:var(--gold);
-}
-.dash-sub{
-  color:var(--muted);
-  font-size:11.5px;
-  letter-spacing:1px;
-}
-.dash-clock{
-  color:var(--cyan);
-  font-size:28px;
-  font-weight:700;
-  letter-spacing:2px;
-  font-variant-numeric:tabular-nums;
-  text-shadow:0 0 15px var(--cyan-glow);
-  position:relative;
-  z-index:1;
+function updateClock() {
+  const el = document.getElementById("dashClock");
+  if (!el) return;
+  const d = new Date();
+  el.textContent =
+    String(d.getHours()).padStart(2, "0") + ":" +
+    String(d.getMinutes()).padStart(2, "0") + ":" +
+    String(d.getSeconds()).padStart(2, "0");
 }
 
-.dash-stats{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:14px;
-  margin-bottom:32px;
-}
-.dash-stat{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:18px;
-  text-align:center;
-  transition:all 0.2s;
-  position:relative;
-  overflow:hidden;
-}
-.dash-stat::before{
-  content:'';
-  position:absolute;
-  top:0;left:0;right:0;
-  height:2px;
-  background:linear-gradient(90deg,var(--cyan),var(--blue));
-  opacity:0.6;
-}
-.dash-stat:hover{
-  border-color:var(--border-light);
-  background:var(--panel-2);
-  transform:translateY(-2px);
-  box-shadow:var(--shadow);
-}
-.dash-stat-icon{
-  font-size:24px;
-  margin-bottom:8px;
-  filter:grayscale(0.2);
-}
-.dash-stat-value{
-  color:#fff;
-  font-size:26px;
-  font-weight:700;
-  letter-spacing:0.5px;
-  margin-bottom:4px;
-}
-.dash-stat-value.online{
-  color:var(--green);
-  text-shadow:0 0 10px rgba(74,222,128,0.4);
-}
-.dash-stat-label{
-  color:var(--muted);
-  font-size:11px;
-  letter-spacing:1.2px;
-  text-transform:uppercase;
-  font-weight:500;
+// ==================== ТОП УЧАСТНИКОВ ====================
+function renderTop(list) {
+  const el = document.getElementById("dashTop");
+  if (!el) return;
+
+  if (!list || list.length === 0) {
+    el.innerHTML = `
+      <div class="dash-top-item" style="border-left-color: var(--muted); opacity: 0.6;">
+        <div class="rank">—</div>
+        <div class="who">
+          <div class="nick">Пока нет данных</div>
+          <div class="role">Топ сформируется по мере активности</div>
+        </div>
+        <div class="val">0 ₽</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = list.map(t => `
+    <div class="dash-top-item">
+      <div class="rank">#${t.rank}</div>
+      <div class="who">
+        <div class="nick">${t.nick}</div>
+        <div class="role">${t.role}</div>
+      </div>
+      <div class="val">${t.val}</div>
+    </div>
+  `).join("");
 }
 
-.dash-feed{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  max-height:340px;
-  overflow-y:auto;
-}
-.dash-event{
-  padding:14px 18px;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  gap:14px;
-  font-size:13px;
-  transition:background 0.15s;
-}
-.dash-event:last-child{border-bottom:none;}
-.dash-event:hover{background:var(--panel-2);}
-.dash-event-icon{
-  font-size:16px;
-  width:28px;
-  text-align:center;
-  flex-shrink:0;
-}
-.dash-event-time{
-  color:var(--muted);
-  font-size:11.5px;
-  min-width:90px;
-  flex-shrink:0;
-  font-variant-numeric:tabular-nums;
-}
-.dash-event-text{color:var(--text-2);flex:1;}
-
-.dash-top{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:12px;
-}
-.dash-top-item{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:16px 18px;
-  display:flex;
-  align-items:center;
-  gap:14px;
-  transition:all 0.2s;
-}
-.dash-top-item:hover{
-  background:var(--panel-2);
-  border-color:var(--border-light);
-  transform:translateX(3px);
-}
-.dash-top-item .rank{
-  color:var(--cyan);
-  font-size:22px;
-  font-weight:800;
-  width:38px;
-  text-align:center;
-  text-shadow:0 0 10px var(--cyan-glow);
-}
-.dash-top-item:nth-child(1) .rank{color:var(--gold);text-shadow:0 0 10px rgba(251,191,36,0.5);}
-.dash-top-item:nth-child(2) .rank{color:#c0c0c0;}
-.dash-top-item:nth-child(3) .rank{color:#cd7f32;}
-.dash-top-item .who{flex:1;min-width:0;}
-.dash-top-item .who .nick{
-  color:#fff;
-  font-size:13.5px;
-  font-weight:600;
-}
-.dash-top-item .who .role{
-  color:var(--muted);
-  font-size:11px;
-  letter-spacing:0.8px;
-  text-transform:uppercase;
-  margin-top:2px;
-}
-.dash-top-item .val{
-  color:var(--cyan);
-  font-size:13.5px;
-  font-weight:600;
-  font-variant-numeric:tabular-nums;
+// ==================== ЛЕНТА СОБЫТИЙ ====================
+function renderFeedEmpty() {
+  const feed = document.getElementById("dashFeed");
+  if (!feed) return;
+  feed.innerHTML = `
+    <div class="dash-event" style="opacity: 0.5;">
+      <span class="dash-event-icon">⏳</span>
+      <span class="dash-event-time">—</span>
+      <span class="dash-event-text">Событий пока нет</span>
+    </div>
+  `;
 }
 
-@media (max-width:640px){
-  .dash-welcome{flex-direction:column;text-align:center;padding:20px;}
-  .dash-clock{font-size:22px;}
-  .dash-stat-value{font-size:22px;}
+export function addDashEvent(icon, text) {
+  const feed = document.getElementById("dashFeed");
+  if (!feed) return;
+
+  // Если в ленте только заглушка — убираем её
+  const placeholder = feed.querySelector(".dash-event[style*='opacity: 0.5']");
+  if (placeholder) feed.innerHTML = "";
+
+  const now = new Date();
+  const time = String(now.getHours()).padStart(2, "0") + ":" +
+               String(now.getMinutes()).padStart(2, "0");
+
+  const event = document.createElement("div");
+  event.className = "dash-event";
+  event.innerHTML = `
+    <span class="dash-event-icon">${icon}</span>
+    <span class="dash-event-time">${time}</span>
+    <span class="dash-event-text">${text}</span>
+  `;
+  feed.insertBefore(event, feed.firstChild);
+
+  // Держим максимум 30 событий
+  while (feed.children.length > 30) feed.removeChild(feed.lastChild);
 }
