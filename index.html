@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/roles.css">
 <link rel="stylesheet" href="css/music.css">
 <link rel="stylesheet" href="css/album.css">
+<link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
@@ -69,7 +70,7 @@
   <button data-tab="ranks">🎖 Ранги симьи</button>
   <button data-tab="contracts">📜 Контракты</button>
   <button data-tab="accolade">🏅 Акколада</button>
-  <button data-tab="containers">📦 Контейнеры</button>
+  <button data-tab="containers">🎯 Капты</button>
   <button data-tab="warehouse">🏭 Склад</button>
   <button data-tab="allies">🤝 Союз симьи</button>
   <button data-tab="music">🎵 Музыка</button>
@@ -145,14 +146,13 @@
     <div class="grid" id="accoladeGrid"></div>
   </section>
 
-  <!-- КОНТЕЙНЕРЫ -->
+  <!-- КАПТЫ (бывшие контейнеры) -->
   <section class="panel" id="containers">
-    <h2>Контейнеры симьи</h2>
-    <div class="grid">
-      <div class="card"><div class="name">Контейнер #001</div><div class="role">Общий</div><div class="stat">Оружие: <span class="val">24</span> | Боеприпасы: <span class="val">1 200</span></div></div>
-      <div class="card"><div class="name">Контейнер #002</div><div class="role gold">Лидерский</div><div class="stat">T-Virus: <span class="val">3</span> | Артефакты: <span class="val">12</span></div></div>
-      <div class="card"><div class="name">Контейнер #003</div><div class="role blue">Разведка</div><div class="stat">Карты: <span class="val">8</span> | Документы: <span class="val">15</span></div></div>
+    <div class="contracts-head">
+      <h2>Капты — доска объявлений</h2>
+      <div id="captasToolbar"></div>
     </div>
+    <div class="grid" id="captasGrid"></div>
   </section>
 
   <!-- СКЛАД -->
