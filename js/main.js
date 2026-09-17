@@ -126,4 +126,64 @@ function enterApp(user) {
 
     if (tab === "contracts" && !inited.contracts) {
       inited.contracts = true;
-      try { init
+      try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
+    }
+
+    if (tab === "warehouse" && !inited.warehouse) {
+      inited.warehouse = true;
+      try { initWarehouse(); } catch (err) { console.warn("Warehouse init failed:", err); }
+    }
+
+    if (tab === "allies" && !inited.allies) {
+      inited.allies = true;
+      try { initAllies(); } catch (err) { console.warn("Allies init failed:", err); }
+    }
+
+    if (tab === "rules" && !inited.rules) {
+      inited.rules = true;
+      try { initRules(); } catch (err) { console.warn("Rules init failed:", err); }
+    }
+
+    if (tab === "accolade" && !inited.accolades) {
+      inited.accolades = true;
+      try { initAccolades(); } catch (err) { console.warn("Accolades init failed:", err); }
+    }
+  });
+
+  // Если открыли по хэшу — инициализируем сразу
+  if (location.hash === "#chat" && !inited.chat) {
+    inited.chat = true;
+    try { initChat(); } catch (err) {}
+  }
+  if (location.hash === "#contracts" && !inited.contracts) {
+    inited.contracts = true;
+    try { initContracts(); } catch (err) {}
+  }
+  if (location.hash === "#warehouse" && !inited.warehouse) {
+    inited.warehouse = true;
+    try { initWarehouse(); } catch (err) {}
+  }
+  if (location.hash === "#allies" && !inited.allies) {
+    inited.allies = true;
+    try { initAllies(); } catch (err) {}
+  }
+  if (location.hash === "#rules" && !inited.rules) {
+    inited.rules = true;
+    try { initRules(); } catch (err) {}
+  }
+  if (location.hash === "#accolade" && !inited.accolades) {
+    inited.accolades = true;
+    try { initAccolades(); } catch (err) {}
+  }
+
+  const createBtn = document.getElementById("createContractBtn");
+  if (createBtn) createBtn.addEventListener("click", openCreateContract);
+
+  toast(`Добро пожаловать, ${user.login}`, "ok");
+}
+
+// ==================== ВЫХОД ====================
+window.addEventListener("beforeunload", () => {
+  try { destroyChat(); } catch (e) {}
+  try { destroyContracts(); } catch (e) {}
+});
