@@ -1,0 +1,203 @@
+/* ============ РЕДАКТОР РОЛЕЙ И ПОДРАЗДЕЛЕНИЙ ============ */
+.roles-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+  gap:12px;
+}
+
+.roles-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.role-row{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  transition:all 0.2s;
+}
+.role-row:hover{
+  border-color:var(--border-light);
+  background:var(--panel-2);
+}
+
+.role-color-dot{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  flex-shrink:0;
+  border:3px solid var(--panel);
+  box-shadow:0 0 0 1px var(--border);
+}
+
+.role-info{flex:1;min-width:0;}
+.role-info .name{
+  color:#fff;
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:4px;
+}
+.role-info .desc{
+  color:var(--muted);
+  font-size:12px;
+}
+.role-info .badge-system{
+  display:inline-block;
+  margin-left:8px;
+  padding:2px 8px;
+  background:rgba(0,200,212,0.12);
+  color:var(--cyan);
+  border:1px solid rgba(0,200,212,0.3);
+  border-radius:4px;
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  font-weight:600;
+}
+
+.role-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.role-actions button{
+  width:36px;
+  height:36px;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  color:var(--text-2);
+  border-radius:6px;
+  cursor:pointer;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.15s;
+}
+.role-actions button:hover{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(0,200,212,0.08);
+}
+.role-actions button.danger:hover{
+  border-color:var(--red);
+  color:var(--red);
+  background:rgba(239,68,68,0.08);
+}
+.role-actions button:disabled{
+  opacity:0.3;
+  cursor:not-allowed;
+}
+.role-actions button:disabled:hover{
+  border-color:var(--border);
+  color:var(--text-2);
+  background:var(--panel-2);
+}
+
+/* Модалка редактирования роли */
+.role-modal-form{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.role-modal-color-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.role-modal-color-row input[type="color"]{
+  width:56px;
+  height:44px;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:8px;
+  cursor:pointer;
+  padding:2px;
+}
+.role-modal-color-row input[type="text"]{
+  flex:1;
+  background:#050505;
+  border:1px solid var(--border);
+  color:#fff;
+  padding:10px 14px;
+  font-family:'Courier New', monospace;
+  font-size:13px;
+  border-radius:6px;
+}
+.role-modal-color-row input[type="text"]:focus{
+  outline:none;
+  border-color:var(--cyan);
+}
+
+.role-preview{
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:14px;
+  text-align:center;
+}
+.role-preview .label{
+  color:var(--muted);
+  font-size:10.5px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.role-preview .badge-sample{
+  display:inline-block;
+  padding:6px 16px;
+  border-radius:6px;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.8px;
+  transition:all 0.2s;
+}
+
+/* Бейджи в панели */
+.role-badge{
+  display:inline-block;
+  padding:2px 10px;
+  border-radius:4px;
+  font-size:10.5px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  font-weight:600;
+  white-space:nowrap;
+}
+.division-badge{
+  display:inline-block;
+  padding:2px 10px;
+  border-radius:4px;
+  font-size:10.5px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+/* Селекты в модалке */
+.role-select{
+  width:100%;
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px 14px;
+  font-family:inherit;
+  font-size:13.5px;
+  border-radius:6px;
+  transition:all 0.15s;
+}
+.role-select:focus{
+  outline:none;
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px var(--cyan-glow);
+}
