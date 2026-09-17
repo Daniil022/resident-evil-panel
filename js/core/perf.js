@@ -1,6 +1,4 @@
 // js/core/perf.js
-// Хелперы производительности
-
 export function debounce(fn, ms = 200) {
   let t = null;
   return function (...args) {
@@ -29,11 +27,4 @@ export function throttle(fn, ms = 100) {
 
 export function raf(fn) {
   requestAnimationFrame(() => requestAnimationFrame(fn));
-}
-
-export function batchDOM(updates) {
-  // Применяем все изменения за один кадр
-  const fragment = document.createDocumentFragment();
-  updates.forEach(u => u(fragment));
-  return fragment;
 }
