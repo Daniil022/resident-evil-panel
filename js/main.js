@@ -6,16 +6,27 @@ import { initDashboard } from "./core/dashboard.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
-import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName, getDivisionName, getDivisionColor } from "./core/colorize.js";
+import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await preloadColorData();
+// ==================== ЗАПУСК ====================
+document.addEventListener("DOMContentLoaded", () => {
   setupAuthScreen();
+
+  // Предзагрузка ролей В ФОНЕ — не блокирует вход
+  preloadColorData().catch(e => console.warn("Roles preload failed:", e));
+
+  // Проверка сессии
   const session = tryRestoreSession();
   if (session) enterApp(session);
   else showAuthScreen();
 });
 
+function showAuthScreen() {
+  document.getElementById("authScreen").classList.remove("hidden");
+  document.getElementById("app").style.display = "none";
+}
+
+// ==================== ЭКРАН АВТОРИЗАЦИИ ====================
 function setupAuthScreen() {
   const btn = document.getElementById("loginBtn");
   const loginInput = document.getElementById("loginInput");
@@ -33,19 +44,39 @@ function setupAuthScreen() {
     error.classList.remove("show");
     btn.disabled = true;
     btn.textContent = "ПРОВЕРКА...";
-    const res = await login(loginInput.value.trim(), pinInput.value.trim());
-    btn.disabled = false;
-    btn.textContent = "ВОЙТИ В СИСТЕМУ";
-    if (!res.ok) {
-      error.textContent = res.error;
+
+    try {
+      const res = await login(loginInput.value.trim(), pinInput.value.trim());
+      btn.disabled = false;
+      btn.textContent = "ВОЙТИ В СИСТЕМУ";
+
+      if (!res.ok) {
+        error.textContent = res.error;
+        error.classList.add("show");
+        return;
+      }
+
+      // Догружаем роли перед входом в интерфейс
+      try {
+        await preloadColorData();
+      } catch (e) {
+        console.warn("Color preload failed, using fallback");
+      }
+
+      enterApp(res.user);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "ВОЙТИ В СИСТЕМУ";
+      error.textContent = "Ошибка: " + e.message;
       error.classList.add("show");
-      return;
+      console.error(e);
     }
-    enterApp(res.user);
   }
+
   loginInput.focus();
 }
 
+// ==================== ВХОД В ПРИЛОЖЕНИЕ ====================
 function enterApp(user) {
   document.getElementById("authScreen").classList.add("hidden");
   document.getElementById("app").style.display = "block";
@@ -55,13 +86,20 @@ function enterApp(user) {
   const avatarEl = document.getElementById("userAvatar");
 
   if (nameEl) nameEl.textContent = user.login;
+
   if (roleEl) {
-    roleEl.textContent = getRoleName(user.role);
-    roleEl.className = "role-tag";
-    roleEl.style.color = getRoleColor(user.role);
+    try {
+      roleEl.textContent = getRoleName(user.role);
+      roleEl.className = "role-tag";
+      roleEl.style.color = getRoleColor(user.role);
+    } catch (e) {
+      roleEl.textContent = user.role || "—";
+    }
   }
+
   if (avatarEl) avatarEl.textContent = user.login.charAt(0).toUpperCase();
 
+  // ADMIN виден только Императору и Лорду Тьмы
   const navAdmin = document.getElementById("navAdmin");
   const isAdminRole = ["emperor", "lord"].includes(user.role);
   if (navAdmin) navAdmin.classList.toggle("hidden", !isAdminRole);
@@ -74,21 +112,42 @@ function enterApp(user) {
 
   window.addEventListener("tabChange", (e) => {
     const tab = e.detail.tab;
-    if (tab === "chat" && !inited.chat) { inited.chat = true; initChat(); }
-    if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; initAdmin(); }
-    if (tab === "contracts" && !inited.contracts) { inited.contracts = true; initContracts(); }
+
+    if (tab === "chat" && !inited.chat) {
+      inited.chat = true;
+      try { initChat(); } catch (err) { console.warn("Chat init failed:", err); }
+    }
+
+    if (tab === "admin" && isAdminRole && !inited.admin) {
+      inited.admin = true;
+      try { initAdmin(); } catch (err) { console.warn("Admin init failed:", err); }
+    }
+
+    if (tab === "contracts" && !inited.contracts) {
+      inited.contracts = true;
+      try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
+    }
   });
 
-  if (location.hash === "#chat" && !inited.chat) { inited.chat = true; initChat(); }
-  if (location.hash === "#contracts" && !inited.contracts) { inited.contracts = true; initContracts(); }
+  // Если открыли по хэшу — инициализируем сразу
+  if (location.hash === "#chat" && !inited.chat) {
+    inited.chat = true;
+    try { initChat(); } catch (err) { console.warn("Chat init failed:", err); }
+  }
+  if (location.hash === "#contracts" && !inited.contracts) {
+    inited.contracts = true;
+    try { initContracts(); } catch (err) { console.warn("Contracts init failed:", err); }
+  }
 
+  // Кнопка «Создать контракт»
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
 
   toast(`Добро пожаловать, ${user.login}`, "ok");
 }
 
+// ==================== ВЫХОД ====================
 window.addEventListener("beforeunload", () => {
-  destroyChat();
-  destroyContracts();
+  try { destroyChat(); } catch (e) {}
+  try { destroyContracts(); } catch (e) {}
 });
