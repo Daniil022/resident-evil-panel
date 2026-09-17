@@ -1,7 +1,7 @@
 // js/modules/nicks.js
 import { db } from "../firebase-init.js";
 import {
-  collection, addDoc, getDocs, doc, updateDoc, deleteDoc
+  collection, addDoc, getDocs, doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { listUsers } from "../core/auth.js";
 import { listRoles } from "../core/roles.js";
@@ -44,12 +44,23 @@ export async function initNicks() {
     const divName = getDivisionName(u.division);
     const banned = u.banned ? `<span style="color:var(--red);font-size:10px;margin-left:6px;">ЗАБАНЕН</span>` : "";
 
+    // Отряд — всегда показываем (или "без отряда")
+    const divBadge = u.division
+      ? `<span class="division-badge" style="background:${hexRgba(divColor,0.15)};color:${divColor};border:1px solid ${hexRgba(divColor,0.3)};margin-left:6px;">${divName}</span>`
+      : `<span class="division-badge" style="background:rgba(120,120,120,0.15);color:#888;border:1px solid rgba(120,120,120,0.3);margin-left:6px;">— без отряда —</span>`;
+
+    // Аватар
+    const avatarHtml = u.avatar
+      ? `<img src="${u.avatar}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;display:block;margin-bottom:10px;border:2px solid var(--border);">`
+      : `<div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700;margin-bottom:10px;">${escapeHtml(u.login.charAt(0).toUpperCase())}</div>`;
+
     return `
       <div class="card">
+        ${avatarHtml}
         <div class="name">${escapeHtml(u.login)}${banned}</div>
         <div style="margin:8px 0;">
           <span class="role-badge" style="background:${hexRgba(roleColor,0.15)};color:${roleColor};border:1px solid ${hexRgba(roleColor,0.3)};">${roleName}</span>
-          ${u.division ? `<span class="division-badge" style="background:${hexRgba(divColor,0.15)};color:${divColor};border:1px solid ${hexRgba(divColor,0.3)};margin-left:6px;">${divName}</span>` : ""}
+          ${divBadge}
         </div>
         ${u.age ? `<div class="stat">Возраст: <span class="val">${u.age}</span></div>` : ""}
         ${u.voice ? `<div class="stat">ГС: <span class="val">${u.voice === "yes" ? "✓ есть" : "✕ нет"}</span></div>` : ""}
@@ -73,7 +84,7 @@ function openNickModal() {
       <div class="form-grid">
         <div class="form-field" style="grid-column:1/-1;">
           <label>Игровой ник</label>
-          <input type="text" id="nkNick" value="${escapeHtml(me.login)}" placeholder="Nick_Name" readonly>
+          <input type="text" id="nkNick" value="${escapeHtml(me.login)}" readonly>
           <div class="form-hint">Это твой логин в системе</div>
         </div>
         <div class="form-field">
