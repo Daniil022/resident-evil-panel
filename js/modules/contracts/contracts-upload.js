@@ -1,9 +1,8 @@
 // js/modules/contracts/contracts-upload.js
 
-// ==== URL API Vercel ====
 const API_URL = "https://resident-evil-panel.vercel.app/api/upload";
 
-export async function uploadMedia(file, contractId, userLogin, message = "") {
+export async function uploadMedia(file, contextId, userLogin, message = "", mediaType = "contract") {
   if (!file) throw new Error("Файл не выбран");
 
   const maxSize = 50 * 1024 * 1024;
@@ -12,13 +11,10 @@ export async function uploadMedia(file, contractId, userLogin, message = "") {
   const fd = new FormData();
   fd.append("file", file, file.name);
   fd.append("filename", file.name);
-  fd.append("message", `📦 ${userLogin} | Контракт #${contractId}\n${message}`);
+  fd.append("message", message);
+  fd.append("mediaType", mediaType);
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: fd
-  });
-
+  const res = await fetch(API_URL, { method: "POST", body: fd });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || "Ошибка загрузки");
 
@@ -26,7 +22,10 @@ export async function uploadMedia(file, contractId, userLogin, message = "") {
     url: data.vk_link,
     attachment: data.attachment,
     message_id: data.message_id,
-    type: file.type.startsWith("video") ? "video" : "image",
+    peer_id: data.peer_id,
+    type: file.type.startsWith("video") ? "video"
+        : file.type.startsWith("audio") ? "audio"
+        : "image",
     name: file.name
   };
 }
