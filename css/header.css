@@ -378,6 +378,9 @@ nav button[data-tab="admin"].active::after {
   }
 }
 
+/* Скрыть старый переключатель тем если где-то остался */
+.theme-switch { display: none !important; }
+
 @media (max-width: 768px) {
   header { padding: 14px 16px; }
   .logo { font-size: 16px; }
