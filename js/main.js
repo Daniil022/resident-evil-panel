@@ -14,7 +14,7 @@ import { initAccolades } from "./modules/accolades.js";
 import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
 import { initCaptas } from "./modules/captas.js";
-import { setupAvatarClick, updateHeaderAvatar, updateDashAvatar } from "./modules/profile.js";
+import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -93,10 +93,9 @@ function enterApp(user) {
     }
   }
 
-  // Аватар
   if (avatarEl) {
     if (user.avatar) {
-      avatarEl.innerHTML = `<img src="${user.avatar}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      avatarEl.innerHTML = '<img src="' + user.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
       avatarEl.style.padding = "0";
       avatarEl.style.overflow = "hidden";
     } else {
@@ -112,17 +111,14 @@ function enterApp(user) {
   initDashboard();
   applyColorsToDOM();
 
-  // Аватар клик
   setupAvatarClick();
   if (user.avatar) updateDashAvatar(user);
-
-  try { initNicks(); } catch (e) { console.warn("Nicks init failed:", e); }
-  try { initRanks(); } catch (e) { console.warn("Ranks init failed:", e); }
 
   const inited = {
     chat: false, admin: false, contracts: false,
     warehouse: false, allies: false, rules: false,
-    accolades: false, music: false, album: false, captas: false
+    accolades: false, music: false, album: false,
+    captas: false, nicks: false, ranks: false
   };
 
   window.addEventListener("tabChange", (e) => {
@@ -138,18 +134,22 @@ function enterApp(user) {
     if (tab === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
     if (tab === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
     if (tab === "containers" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
+    if (tab === "nicks" && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
+    if (tab === "ranks" && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
   });
 
   const hash = location.hash.replace("#", "");
-  if (hash === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (e) {} }
-  if (hash === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (e) {} }
-  if (hash === "warehouse" && !inited.warehouse) { inited.warehouse = true; try { initWarehouse(); } catch (e) {} }
-  if (hash === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (e) {} }
-  if (hash === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (e) {} }
-  if (hash === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
-  if (hash === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (e) {} }
-  if (hash === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (e) {} }
-  if (hash === "containers" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "chat") { inited.chat = true; try { initChat(); } catch (e) {} }
+  if (hash === "contracts") { inited.contracts = true; try { initContracts(); } catch (e) {} }
+  if (hash === "warehouse") { inited.warehouse = true; try { initWarehouse(); } catch (e) {} }
+  if (hash === "allies") { inited.allies = true; try { initAllies(); } catch (e) {} }
+  if (hash === "rules") { inited.rules = true; try { initRules(); } catch (e) {} }
+  if (hash === "accolade") { inited.accolades = true; try { initAccolades(); } catch (e) {} }
+  if (hash === "music") { inited.music = true; try { initMusic(); } catch (e) {} }
+  if (hash === "album") { inited.album = true; try { initAlbum(); } catch (e) {} }
+  if (hash === "containers") { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "nicks") { inited.nicks = true; try { initNicks(); } catch (e) {} }
+  if (hash === "ranks") { inited.ranks = true; try { initRanks(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
