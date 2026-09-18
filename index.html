@@ -27,14 +27,33 @@
     <div class="auth-logo"><div class="umbrella"></div></div>
     <div class="auth-title">LIVE <span>RUSSIA</span></div>
     <div class="auth-sub">RESIDENT EVIL // ACCESS TERMINAL</div>
-    <div class="auth-error" id="authError">Неверный логин или PIN-код</div>
-    <label for="loginInput">Логин (Nick_Name)</label>
-    <input type="text" id="loginInput" placeholder="Nick_Name" autocomplete="off" spellcheck="false">
-    <div class="auth-hint">Формат: латиница, цифры, нижнее подчёркивание</div>
-    <label for="pinInput">PIN-код / Пароль</label>
-    <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
-    <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
-    <div class="auth-default" id="authDefaultHint"></div>
+
+    <div id="loginForm">
+      <div class="auth-error" id="authError">Неверный логин или PIN-код</div>
+      <label for="loginInput">Логин (Nick_Name)</label>
+      <input type="text" id="loginInput" placeholder="Nick_Name" autocomplete="off" spellcheck="false">
+      <div class="auth-hint">Формат: латиница, цифры, нижнее подчёркивание</div>
+      <label for="pinInput">PIN-код / Пароль</label>
+      <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
+      <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
+      <div class="auth-default" id="authDefaultHint"></div>
+      <button type="button" class="auth-btn" id="showRegisterBtn" style="margin-top:10px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);">📝 ЗАРЕГИСТРИРОВАТЬСЯ</button>
+    </div>
+
+    <div id="registerForm" style="display:none;">
+      <div class="auth-error" id="regError"></div>
+      <div class="auth-sub" style="margin-bottom:16px;font-size:11px;">Заявка на регистрацию</div>
+      <label for="regNick">Игровой ник (Nick_Name)</label>
+      <input type="text" id="regNick" placeholder="Nick_Name" autocomplete="off" spellcheck="false">
+      <div class="auth-hint">Латиница, цифры, _ (3-32 символа)</div>
+      <label for="regPin">PIN-код (4-8 цифр)</label>
+      <input type="password" id="regPin" placeholder="••••" autocomplete="off">
+      <label for="regPin2">Повтори PIN-код</label>
+      <input type="password" id="regPin2" placeholder="••••" autocomplete="off">
+      <button class="auth-btn" id="registerBtn">ОТПРАВИТЬ ЗАЯВКУ</button>
+      <button type="button" class="auth-btn" id="showLoginBtn" style="margin-top:10px;background:transparent;border:1px solid var(--border);color:var(--text-2);">← НАЗАД</button>
+    </div>
+
     <div class="auth-footer">T-VIRUS PROTOCOL v2.4 // UNAUTHORIZED ACCESS PROHIBITED</div>
   </div>
 </div>
@@ -254,6 +273,9 @@
         <div class="stat">Полное удаление</div>
       </div>
     </div>
+
+    <h2 class="sub">📥 Регистрация — заявки на аккаунт</h2>
+    <div class="grid" id="registrationList"></div>
 
     <h2 class="sub">📥 Заявки на аттестацию (акколада)</h2>
     <div class="grid" id="applicationsList"></div>
