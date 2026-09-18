@@ -1,37 +1,65 @@
-:root{
-  /* Фоны */
-  --bg:#0f1419;
-  --bg-2:#141a22;
-  --panel:#1a222c;
-  --panel-2:#212b37;
-  --panel-3:#2a3543;
-  --border:#2a3543;
-  --border-light:#374557;
+:root {
+  /* ========== ТЁМНАЯ ТЕМА (по умолчанию) ========== */
+  --bg: #1a1a1a;
+  --bg-2: #232323;
+  --panel: #2a2a2a;
+  --panel-2: #333333;
+  --panel-3: #3d3d3d;
+  --border: #404040;
+  --border-light: #555555;
 
-  /* Текст */
-  --text:#e6edf3;
-  --text-2:#a4b1c0;
-  --muted:#6b7a8d;
+  --text: #e8e8e8;
+  --text-2: #b0b0b0;
+  --muted: #808080;
 
-  /* Акценты */
-  --cyan:#00c8d4;
-  --cyan-dark:#00a4b0;
-  --cyan-glow:rgba(0,200,212,0.35);
-  --blue:#3b82f6;
-  --blue-dark:#2563eb;
-  --green:#4ade80;
-  --gold:#fbbf24;
-  --red:#ef4444;
-  --red-dark:#dc2626;
-  --purple:#a855f7;
+  --accent: #e8e8e8;
+  --accent-dark: #b0b0b0;
+  --accent-glow: rgba(232, 232, 232, 0.3);
 
-  /* Размеры */
-  --radius:8px;
-  --radius-sm:6px;
-  --radius-lg:12px;
+  --blue: #6b7280;
+  --blue-dark: #4b5563;
+  --green: #6b7280;
+  --gold: #9ca3af;
+  --red: #7a7a7a;
+  --red-dark: #5a5a5a;
+  --purple: #6b7280;
 
-  /* Тени */
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
-  --shadow:0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg:0 8px 24px rgba(0,0,0,0.5);
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ========== СВЕТЛАЯ ТЕМА ========== */
+body[data-theme="light"] {
+  --bg: #f5f5f5;
+  --bg-2: #ececec;
+  --panel: #ffffff;
+  --panel-2: #f0f0f0;
+  --panel-3: #e0e0e0;
+  --border: #d0d0d0;
+  --border-light: #b0b0b0;
+
+  --text: #1a1a1a;
+  --text-2: #4a4a4a;
+  --muted: #707070;
+
+  --accent: #1a1a1a;
+  --accent-dark: #4a4a4a;
+  --accent-glow: rgba(26, 26, 26, 0.15);
+
+  --blue: #4b5563;
+  --blue-dark: #374151;
+  --green: #4b5563;
+  --gold: #6b7280;
+  --red: #6b7280;
+  --red-dark: #4b5563;
+  --purple: #6b7280;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
