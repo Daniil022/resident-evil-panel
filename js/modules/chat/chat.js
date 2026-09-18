@@ -1,7 +1,7 @@
 // js/modules/chat/chat.js
 import {
   collection, addDoc, query, orderBy, limit,
-  onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc
+  onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "../../firebase-init.js";
 import { getCurrentUser } from "../../core/state.js";
@@ -25,7 +25,10 @@ const CHATS = {
     replyTextId: "replyToText",
     badgeId: "chatBadge",
     themePickerId: "chatThemePicker",
-    panelId: "chat"
+    panelId: "chat",
+    pinBarId: "chatPinBar",
+    pinAuthorId: "chatPinAuthor",
+    pinTextId: "chatPinText"
   },
   allies: {
     containerId: "chatAlliesMessages",
@@ -39,7 +42,10 @@ const CHATS = {
     replyTextId: "chatAlliesReplyToText",
     badgeId: "chatAlliesBadge",
     themePickerId: "chatAlliesThemePicker",
-    panelId: "chat-allies"
+    panelId: "chat-allies",
+    pinBarId: "chatAlliesPinBar",
+    pinAuthorId: "chatAlliesPinAuthor",
+    pinTextId: "chatAlliesPinText"
   }
 };
 
@@ -47,9 +53,9 @@ const unsubscribers = { residents: null, allies: null };
 const lastMessageId = { residents: null, allies: null };
 const firstLoad = { residents: true, allies: true };
 const autoScroll = { residents: true, allies: true };
+const hiddenMessages = { residents: new Set(), allies: new Set() };
 
 let demoMode = false;
-let demoMessages = { residents: [], allies: [] };
 let notificationsInited = false;
 
 export function initChat() {
@@ -58,7 +64,6 @@ export function initChat() {
 
   const isAlly = user.role === "ally";
 
-  // Союзник видит только чат союзников
   if (isAlly) {
     initOneChat("allies");
   } else {
@@ -85,14 +90,12 @@ function initOneChat(chatId) {
   if (!cfg) return;
 
   const container = document.getElementById(cfg.containerId);
-  if (!container) {
-    console.warn("Container not found for chat:", chatId, cfg.containerId);
-    return;
-  }
+  if (!container) return;
 
   setupInputForChat(chatId);
   setupScrollForChat(chatId);
   initThemeForChat(chatId);
+  loadPinned(chatId);
 
   const msgsRef = collection(db, "chats", chatId, "messages");
   const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
@@ -112,6 +115,8 @@ function initOneChat(chatId) {
         count++;
         newestMsg = msg;
 
+        if (hiddenMessages[chatId].has(msg.id)) return;
+
         const msgDate = msg.createdAt.toDate ? msg.createdAt.toDate() : new Date();
 
         if (!lastDate || !isSameDay(lastDate, msgDate)) {
@@ -127,7 +132,8 @@ function initOneChat(chatId) {
           onReply: (m) => setReplyToChat(chatId, m),
           onReact: (id, emoji) => toggleReaction(id, emoji, chatId),
           onEdit: (m) => openEditModal(m, chatId),
-          onDelete: (m) => deleteMessage(m, chatId)
+          onDelete: (m) => openDeleteModal(m, chatId),
+          onPin: (m) => pinMessage(chatId, m)
         }, user.uid));
 
         lastAuthor = msg.authorId;
@@ -165,6 +171,7 @@ export function destroyChat() {
   try { destroyPresence(); } catch (e) {}
 }
 
+// ==================== РЕДАКТИРОВАНИЕ ====================
 function openEditModal(msg, chatId) {
   if (!msg) return;
   openModal({
@@ -176,16 +183,6 @@ function openEditModal(msg, chatId) {
       const newText = document.getElementById("editText").value.trim();
       const err = document.getElementById("editError");
       if (!newText) { err.textContent = "Введите текст"; err.style.display = "block"; return; }
-
-      if (demoMode) {
-        const arr = demoMessages[chatId];
-        const m = arr.find(x => x.id === msg.id);
-        if (m) { m.text = newText; m.editedAt = Date.now(); }
-        saveDemoMessages();
-        renderDemoForChat(chatId);
-        closeModal();
-        return;
-      }
 
       try {
         await updateDoc(doc(db, "chats", chatId, "messages", msg.id), {
@@ -202,82 +199,155 @@ function openEditModal(msg, chatId) {
   setTimeout(() => document.getElementById("editText")?.focus(), 80);
 }
 
-function enableDemoMode() {
-  demoMode = true;
-  const raw = localStorage.getItem("re_demo_messages_multi");
-  if (raw) {
-    try { demoMessages = JSON.parse(raw); } catch {}
-  } else {
-    demoMessages = { residents: [], allies: [] };
-    saveDemoMessages();
-  }
-  renderDemoForChat("residents");
-  renderDemoForChat("allies");
-}
-
-function saveDemoMessages() {
-  localStorage.setItem("re_demo_messages_multi", JSON.stringify(demoMessages));
-}
-
-function renderDemoForChat(chatId) {
-  const cfg = CHATS[chatId];
-  if (!cfg) return;
-  const container = document.getElementById(cfg.containerId);
-  if (!container) return;
-  container.innerHTML = "";
+// ==================== УДАЛЕНИЕ ====================
+function openDeleteModal(msg, chatId) {
   const user = getCurrentUser();
-  let lastDate = null;
-  const arr = demoMessages[chatId] || [];
+  const isAdmin = ["emperor", "lord"].includes(user.role);
+  const isOwn = msg.authorId === user.uid;
+  const canDeleteForAll = isOwn || isAdmin;
 
-  if (arr.length === 0) {
-    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">Нет сообщений</div>';
+  let html = '<p style="color:var(--text-2);font-size:13px;margin-bottom:14px;">Что сделать с сообщением?</p>' +
+    '<div class="delete-modal-options">';
+
+  html += '<button class="delete-option" onclick="window.__deleteForMe(\'' + chatId + '\',\'' + msg.id + '\')">' +
+    '<span class="delete-icon">👤</span>' +
+    '<div class="delete-body">' +
+      '<div class="delete-title">Удалить у себя</div>' +
+      '<div class="delete-desc">Сообщение исчезнет только для тебя</div>' +
+    '</div>' +
+  '</button>';
+
+  if (canDeleteForAll) {
+    html += '<button class="delete-option danger" onclick="window.__deleteForAll(\'' + chatId + '\',\'' + msg.id + '\')">' +
+      '<span class="delete-icon">🗑</span>' +
+      '<div class="delete-body">' +
+        '<div class="delete-title">Удалить для всех</div>' +
+        '<div class="delete-desc">Сообщение исчезнет у всех участников</div>' +
+      '</div>' +
+    '</button>';
+  }
+
+  html += '</div>';
+
+  openModal({
+    title: "УДАЛИТЬ СООБЩЕНИЕ",
+    html: html,
+    confirmText: "",
+    hideConfirm: true
+  });
+}
+
+window.__deleteForMe = function(chatId, msgId) {
+  hiddenMessages[chatId].add(msgId);
+  const el = document.querySelector('[data-id="' + msgId + '"]');
+  if (el) el.classList.add("msg-hidden");
+  toast("Скрыто для тебя", "ok");
+  closeModal();
+};
+
+window.__deleteForAll = async function(chatId, msgId) {
+  try {
+    await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
+    toast("Удалено для всех", "ok");
+    closeModal();
+  } catch (e) {
+    toast("Ошибка: " + e.message, "warn");
+  }
+};
+
+// ==================== PIN ====================
+async function pinMessage(chatId, msg) {
+  const user = getCurrentUser();
+  const isAdmin = ["emperor", "lord"].includes(user.role);
+  if (!isAdmin) {
+    toast("Только лидер и зам могут закреплять", "warn");
     return;
   }
 
-  arr.forEach(msg => {
-    const msgDate = new Date(msg.createdAt);
-    if (!lastDate || !isSameDay(lastDate, msgDate)) {
-      container.appendChild(renderDateSeparator(msgDate));
-      lastDate = msgDate;
-    }
-    container.appendChild(renderMessage(msg, false, {
-      onReply: (m) => setReplyToChat(chatId, m),
-      onReact: (id, emoji) => demoReact(chatId, id, emoji),
-      onEdit: (m) => openEditModal(m, chatId),
-      onDelete: (m) => demoDelete(chatId, m.id)
-    }, user.uid));
-  });
-
-  scrollToBottomForChat(chatId);
-  updateBadgeForChat(chatId, arr.length);
+  try {
+    const pinRef = doc(db, "chats", chatId, "meta", "pin");
+    await setDoc(pinRef, {
+      msgId: msg.id,
+      author: msg.authorLogin,
+      text: msg.text.substring(0, 100),
+      fullText: msg.text,
+      pinnedBy: user.login,
+      pinnedAt: Date.now()
+    });
+    toast("Сообщение закреплено", "ok");
+    updatePinBar(chatId, msg);
+  } catch (e) {
+    toast("Ошибка: " + e.message, "warn");
+  }
 }
 
-function demoReact(chatId, id, emoji) {
-  const arr = demoMessages[chatId] || [];
-  const msg = arr.find(m => m.id === id);
-  if (!msg) return;
-  msg.reactions = msg.reactions || {};
-  msg.reactions[emoji] = msg.reactions[emoji] || [];
+async function unpinMessage(chatId) {
   const user = getCurrentUser();
-  const idx = msg.reactions[emoji].indexOf(user.uid);
-  if (idx >= 0) msg.reactions[emoji].splice(idx, 1);
-  else msg.reactions[emoji].push(user.uid);
-  saveDemoMessages();
-  renderDemoForChat(chatId);
+  const isAdmin = ["emperor", "lord"].includes(user.role);
+  if (!isAdmin) {
+    toast("Только лидер и зам могут откреплять", "warn");
+    return;
+  }
+
+  try {
+    const pinRef = doc(db, "chats", chatId, "meta", "pin");
+    await deleteDoc(pinRef);
+    toast("Сообщение откреплено", "ok");
+    const bar = document.getElementById(CHATS[chatId].pinBarId);
+    if (bar) bar.classList.remove("active");
+  } catch (e) {
+    toast("Ошибка: " + e.message, "warn");
+  }
 }
 
-function demoDelete(chatId, id) {
-  if (!confirm("Удалить сообщение?")) return;
-  demoMessages[chatId] = demoMessages[chatId].filter(m => m.id !== id);
-  saveDemoMessages();
-  renderDemoForChat(chatId);
+window.__chatUnpin = function(chatId) {
+  unpinMessage(chatId);
+};
+
+async function loadPinned(chatId) {
+  try {
+    const pinRef = doc(db, "chats", chatId, "meta", "pin");
+    const snap = await getDoc(pinRef);
+    if (snap.exists()) {
+      updatePinBar(chatId, snap.data());
+    } else {
+      const bar = document.getElementById(CHATS[chatId].pinBarId);
+      if (bar) bar.classList.remove("active");
+    }
+  } catch (e) {
+    console.warn("Pin load failed:", e);
+  }
 }
 
+function updatePinBar(chatId, pinData) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+
+  const bar = document.getElementById(cfg.pinBarId);
+  const author = document.getElementById(cfg.pinAuthorId);
+  const text = document.getElementById(cfg.pinTextId);
+
+  if (!bar || !author || !text) return;
+
+  author.textContent = pinData.author + (pinData.pinnedBy ? ' (закрепил ' + pinData.pinnedBy + ')' : '');
+  text.textContent = pinData.fullText || pinData.text;
+  bar.classList.add("active");
+
+  bar.onclick = (e) => {
+    if (e.target.classList.contains("pin-close")) return;
+    const msgEl = document.querySelector('[data-id="' + pinData.msgId + '"]');
+    if (msgEl) {
+      msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      msgEl.classList.add("msg-highlight");
+      setTimeout(() => msgEl.classList.remove("msg-highlight"), 1500);
+    }
+  };
+}
+
+// ==================== ОТПРАВКА ====================
 async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
-
-  console.log("Отправка:", { chatId, role: user.role, text });
 
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
@@ -302,30 +372,10 @@ async function sendMessageTo(chatId, text) {
 
   try {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
-    console.log("Сообщение отправлено в", chatId);
     clearReplyForChat(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
-    console.error("Ошибка отправки:", e);
     toast("Ошибка: " + e.message, "warn");
-  }
-}
-
-async function deleteMessage(msg, chatId) {
-  const user = getCurrentUser();
-  if (!user) return;
-  const isAdmin = ["emperor", "lord"].includes(user.role);
-  if (msg.authorId !== user.uid && !isAdmin) {
-    toast("Нет прав на удаление", "warn");
-    return;
-  }
-  if (!confirm("Удалить сообщение?")) return;
-
-  try {
-    await deleteDoc(doc(db, "chats", chatId, "messages", msg.id));
-    addDashEvent("🗑", user.login + " удалил сообщение");
-  } catch (e) {
-    toast("Не удалось удалить", "warn");
   }
 }
 
@@ -338,10 +388,7 @@ function setupInputForChat(chatId) {
   const emojiBtn = document.getElementById(cfg.emojiBtnId);
   const emojiPicker = document.getElementById(cfg.emojiPickerId);
 
-  if (!input || !sendBtn) {
-    console.warn("Input not found for chat:", chatId);
-    return;
-  }
+  if (!input || !sendBtn) return;
 
   const send = () => {
     const text = input.value.trim();
@@ -360,7 +407,6 @@ function setupInputForChat(chatId) {
 
   let typingTimeout = null;
   input.addEventListener("input", () => {
-    if (demoMode) return;
     try {
       setTyping(true);
       clearTimeout(typingTimeout);
