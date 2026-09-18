@@ -30,7 +30,7 @@ export function switchTab(tab, updateHash = true) {
   navButtons.forEach(b => b.classList.remove("active"));
   panels.forEach(p => p.classList.remove("active"));
 
-  const btn = document.querySelector(`#mainNav button[data-tab="${tab}"]`);
+  const btn = document.querySelector('#mainNav button[data-tab="' + tab + '"]');
   const panel = document.getElementById(tab);
 
   if (btn) btn.classList.add("active");
@@ -40,6 +40,9 @@ export function switchTab(tab, updateHash = true) {
     history.replaceState(null, "", "#" + tab);
   }
 
-  // Событие для модулей (можно подписаться)
+  // Событие для модулей
   window.dispatchEvent(new CustomEvent("tabChange", { detail: { tab } }));
 }
+
+// Экспорт в window для нижней панели мобильной версии
+window.switchTab = switchTab;
