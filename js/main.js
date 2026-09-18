@@ -1,5 +1,6 @@
 // js/main.js
 import { tryRestoreSession, login } from "./core/auth.js";
+import { submitRegistrationRequest } from "./modules/registration.js";
 import { initRouter } from "./core/router.js";
 import { toast } from "./core/utils.js";
 import { initDashboard } from "./core/dashboard.js";
@@ -37,11 +38,32 @@ function setupAuthScreen() {
   const error = document.getElementById("authError");
   const hint = document.getElementById("authDefaultHint");
 
-  if (hint) hint.innerHTML = `🔑 Демо-вход: <b>Emperor</b> / PIN <b>1111</b>`;
+  const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  const showRegisterBtn = document.getElementById("showRegisterBtn");
+  const showLoginBtn = document.getElementById("showLoginBtn");
+  const registerBtn = document.getElementById("registerBtn");
+  const regError = document.getElementById("regError");
+
+  if (hint) hint.innerHTML = '🔑 Демо-вход: <b>Emperor</b> / PIN <b>1111</b>';
 
   btn.addEventListener("click", doLogin);
   pinInput.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
   loginInput.addEventListener("keydown", e => { if (e.key === "Enter") pinInput.focus(); });
+
+  showRegisterBtn.addEventListener("click", () => {
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+    document.getElementById("regNick")?.focus();
+  });
+
+  showLoginBtn.addEventListener("click", () => {
+    registerForm.style.display = "none";
+    loginForm.style.display = "block";
+    regError.classList.remove("show");
+  });
+
+  registerBtn.addEventListener("click", doRegister);
 
   async function doLogin() {
     error.classList.remove("show");
@@ -67,6 +89,38 @@ function setupAuthScreen() {
       error.textContent = "Ошибка: " + e.message;
       error.classList.add("show");
       console.error(e);
+    }
+  }
+
+  async function doRegister() {
+    regError.classList.remove("show");
+    const nick = document.getElementById("regNick").value.trim();
+    const pin = document.getElementById("regPin").value.trim();
+    const pin2 = document.getElementById("regPin2").value.trim();
+
+    if (pin !== pin2) {
+      regError.textContent = "PIN-коды не совпадают";
+      regError.classList.add("show");
+      return;
+    }
+
+    registerBtn.disabled = true;
+    registerBtn.textContent = "ОТПРАВКА...";
+
+    try {
+      await submitRegistrationRequest(nick, pin);
+      toast("Заявка отправлена! Ожидайте одобрения лидера.", "ok");
+      registerForm.style.display = "none";
+      loginForm.style.display = "block";
+      document.getElementById("regNick").value = "";
+      document.getElementById("regPin").value = "";
+      document.getElementById("regPin2").value = "";
+    } catch (e) {
+      regError.textContent = e.message;
+      regError.classList.add("show");
+    } finally {
+      registerBtn.disabled = false;
+      registerBtn.textContent = "ОТПРАВИТЬ ЗАЯВКУ";
     }
   }
 
@@ -154,7 +208,7 @@ function enterApp(user) {
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
 
-  toast(`Добро пожаловать, ${user.login}`, "ok");
+  toast('Добро пожаловать, ' + user.login, "ok");
 }
 
 window.addEventListener("beforeunload", () => {
