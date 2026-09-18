@@ -1,22 +1,18 @@
 // js/modules/chat/chat.js
 import {
   collection, addDoc, query, orderBy, limit,
-  onSnapshot, serverTimestamp, doc, deleteDoc
+  onSnapshot, serverTimestamp, doc, getDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "../../firebase-init.js";
 import { getCurrentUser } from "../../core/state.js";
 import { renderMessage, renderDateSeparator, isSameDay } from "./chat-render.js";
 import { setupInput, setReplyTo, clearReply } from "./chat-input.js";
 import { setupPresence, setTyping, destroyPresence } from "./chat-presence.js";
-import { scrollToBottom, setupScroll } from "./chat-scroll.js";
+import { scrollToBottom, setupScroll, scrollToMessage } from "./chat-scroll.js";
 import { toggleReaction } from "./chat-reactions.js";
-import { toast } from "../../core/utils.js";
+import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
-import {
-  notifyNewMessage,
-  resetUnread,
-  initChatNotifications
-} from "./chat-notifications.js";
+import { notifyNewMessage, resetUnread, initChatNotifications } from "./chat-notifications.js";
 
 const CHAT_ID = "main";
 let unsubscribeMessages = null;
@@ -33,6 +29,7 @@ export function initChat() {
   setupInput(sendMessage, onTyping);
   setupPresence();
   setupScroll();
+  initChatTheme();
 
   if (!notificationsInited) {
     notificationsInited = true;
@@ -71,6 +68,7 @@ export function initChat() {
         container.appendChild(renderMessage(msg, grouped, {
           onReply: (m) => setReplyTo(m),
           onReact: (id, emoji) => toggleReaction(id, emoji),
+          onEdit: (m) => openEditModal(m),
           onDelete: (m) => deleteMessage(m)
         }, user.uid));
 
@@ -87,11 +85,9 @@ export function initChat() {
 
       scrollToBottom();
       updateBadge(count);
-      window.dispatchEvent(new CustomEvent("chatMessageCount", {
-        detail: { count }
-      }));
+      window.dispatchEvent(new CustomEvent("chatMessageCount", { detail: { count } }));
     }, (err) => {
-      console.warn("Firebase offline, включаем демо-режим чата");
+      console.warn("Firebase offline, демо-режим");
       enableDemoMode();
     });
   } catch (e) {
@@ -99,9 +95,7 @@ export function initChat() {
   }
 
   window.addEventListener("tabChange", (e) => {
-    if (e.detail.tab === "chat") {
-      resetUnread();
-    }
+    if (e.detail.tab === "chat") resetUnread();
   });
 }
 
@@ -110,18 +104,50 @@ export function destroyChat() {
   destroyPresence();
 }
 
+function openEditModal(msg) {
+  if (!msg) return;
+  openModal({
+    title: "РЕДАКТИРОВАТЬ СООБЩЕНИЕ",
+    html: '<div class="form-field"><label>Новый текст</label><textarea id="editText" style="min-height:100px;">' + escapeHtml(msg.text) + '</textarea></div>' +
+          '<div id="editError" style="color:var(--red);font-size:12px;display:none;"></div>',
+    confirmText: "СОХРАНИТЬ",
+    onConfirm: async () => {
+      const newText = document.getElementById("editText").value.trim();
+      const err = document.getElementById("editError");
+      if (!newText) { err.textContent = "Введите текст"; err.style.display = "block"; return; }
+
+      if (demoMode) {
+        const m = demoMessages.find(x => x.id === msg.id);
+        if (m) { m.text = newText; m.editedAt = Date.now(); }
+        localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
+        renderDemo();
+        closeModal();
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "chats", CHAT_ID, "messages", msg.id), {
+          text: newText,
+          editedAt: Date.now()
+        });
+        toast("Сообщение изменено", "ok");
+        closeModal();
+      } catch (e) {
+        toast("Ошибка: " + e.message, "warn");
+      }
+    }
+  });
+  setTimeout(() => document.getElementById("editText")?.focus(), 80);
+}
+
 function enableDemoMode() {
   demoMode = true;
-  const container = document.getElementById("chatMessages");
-  if (!container) return;
-
   const raw = localStorage.getItem("re_demo_messages");
   demoMessages = raw ? JSON.parse(raw) : [
-    { id: "d1", text: "Добро пожаловать в беседу симьи RESIDENT EVIL.",
+    { id: "d1", text: "Добро пожаловать в беседу семьи RESIDENT EVIL.",
       authorLogin: "Emperor", authorRole: "emperor", authorId: "demo-emperor",
       createdAt: Date.now() - 3600000, reactions: {} },
   ];
-
   renderDemo();
 }
 
@@ -129,7 +155,6 @@ function renderDemo() {
   const container = document.getElementById("chatMessages");
   if (!container) return;
   container.innerHTML = "";
-
   const user = getCurrentUser();
   let lastDate = null;
 
@@ -142,14 +167,13 @@ function renderDemo() {
     container.appendChild(renderMessage(msg, false, {
       onReply: (m) => setReplyTo(m),
       onReact: (id, emoji) => demoReact(id, emoji),
+      onEdit: (m) => openEditModal(m),
       onDelete: (m) => demoDelete(m.id)
     }, user.uid));
   });
 
   scrollToBottom(true);
-  window.dispatchEvent(new CustomEvent("chatMessageCount", {
-    detail: { count: demoMessages.length }
-  }));
+  window.dispatchEvent(new CustomEvent("chatMessageCount", { detail: { count: demoMessages.length } }));
 }
 
 function demoReact(id, emoji) {
@@ -175,7 +199,6 @@ function demoDelete(id) {
 async function sendMessage(text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
-
   const replyTo = window.__currentReply || null;
 
   const newMsg = {
@@ -215,19 +238,14 @@ async function sendMessage(text) {
 async function deleteMessage(msg) {
   const user = getCurrentUser();
   if (!user) return;
-
   const isAdmin = ["emperor", "lord"].includes(user.role);
   if (msg.authorId !== user.uid && !isAdmin) {
     toast("Нет прав на удаление", "warn");
     return;
   }
-
   if (!confirm("Удалить сообщение?")) return;
 
-  if (demoMode) {
-    demoDelete(msg.id);
-    return;
-  }
+  if (demoMode) { demoDelete(msg.id); return; }
 
   try {
     await deleteDoc(doc(db, "chats", CHAT_ID, "messages", msg.id));
@@ -252,10 +270,32 @@ function updateBadge(count) {
   if (!badge) return;
   const chatPanel = document.getElementById("chat");
   const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-  if (isChatOpen) {
-    badge.style.display = "none";
-    return;
-  }
+  if (isChatOpen) { badge.style.display = "none"; return; }
   badge.textContent = count;
   badge.style.display = count > 0 ? "inline-block" : "none";
-  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function initChatTheme() {
+  const saved = localStorage.getItem("chat_theme") || "default";
+  document.body.setAttribute("data-chat-theme", saved);
+
+  const picker = document.getElementById("chatThemePicker");
+  if (!picker) return;
+
+  picker.querySelectorAll(".chat-theme-btn").forEach(btn => {
+    if (btn.dataset.theme === saved) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      const theme = btn.dataset.theme;
+      document.body.setAttribute("data-chat-theme", theme);
+      localStorage.setItem("chat_theme", theme);
+      picker.querySelectorAll(".chat-theme-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      toast("Тема чата изменена", "ok");
+    });
+  });
+}
