@@ -10,6 +10,7 @@ import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
 import { initAdminApplications } from "./admin-applications.js";
 import { initAdminNickApplications } from "./admin-nick-applications.js";
+import { initAdminRegistration } from "./admin-registration.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
 let initialized = false;
@@ -24,6 +25,7 @@ export async function initAdmin() {
   await initAdminDivisions();
   await initAdminApplications();
   await initAdminNickApplications();
+  await initAdminRegistration();
   await renderUsersTable(true);
 }
 
@@ -48,32 +50,13 @@ async function openCreateUser() {
 
   openModal({
     title: "СОЗДАТЬ АККАУНТ",
-    html: `
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Логин</label>
-          <input type="text" id="newLogin" placeholder="Nick_Name" autocomplete="off">
-        </div>
-        <div class="form-field">
-          <label>PIN (4-8 цифр)</label>
-          <input type="text" id="newPin" placeholder="1234" autocomplete="off">
-        </div>
-        <div class="form-field">
-          <label>Роль</label>
-          <select id="newRole" class="role-select">
-            ${roles.map(r => `<option value="${r.id}">${r.name}</option>`).join("")}
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Подразделение</label>
-          <select id="newDivision" class="role-select">
-            <option value="">— без подразделения —</option>
-            ${divisions.map(d => `<option value="${d.id}">${d.name}</option>`).join("")}
-          </select>
-        </div>
-      </div>
-      <div id="createUserError" style="color:var(--red);font-size:12px;display:none;"></div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Логин</label><input type="text" id="newLogin" placeholder="Nick_Name" autocomplete="off"></div>' +
+      '<div class="form-field"><label>PIN (4-8 цифр)</label><input type="text" id="newPin" placeholder="1234" autocomplete="off"></div>' +
+      '<div class="form-field"><label>Роль</label><select id="newRole" class="role-select">' + roles.map(r => '<option value="' + r.id + '">' + r.name + '</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Подразделение</label><select id="newDivision" class="role-select"><option value="">— без подразделения —</option>' + divisions.map(d => '<option value="' + d.id + '">' + d.name + '</option>').join("") + '</select></div>' +
+      '</div>' +
+      '<div id="createUserError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: "СОЗДАТЬ",
     onConfirm: async () => {
       const login = document.getElementById("newLogin").value.trim();
@@ -83,8 +66,8 @@ async function openCreateUser() {
       const err = document.getElementById("createUserError");
       try {
         await createUser({ login, pin, role, division });
-        toast(`Аккаунт ${login} создан`, "ok");
-        addLog(`Создан ${login}`, "ok");
+        toast("Аккаунт " + login + " создан", "ok");
+        addLog("Создан " + login, "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) {
@@ -101,21 +84,10 @@ async function openChangePin() {
   if (!users.length) return toast("Нет участников", "warn");
   openModal({
     title: "СМЕНИТЬ PIN-КОД",
-    html: `
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Участник</label>
-          <select id="pinUser" class="role-select">
-            ${users.map(u => `<option value="${u.uid}">${u.login}</option>`).join("")}
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Новый PIN</label>
-          <input type="text" id="newPinValue" placeholder="1234" autocomplete="off">
-        </div>
-      </div>
-      <div id="changePinError" style="color:var(--red);font-size:12px;display:none;"></div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Участник</label><select id="pinUser" class="role-select">' + users.map(u => '<option value="' + u.uid + '">' + u.login + '</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Новый PIN</label><input type="text" id="newPinValue" placeholder="1234" autocomplete="off"></div>' +
+      '</div><div id="changePinError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: "СМЕНИТЬ",
     onConfirm: async () => {
       const uid = document.getElementById("pinUser").value;
@@ -124,7 +96,6 @@ async function openChangePin() {
       try {
         await changePin(uid, pin);
         toast("PIN обновлён", "ok");
-        addLog("PIN изменён", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) {
@@ -141,23 +112,10 @@ async function openChangeRole() {
   if (!users.length) return toast("Нет участников", "warn");
   openModal({
     title: "СМЕНИТЬ РОЛЬ",
-    html: `
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Участник</label>
-          <select id="roleUser" class="role-select">
-            ${users.map(u => `<option value="${u.uid}">${u.login}</option>`).join("")}
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Новая роль</label>
-          <select id="newRoleValue" class="role-select">
-            ${roles.map(r => `<option value="${r.id}">${r.name}</option>`).join("")}
-          </select>
-        </div>
-      </div>
-      <p style="color:var(--muted);font-size:12px;margin-top:8px;">Все роли настраиваются в «Редактор ролей» выше.</p>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Участник</label><select id="roleUser" class="role-select">' + users.map(u => '<option value="' + u.uid + '">' + u.login + '</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Новая роль</label><select id="newRoleValue" class="role-select">' + roles.map(r => '<option value="' + r.id + '">' + r.name + '</option>').join("") + '</select></div>' +
+      '</div>',
     confirmText: "СМЕНИТЬ",
     onConfirm: async () => {
       const uid = document.getElementById("roleUser").value;
@@ -165,7 +123,6 @@ async function openChangeRole() {
       try {
         await changeRole(uid, role);
         toast("Роль изменена", "ok");
-        addLog("Роль изменена", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -179,23 +136,10 @@ async function openChangeDivision() {
   if (!users.length) return toast("Нет участников", "warn");
   openModal({
     title: "СМЕНИТЬ ПОДРАЗДЕЛЕНИЕ",
-    html: `
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Участник</label>
-          <select id="divUser" class="role-select">
-            ${users.map(u => `<option value="${u.uid}">${u.login}</option>`).join("")}
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Подразделение</label>
-          <select id="newDivValue" class="role-select">
-            <option value="">— без подразделения —</option>
-            ${divisions.map(d => `<option value="${d.id}">${d.name}</option>`).join("")}
-          </select>
-        </div>
-      </div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Участник</label><select id="divUser" class="role-select">' + users.map(u => '<option value="' + u.uid + '">' + u.login + '</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Подразделение</label><select id="newDivValue" class="role-select"><option value="">— без подразделения —</option>' + divisions.map(d => '<option value="' + d.id + '">' + d.name + '</option>').join("") + '</select></div>' +
+      '</div>',
     confirmText: "НАЗНАЧИТЬ",
     onConfirm: async () => {
       const uid = document.getElementById("divUser").value;
@@ -203,7 +147,6 @@ async function openChangeDivision() {
       try {
         await changeDivision(uid, division);
         toast("Подразделение обновлено", "ok");
-        addLog("Подразделение изменено", "ok");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -216,20 +159,10 @@ async function openWarn() {
   if (!users.length) return toast("Нет участников", "warn");
   openModal({
     title: "ВЫДАТЬ WARN",
-    html: `
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Участник</label>
-          <select id="warnUserSel" class="role-select">
-            ${users.map(u => `<option value="${u.uid}">${u.login} (${u.warn || 0}/3)</option>`).join("")}
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Причина</label>
-          <input type="text" id="warnReason" placeholder="Нарушение правил" autocomplete="off">
-        </div>
-      </div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Участник</label><select id="warnUserSel" class="role-select">' + users.map(u => '<option value="' + u.uid + '">' + u.login + ' (' + (u.warn || 0) + '/3)</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Причина</label><input type="text" id="warnReason" placeholder="Нарушение правил" autocomplete="off"></div>' +
+      '</div>',
     confirmText: "ВЫДАТЬ",
     danger: true,
     onConfirm: async () => {
@@ -237,13 +170,7 @@ async function openWarn() {
       const reason = document.getElementById("warnReason").value.trim();
       try {
         const res = await warnUser(uid, reason);
-        if (res.banned) {
-          toast("ЗАБАНЕН (3/3)", "warn");
-          addLog("Забанен (3/3)", "crit");
-        } else {
-          toast(`Warn (${res.warn}/3)`, "warn");
-          addLog(`Warn (${res.warn}/3)`, "warn");
-        }
+        toast(res.banned ? "ЗАБАНЕН (3/3)" : "Warn (" + res.warn + "/3)", "warn");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -256,15 +183,8 @@ async function openDeleteUser() {
   if (!users.length) return toast("Нет участников", "warn");
   openModal({
     title: "УДАЛИТЬ АККАУНТ",
-    html: `
-      <div class="form-field">
-        <label>Участник</label>
-        <select id="deleteUserSel" class="role-select">
-          ${users.map(u => `<option value="${u.uid}">${u.login}</option>`).join("")}
-        </select>
-      </div>
-      <p style="color:var(--red);font-size:12px;margin-top:12px;">⚠ Необратимо.</p>
-    `,
+    html: '<div class="form-field"><label>Участник</label><select id="deleteUserSel" class="role-select">' + users.map(u => '<option value="' + u.uid + '">' + u.login + '</option>').join("") + '</select></div>' +
+      '<p style="color:var(--red);font-size:12px;margin-top:12px;">⚠ Необратимо.</p>',
     confirmText: "УДАЛИТЬ",
     danger: true,
     onConfirm: async () => {
@@ -272,7 +192,6 @@ async function openDeleteUser() {
       try {
         await deleteUser(uid);
         toast("Удалён", "ok");
-        addLog("Аккаунт удалён", "crit");
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -292,7 +211,7 @@ export function addLog(message, type = "info") {
   const line = document.createElement("div");
   line.className = "log-line";
   const cls = type === "ok" ? "ok" : type === "warn" ? "warn" : type === "crit" ? "crit" : "";
-  line.innerHTML = `<span class="ts">${ts}</span><span class="${cls}">${message}</span>`;
+  line.innerHTML = '<span class="ts">' + ts + '</span><span class="' + cls + '">' + message + '</span>';
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 }
