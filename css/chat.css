@@ -19,14 +19,16 @@
   --msg-other-color: #e6edf3;
 }
 
-body[data-chat-theme="vk-classic"] {
+body[data-chat-theme-residents="vk-classic"],
+body[data-chat-theme-allies="vk-classic"] {
   --msg-own-bg: linear-gradient(135deg, #3b82f6, #2563eb);
   --msg-own-color: #fff;
   --msg-other-bg: #ffffff;
   --msg-other-color: #000;
 }
 
-body[data-chat-theme="dark"] {
+body[data-chat-theme-residents="dark"],
+body[data-chat-theme-allies="dark"] {
   --msg-own-bg: linear-gradient(135deg, #2a3543, #1a222c);
   --msg-own-color: #fff;
   --msg-other-bg: #0f1419;
@@ -112,6 +114,12 @@ body[data-chat-theme="dark"] {
 .msg-avatar.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 0 1px #fbbf24; }
 .msg-avatar.red { background: linear-gradient(135deg, #ef4444, #991b1b); box-shadow: 0 0 0 1px #ef4444; }
 .msg-avatar.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 0 0 1px #3b82f6; }
+.msg-avatar.rainbow {
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 300%;
+  animation: rainbowShift 4s linear infinite;
+  box-shadow: 0 0 0 1px #ff7f00, 0 0 15px rgba(255, 127, 0, 0.4);
+}
 
 .msg-body {
   padding: 10px 14px;
@@ -146,6 +154,14 @@ body[data-chat-theme="dark"] {
 .msg-author.gold { color: var(--gold); }
 .msg-author.red { color: var(--red); }
 .msg-author.blue { color: var(--blue); }
+.msg-author.rainbow {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 4s linear infinite;
+}
 
 .msg-role-badge {
   font-size: 9.5px;
@@ -161,6 +177,14 @@ body[data-chat-theme="dark"] {
 .msg-role-badge.gold { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.3); color: var(--gold); }
 .msg-role-badge.red { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
 .msg-role-badge.blue { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: var(--blue); }
+.msg-role-badge.rainbow {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 100%;
+  color: #fff;
+  border: none;
+  animation: rainbowShift 4s linear infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
 
 .msg-text {
   font-size: 13.5px;
@@ -182,8 +206,10 @@ body[data-chat-theme="dark"] {
   font-variant-numeric: tabular-nums;
 }
 .msg-own .msg-time { color: rgba(0, 20, 23, 0.6); }
-body[data-chat-theme="vk-classic"] .msg-own .msg-time { color: rgba(255, 255, 255, 0.7); }
-body[data-chat-theme="dark"] .msg-own .msg-time { color: rgba(255, 255, 255, 0.5); }
+body[data-chat-theme-residents="vk-classic"] .msg-own .msg-time,
+body[data-chat-theme-allies="vk-classic"] .msg-own .msg-time { color: rgba(255, 255, 255, 0.7); }
+body[data-chat-theme-residents="dark"] .msg-own .msg-time,
+body[data-chat-theme-allies="dark"] .msg-own .msg-time { color: rgba(255, 255, 255, 0.5); }
 
 .msg-edited {
   font-style: italic;
@@ -215,7 +241,8 @@ body[data-chat-theme="dark"] .msg-own .msg-time { color: rgba(255, 255, 255, 0.5
   text-decoration-color: #fff;
 }
 .msg-own .chat-link { color: #001417; text-decoration-color: rgba(0, 20, 23, 0.4); }
-body[data-chat-theme="vk-classic"] .msg-own .chat-link { color: #fff; text-decoration-color: rgba(255, 255, 255, 0.5); }
+body[data-chat-theme-residents="vk-classic"] .msg-own .chat-link,
+body[data-chat-theme-allies="vk-classic"] .msg-own .chat-link { color: #fff; text-decoration-color: rgba(255, 255, 255, 0.5); }
 
 .chat-mention {
   background: rgba(0, 200, 212, 0.2);
@@ -371,6 +398,60 @@ nav button .badge {
 @keyframes badgePulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 48, 64, 0.6); }
   50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 48, 64, 0.9); }
+}
+
+.chat-new-btn {
+  position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+  background: var(--cyan); color: #001417; border: none;
+  padding: 9px 20px; border-radius: 20px; font-family: inherit;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 4px 20px var(--cyan-glow); z-index: 5; display: none;
+}
+.chat-new-btn.show { display: block; animation: fadeIn 0.2s; }
+.chat-new-btn:hover { background: #00e0ee; }
+
+/* ============ РАДУЖНЫЙ ЗАГОЛОВОК И ПИН ============ */
+.h2-rainbow {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 4s linear infinite;
+  font-weight: 700;
+}
+
+.chat-pinned-rainbow {
+  background: linear-gradient(90deg, rgba(255, 0, 0, 0.08), rgba(255, 127, 0, 0.08), rgba(255, 255, 0, 0.08), rgba(0, 255, 0, 0.08), rgba(0, 200, 212, 0.08), rgba(0, 0, 255, 0.08), rgba(75, 0, 130, 0.08), rgba(148, 0, 211, 0.08));
+  border-bottom-color: rgba(255, 127, 0, 0.4);
+}
+
+.badge-rainbow {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3) !important;
+  background-size: 300% 100% !important;
+  animation: rainbowShift 4s linear infinite !important;
+  box-shadow: 0 0 10px rgba(255, 127, 0, 0.6) !important;
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+nav button[data-tab="chat-allies"] {
+  color: #fff;
+  font-weight: 600;
+}
+
+nav button[data-tab="chat-allies"]::after {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 100%;
+  animation: rainbowShift 4s linear infinite;
+}
+
+nav button[data-tab="chat-allies"].active {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(255, 0, 0, 0.1), rgba(255, 127, 0, 0.1), rgba(255, 255, 0, 0.1), rgba(0, 255, 0, 0.1), rgba(0, 200, 212, 0.1), rgba(0, 0, 255, 0.1), rgba(75, 0, 130, 0.1), rgba(148, 0, 211, 0.1));
 }
 
 @media (max-width: 640px) {
