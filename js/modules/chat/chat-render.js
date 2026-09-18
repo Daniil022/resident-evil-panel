@@ -10,7 +10,6 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   const initial = (msg.authorLogin || "?").charAt(0).toUpperCase();
   const roleClass = roleToClass(msg.authorRole);
 
-  // Аватар
   if (!grouped && !isOwn) {
     const av = document.createElement("div");
     av.className = "msg-avatar " + roleClass;
@@ -23,11 +22,9 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     wrap.appendChild(spacer);
   }
 
-  // Тело
   const body = document.createElement("div");
   body.className = "msg-body";
 
-  // Заголовок (только для чужих и при группировке)
   if (!grouped && !isOwn) {
     const head = document.createElement("div");
     head.className = "msg-head";
@@ -37,30 +34,39 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     body.appendChild(head);
   }
 
-  // Ответ-цитата
   if (msg.replyTo) {
     const reply = document.createElement("div");
     reply.className = "msg-reply";
     reply.dataset.replyId = msg.replyTo.id;
+    reply.title = "Перейти к сообщению";
     reply.innerHTML =
       '<div class="reply-author">' + escapeHtml(msg.replyTo.author) + '</div>' +
       '<div class="reply-text">' + escapeHtml(msg.replyTo.text) + '</div>';
+    reply.addEventListener("click", () => {
+      const targetId = msg.replyTo.id;
+      const el = document.querySelector('[data-id="' + targetId + '"]');
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("msg-highlight");
+        setTimeout(() => el.classList.remove("msg-highlight"), 1500);
+      }
+    });
     body.appendChild(reply);
   }
 
-  // Текст
   const text = document.createElement("div");
   text.className = "msg-text";
-  text.textContent = msg.text;
+  const rendered = renderText(msg.text);
+  text.innerHTML = rendered.html;
+  if (rendered.isBigEmoji) text.classList.add("msg-text-big-emoji");
   body.appendChild(text);
 
-  // Время
   const time = document.createElement("div");
   time.className = "msg-time";
-  time.textContent = formatTime(msg.createdAt);
+  const editedMark = msg.editedAt ? ' <span class="msg-edited" title="Изменено">(ред.)</span>' : '';
+  time.innerHTML = formatTime(msg.createdAt) + editedMark;
   body.appendChild(time);
 
-  // Реакции
   if (msg.reactions && Object.keys(msg.reactions).length) {
     const reactWrap = document.createElement("div");
     reactWrap.className = "msg-reactions";
@@ -75,37 +81,63 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     body.appendChild(reactWrap);
   }
 
-  // Кнопки при hover
   const actions = document.createElement("div");
   actions.className = "msg-actions";
-  actions.innerHTML = '<button title="Ответить">↩</button><button title="Реакция">☺</button><button title="Удалить">✕</button>';
+  actions.innerHTML =
+    '<button title="Ответить">↩</button>' +
+    '<button title="Реакция">☺</button>' +
+    (isOwn ? '<button title="Редактировать">✏️</button>' : '') +
+    '<button title="Удалить">✕</button>';
+
   actions.children[0].onclick = () => handlers.onReply(msg);
   actions.children[1].onclick = () => quickReact(msg.id, handlers);
-  actions.children[2].onclick = () => handlers.onDelete(msg);
+  if (isOwn) {
+    actions.children[2].onclick = () => handlers.onEdit && handlers.onEdit(msg);
+    actions.children[3].onclick = () => handlers.onDelete(msg);
+  } else {
+    actions.children[2].onclick = () => handlers.onDelete(msg);
+  }
   body.appendChild(actions);
 
-  // Аватар справа для своих
+  wrap.appendChild(body);
+
   if (!grouped && isOwn) {
-    wrap.appendChild(body);
     const av = document.createElement("div");
     av.className = "msg-avatar " + roleClass;
     av.textContent = initial;
     wrap.appendChild(av);
-  } else {
-    wrap.appendChild(body);
   }
 
   return wrap;
 }
 
-function quickReact(msgId, handlers) {
-  const emojis = ["❤️", "🔥", "💀", "⚔️", "😂", "👍"];
-  const choice = prompt("Реакция:\n" + emojis.map((e, i) => (i + 1) + ". " + e).join("\n"), "1");
-  if (!choice) return;
-  const idx = parseInt(choice) - 1;
-  if (idx >= 0 && idx < emojis.length) {
-    handlers.onReact(msgId, emojis[idx]);
-  }
+function renderText(text) {
+  if (!text) return { html: "", isBigEmoji: false };
+
+  const trimmed = text.trim();
+  const emojiOnly = /^(?:[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F0FF}]\u{FE0F}?\s*){1,3}$/u;
+  const isBigEmoji = emojiOnly.test(trimmed);
+
+  let html = escapeHtml(text);
+  html = html.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
+  );
+  html = html.replace(
+    /(^|\s)(www\.[^\s<]+)/g,
+    '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="chat-link">$2</a>'
+  );
+  html = html.replace(
+    /(^|\s)(vk\.com\/[^\s<]+)/g,
+    '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="chat-link">$2</a>'
+  );
+
+  html = html.replace(
+    /@([A-Za-z0-9_]{3,32})/g,
+    '<span class="chat-mention" data-mention="$1">@$1</span>'
+  );
+
+  return { html, isBigEmoji };
 }
 
 export function renderDateSeparator(date) {
@@ -119,6 +151,16 @@ export function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() &&
          a.getMonth() === b.getMonth() &&
          a.getDate() === b.getDate();
+}
+
+function quickReact(msgId, handlers) {
+  const emojis = ["❤️", "🔥", "💀", "⚔️", "😂", "👍"];
+  const choice = prompt("Реакция:\n" + emojis.map((e, i) => (i + 1) + ". " + e).join("\n"), "1");
+  if (!choice) return;
+  const idx = parseInt(choice) - 1;
+  if (idx >= 0 && idx < emojis.length) {
+    handlers.onReact(msgId, emojis[idx]);
+  }
 }
 
 function formatTime(ts) {
