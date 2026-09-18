@@ -48,11 +48,13 @@ async function saveAvatar() {
 
   if (file) {
     err.textContent = "Загрузка в ВК...";
-    err.style.color = "var(--cyan)";
+    err.style.color = "var(--accent)";
     err.style.display = "block";
     try {
       const media = await uploadMedia(file, "avatar", me.login, "Аватар: " + me.login, "avatar");
+      // ⚠️ Берём ПРЯМУЮ ссылку
       avatarUrl = media.url;
+      console.log("Avatar uploaded:", avatarUrl);
     } catch (e) {
       err.textContent = e.message;
       err.style.color = "var(--red)";
