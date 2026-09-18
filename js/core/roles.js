@@ -1,14 +1,13 @@
 // js/core/roles.js
 import { db } from "../firebase-init.js";
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache.js";
 
 const CACHE_KEY = "roles_list";
 const DEMO_KEY = "re_demo_roles";
 
-// ==================== ДЕФОЛТНЫЕ РОЛИ ====================
 export const DEFAULT_ROLES = [
   { id: "emperor",  name: "Император",     color: "#fbbf24", desc: "Лидер симьи",  order: 1, system: true },
   { id: "lord",     name: "Лорд Тьмы",     color: "#ef4444", desc: "Заместитель",  order: 2, system: true },
@@ -17,7 +16,6 @@ export const DEFAULT_ROLES = [
   { id: "soul",     name: "Тёмная душа",   color: "#a4b1c0", desc: "Боец",         order: 5, system: true }
 ];
 
-// ==================== ДЕМО ====================
 function getDemoRoles() {
   const raw = localStorage.getItem(DEMO_KEY);
   if (raw) {
@@ -31,10 +29,9 @@ function saveDemoRoles(roles) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(roles));
 }
 
-// ==================== LIST ====================
 export async function listRoles(force = false) {
   if (!force) {
-    const cached = cacheGet(CACHE_KEY, 60000);
+    const cached = cacheGet(CACHE_KEY, 300000);
     if (cached) return cached;
   }
 
@@ -46,7 +43,6 @@ export async function listRoles(force = false) {
       cacheSet(CACHE_KEY, roles);
       return roles;
     }
-    // Если коллекция пуста — инициализируем дефолтными
     await initializeDefaultRoles();
     cacheSet(CACHE_KEY, [...DEFAULT_ROLES]);
     return [...DEFAULT_ROLES];
@@ -67,14 +63,12 @@ async function initializeDefaultRoles() {
   } catch (e) {}
 }
 
-// ==================== GET ====================
 export async function getRole(roleId) {
   if (!roleId) return null;
   const roles = await listRoles();
   return roles.find(r => r.id === roleId) || null;
 }
 
-// ==================== CREATE ====================
 export async function createRole({ name, color, desc = "" }) {
   if (!name || !name.trim()) throw new Error("Введите название");
   if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Неверный HEX-цвет");
@@ -86,13 +80,7 @@ export async function createRole({ name, color, desc = "" }) {
 
   const newId = "role_" + Date.now();
   const maxOrder = Math.max(0, ...roles.map(r => r.order || 0));
-  const newRole = {
-    name: name.trim(),
-    color,
-    desc: desc.trim(),
-    order: maxOrder + 1,
-    system: false
-  };
+  const newRole = { name: name.trim(), color, desc: desc.trim(), order: maxOrder + 1, system: false };
 
   try {
     await setDoc(doc(db, "roles", newId), newRole);
@@ -100,7 +88,6 @@ export async function createRole({ name, color, desc = "" }) {
     return { id: newId, ...newRole };
   } catch (e) {}
 
-  // Демо
   const demo = getDemoRoles();
   const role = { id: newId, ...newRole };
   demo.push(role);
@@ -109,7 +96,6 @@ export async function createRole({ name, color, desc = "" }) {
   return role;
 }
 
-// ==================== UPDATE ====================
 export async function updateRole(roleId, updates) {
   const roles = await listRoles();
   const role = roles.find(r => r.id === roleId);
@@ -139,7 +125,6 @@ export async function updateRole(roleId, updates) {
   cacheInvalidate(CACHE_KEY);
 }
 
-// ==================== DELETE ====================
 export async function deleteRole(roleId) {
   const roles = await listRoles();
   const role = roles.find(r => r.id === roleId);
@@ -155,7 +140,6 @@ export async function deleteRole(roleId) {
   cacheInvalidate(CACHE_KEY);
 }
 
-// ==================== REORDER ====================
 export async function moveRole(roleId, direction) {
   const roles = await listRoles(true);
   const idx = roles.findIndex(r => r.id === roleId);
@@ -166,7 +150,6 @@ export async function moveRole(roleId, direction) {
 
   const a = roles[idx];
   const b = roles[swapIdx];
-
   const aOrder = a.order || idx + 1;
   const bOrder = b.order || swapIdx + 1;
 
