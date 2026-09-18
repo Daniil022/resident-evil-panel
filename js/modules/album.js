@@ -20,9 +20,9 @@ export async function initAlbum() {
     toolbar.__bound = true;
     let html = "";
     if (canEdit()) {
-      html += `<button class="btn" id="addPhotoBtn">📎 Прикрепить файл</button>`;
+      html += '<button class="btn" id="addPhotoBtn">Прикрепить файл</button>';
     }
-    html += `<button class="btn secondary" id="addLinkBtn" style="margin-left:8px;">🔗 По ссылке</button>`;
+    html += '<button class="btn secondary" id="addLinkBtn" style="margin-left:8px;">По ссылке</button>';
     toolbar.innerHTML = html;
 
     if (canEdit()) document.getElementById("addPhotoBtn").onclick = () => openPhotoModal();
@@ -42,8 +42,7 @@ export async function initAlbum() {
 }
 
 function getDemoPhotos() {
-  try { return JSON.parse(localStorage.getItem(DEMO_KEY) || "[]"); }
-  catch { return []; }
+  try { return JSON.parse(localStorage.getItem(DEMO_KEY) || "[]"); } catch { return []; }
 }
 function saveDemoPhotos() {
   localStorage.setItem(DEMO_KEY, JSON.stringify(photos.filter(p => p.source !== "firebase")));
@@ -54,53 +53,50 @@ function renderGrid() {
   if (!grid) return;
 
   if (photos.length === 0) {
-    grid.innerHTML = `<div class="contracts-empty" style="grid-column:1/-1;">
-      <div class="contracts-empty-icon">📸</div>
-      <div class="contracts-empty-text">Фотоальбом пуст</div>
-      <div class="contracts-empty-sub">Добавьте первое фото — файлом или по ссылке</div>
-    </div>`;
+    grid.innerHTML = '<div class="contracts-empty" style="grid-column:1/-1;">' +
+      '<div class="contracts-empty-icon">Фото</div>' +
+      '<div class="contracts-empty-text">Фотоальбом пуст</div>' +
+      '<div class="contracts-empty-sub">Добавьте первое фото — файлом или по ссылке</div>' +
+      '</div>';
     return;
   }
 
   const editable = canEdit();
 
-  grid.innerHTML = photos.map(p => `
-    <div class="photo-card" data-id="${p.id}">
-      <div class="photo-img-wrap">
-        <img src="${p.url}" alt="${escapeHtml(p.title || "Фото")}" loading="lazy" onclick="window.__openMedia('${p.url}','image')">
-        ${editable ? `<button class="photo-del" onclick="event.stopPropagation();window.__albumDelete('${p.id}')" title="Удалить">✕</button>` : ""}
-      </div>
-      <div class="photo-meta">
-        ${p.title ? `<div class="photo-title">${escapeHtml(p.title)}</div>` : ""}
-        <div class="photo-author">
-          <span>👤 ${escapeHtml(p.addedBy || "—")}</span>
-          <span>${formatDate(p.createdAt)}</span>
-        </div>
-      </div>
-    </div>
-  `).join("");
+  grid.innerHTML = photos.map(p =>
+    '<div class="photo-card" data-id="' + p.id + '">' +
+      '<div class="photo-img-wrap">' +
+        '<img src="' + p.url + '" alt="' + escapeHtml(p.title || "Фото") + '" loading="lazy" onclick="window.__openMedia(\'' + p.url + '\',\'image\')">' +
+        (editable ? '<button class="photo-del" onclick="event.stopPropagation();window.__albumDelete(\'' + p.id + '\')" title="Удалить">X</button>' : '') +
+      '</div>' +
+      '<div class="photo-meta">' +
+        (p.title ? '<div class="photo-title">' + escapeHtml(p.title) + '</div>' : '') +
+        '<div class="photo-author">' +
+          '<span>' + escapeHtml(p.addedBy || "—") + '</span>' +
+          '<span>' + formatDate(p.createdAt) + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  ).join("");
 }
 
-// ==================== ЗАГРУЗКА ФАЙЛА ====================
 function openPhotoModal() {
   if (!requireEdit()) return;
 
   openModal({
     title: "ДОБАВИТЬ ФОТО (файл)",
-    html: `
-      <div class="form-grid">
-        <div class="form-field" style="grid-column:1/-1;">
-          <label>Название (опционально)</label>
-          <input type="text" id="phTitle" placeholder="Мероприятие 18.09" autocomplete="off">
-        </div>
-        <div class="form-field" style="grid-column:1/-1;">
-          <label>Файл</label>
-          <input type="file" id="phFile" accept="image/*">
-          <div class="form-hint">Фото уйдёт в ВК-беседу, ссылка сохранится в альбоме</div>
-        </div>
-      </div>
-      <div id="phError" style="color:var(--red);font-size:12px;display:none;"></div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field" style="grid-column:1/-1;">' +
+        '<label>Название (опционально)</label>' +
+        '<input type="text" id="phTitle" placeholder="Мероприятие" autocomplete="off">' +
+      '</div>' +
+      '<div class="form-field" style="grid-column:1/-1;">' +
+        '<label>Файл</label>' +
+        '<input type="file" id="phFile" accept="image/*">' +
+        '<div class="form-hint">Фото уйдёт в ВК-беседу ALBUM</div>' +
+      '</div>' +
+      '</div>' +
+      '<div id="phError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: "ЗАГРУЗИТЬ",
     onConfirm: () => savePhotoFile()
   });
@@ -123,11 +119,11 @@ async function savePhotoFile() {
 
   try {
     const me = getCurrentUser();
-    const media = await uploadMedia(file, "album", me?.login || "album", `📸 Альбом: ${title || file.name}`);
+    const media = await uploadMedia(file, "album", me?.login || "album", "Альбом: " + (title || file.name), "album");
 
     const data = {
       url: media.url,
-      title,
+      title: title,
       addedBy: me?.login || "—",
       createdAt: Date.now()
     };
@@ -149,24 +145,20 @@ async function savePhotoFile() {
   }
 }
 
-// ==================== ЗАГРУЗКА ПО ССЫЛКЕ ====================
 function openLinkModal() {
   openModal({
     title: "ДОБАВИТЬ ПО ССЫЛКЕ",
-    html: `
-      <div class="form-grid">
-        <div class="form-field" style="grid-column:1/-1;">
-          <label>Название (опционально)</label>
-          <input type="text" id="lkTitle" placeholder="Мероприятие" autocomplete="off">
-        </div>
-        <div class="form-field" style="grid-column:1/-1;">
-          <label>Ссылка на изображение</label>
-          <input type="text" id="lkUrl" placeholder="https://..." autocomplete="off">
-          <div class="form-hint">Прямая ссылка на картинку (JPG, PNG, WEBP, GIF)</div>
-        </div>
-      </div>
-      <div id="lkError" style="color:var(--red);font-size:12px;display:none;"></div>
-    `,
+    html: '<div class="form-grid">' +
+      '<div class="form-field" style="grid-column:1/-1;">' +
+        '<label>Название (опционально)</label>' +
+        '<input type="text" id="lkTitle" placeholder="Мероприятие" autocomplete="off">' +
+      '</div>' +
+      '<div class="form-field" style="grid-column:1/-1;">' +
+        '<label>Ссылка на изображение</label>' +
+        '<input type="text" id="lkUrl" placeholder="https://..." autocomplete="off">' +
+      '</div>' +
+      '</div>' +
+      '<div id="lkError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: "ДОБАВИТЬ",
     onConfirm: () => savePhotoLink()
   });
@@ -187,7 +179,7 @@ async function savePhotoLink() {
   }
 
   const me = getCurrentUser();
-  const data = { url, title, addedBy: me?.login || "—", createdAt: Date.now() };
+  const data = { url: url, title: title, addedBy: me?.login || "—", createdAt: Date.now() };
 
   try {
     const ref = await addDoc(collection(db, "album"), data);
@@ -202,7 +194,6 @@ async function savePhotoLink() {
   closeModal();
 }
 
-// ==================== УДАЛЕНИЕ ====================
 window.__albumDelete = async function(id) {
   if (!requireEdit()) return;
   if (!confirm("Удалить фото из альбома?")) return;
