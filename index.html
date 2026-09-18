@@ -225,6 +225,14 @@
         <button class="chat-theme-btn" data-theme="vk-classic" title="Классика ВК"></button>
         <button class="chat-theme-btn" data-theme="dark" title="Тёмная тема"></button>
       </div>
+      <div class="chat-pin-bar" id="chatPinBar">
+        <span class="pin-icon">📌</span>
+        <div class="pin-body">
+          <div class="pin-author" id="chatPinAuthor">—</div>
+          <div class="pin-text" id="chatPinText">—</div>
+        </div>
+        <button class="pin-close" onclick="window.__chatUnpin('residents')" title="Открепить">✕</button>
+      </div>
       <div class="chat-pinned">
         <span class="pin-icon">📌</span>
         <span class="pin-text">Беседа резидентов RESIDENT EVIL.</span>
@@ -257,6 +265,14 @@
         <button class="chat-theme-btn" data-theme="default" title="Стиль по умолчанию"></button>
         <button class="chat-theme-btn" data-theme="vk-classic" title="Классика ВК"></button>
         <button class="chat-theme-btn" data-theme="dark" title="Тёмная тема"></button>
+      </div>
+      <div class="chat-pin-bar" id="chatAlliesPinBar">
+        <span class="pin-icon">📌</span>
+        <div class="pin-body">
+          <div class="pin-author" id="chatAlliesPinAuthor">—</div>
+          <div class="pin-text" id="chatAlliesPinText">—</div>
+        </div>
+        <button class="pin-close" onclick="window.__chatUnpin('allies')" title="Открепить">✕</button>
       </div>
       <div class="chat-pinned chat-pinned-rainbow">
         <span class="pin-icon">🤝</span>
