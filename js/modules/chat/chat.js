@@ -58,10 +58,15 @@ export function initChat() {
 
   const isAlly = user.role === "ally";
 
-  initOneChat("residents");
-  if (!isAlly) initOneChat("allies");
+  // Союзник видит только чат союзников
+  if (isAlly) {
+    initOneChat("allies");
+  } else {
+    initOneChat("residents");
+    initOneChat("allies");
+  }
 
-  setupPresence();
+  try { setupPresence(); } catch (e) { console.warn("Presence failed:", e); }
 
   if (!notificationsInited) {
     notificationsInited = true;
@@ -80,7 +85,10 @@ function initOneChat(chatId) {
   if (!cfg) return;
 
   const container = document.getElementById(cfg.containerId);
-  if (!container) return;
+  if (!container) {
+    console.warn("Container not found for chat:", chatId, cfg.containerId);
+    return;
+  }
 
   setupInputForChat(chatId);
   setupScrollForChat(chatId);
@@ -143,11 +151,10 @@ function initOneChat(chatId) {
       scrollToBottomForChat(chatId);
       updateBadgeForChat(chatId, count);
     }, (err) => {
-      console.warn("Firebase offline для " + chatId);
-      enableDemoMode();
+      console.warn("Firebase offline для " + chatId, err);
     });
   } catch (e) {
-    enableDemoMode();
+    console.warn("Init chat failed for " + chatId, e);
   }
 }
 
@@ -155,7 +162,7 @@ export function destroyChat() {
   for (const id of Object.keys(unsubscribers)) {
     if (unsubscribers[id]) unsubscribers[id]();
   }
-  destroyPresence();
+  try { destroyPresence(); } catch (e) {}
 }
 
 function openEditModal(msg, chatId) {
@@ -270,6 +277,8 @@ async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
 
+  console.log("Отправка:", { chatId, role: user.role, text });
+
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
     return;
@@ -291,24 +300,14 @@ async function sendMessageTo(chatId, text) {
     createdAt: serverTimestamp()
   };
 
-  if (demoMode) {
-    newMsg.id = "demo-" + Date.now();
-    newMsg.createdAt = Date.now();
-    demoMessages[chatId] = demoMessages[chatId] || [];
-    demoMessages[chatId].push(newMsg);
-    saveDemoMessages();
-    renderDemoForChat(chatId);
-    clearReplyForChat(chatId);
-    addDashEvent("💬", user.login + ": " + text.substring(0, 40));
-    return;
-  }
-
   try {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
+    console.log("Сообщение отправлено в", chatId);
     clearReplyForChat(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
-    toast("Не удалось отправить сообщение", "warn");
+    console.error("Ошибка отправки:", e);
+    toast("Ошибка: " + e.message, "warn");
   }
 }
 
@@ -321,8 +320,6 @@ async function deleteMessage(msg, chatId) {
     return;
   }
   if (!confirm("Удалить сообщение?")) return;
-
-  if (demoMode) { demoDelete(chatId, msg.id); return; }
 
   try {
     await deleteDoc(doc(db, "chats", chatId, "messages", msg.id));
@@ -341,7 +338,10 @@ function setupInputForChat(chatId) {
   const emojiBtn = document.getElementById(cfg.emojiBtnId);
   const emojiPicker = document.getElementById(cfg.emojiPickerId);
 
-  if (!input || !sendBtn) return;
+  if (!input || !sendBtn) {
+    console.warn("Input not found for chat:", chatId);
+    return;
+  }
 
   const send = () => {
     const text = input.value.trim();
@@ -361,9 +361,11 @@ function setupInputForChat(chatId) {
   let typingTimeout = null;
   input.addEventListener("input", () => {
     if (demoMode) return;
-    setTyping(true);
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => setTyping(false), 2000);
+    try {
+      setTyping(true);
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => setTyping(false), 2000);
+    } catch (e) {}
   });
 
   if (emojiBtn && emojiPicker) {
