@@ -7,6 +7,7 @@ import { initDashboard } from "./core/dashboard.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
+import { destroyReadSubs } from "./modules/chat/chat-read.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
 import { initNicks, initRanks } from "./modules/nicks.js";
 import { initAllies } from "./modules/allies.js";
@@ -16,9 +17,13 @@ import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
 import { initCaptas } from "./modules/captas.js";
 import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
+import { setupProfileClicks } from "./modules/profile-view.js";
+import { initOnline, renderOnline } from "./modules/online.js";
+import { initTheme } from "./modules/theme.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
   const session = tryRestoreSession();
@@ -179,13 +184,15 @@ function enterApp(user) {
   applyColorsToDOM();
 
   setupAvatarClick();
+  setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
   const inited = {
     chat: false, admin: false, contracts: false,
     allies: false, rules: false,
     accolades: false, music: false, album: false,
-    captas: false, nicks: false, ranks: false, applications: false
+    captas: false, nicks: false, ranks: false,
+    applications: false, online: false
   };
 
   try { initChat(); inited.chat = true; } catch (err) { console.warn("Chat init failed:", err); }
@@ -204,6 +211,8 @@ function enterApp(user) {
     if (tab === "containers" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
     if (tab === "nicks" && !ally && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
     if (tab === "ranks" && !ally && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
+    if (tab === "online" && !inited.online) { inited.online = true; try { initOnline(); } catch (err) {} }
+    if (tab === "online") { try { renderOnline(); } catch (err) {} }
   });
 
   const hash = location.hash.replace("#", "");
@@ -218,6 +227,7 @@ function enterApp(user) {
   if (hash === "containers" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
   if (hash === "nicks" && !ally) { inited.nicks = true; try { initNicks(); } catch (e) {} }
   if (hash === "ranks" && !ally) { inited.ranks = true; try { initRanks(); } catch (e) {} }
+  if (hash === "online") { inited.online = true; try { initOnline(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
@@ -226,7 +236,7 @@ function enterApp(user) {
 }
 
 function applyRoleVisibility(isAlly) {
-  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "containers", "allies", "music", "rules", "album", "applications"];
+  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "containers", "allies", "music", "rules", "album", "applications", "online"];
 
   document.querySelectorAll("#mainNav button").forEach(btn => {
     const tab = btn.dataset.tab;
@@ -244,5 +254,6 @@ function applyRoleVisibility(isAlly) {
 
 window.addEventListener("beforeunload", () => {
   try { destroyChat(); } catch (e) {}
+  try { destroyReadSubs(); } catch (e) {}
   try { destroyContracts(); } catch (e) {}
 });
