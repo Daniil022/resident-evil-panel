@@ -9,7 +9,6 @@ import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
 import { initNicks, initRanks } from "./modules/nicks.js";
-import { initWarehouse } from "./modules/warehouse.js";
 import { initAllies } from "./modules/allies.js";
 import { initRules } from "./modules/rules.js";
 import { initAccolades } from "./modules/accolades.js";
@@ -173,7 +172,7 @@ function enterApp(user) {
 
   const inited = {
     chat: false, admin: false, contracts: false,
-    warehouse: false, allies: false, rules: false,
+    allies: false, rules: false,
     accolades: false, music: false, album: false,
     captas: false, nicks: false, ranks: false, applications: false
   };
@@ -185,7 +184,6 @@ function enterApp(user) {
     if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
     if (tab === "applications" && isAdminRole && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
     if (tab === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
-    if (tab === "warehouse" && !inited.warehouse) { inited.warehouse = true; try { initWarehouse(); } catch (err) {} }
     if (tab === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
     if (tab === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
     if (tab === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
@@ -200,7 +198,6 @@ function enterApp(user) {
   if (hash === "chat") { inited.chat = true; try { initChat(); } catch (e) {} }
   if (hash === "applications" && isAdminRole) { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
   if (hash === "contracts") { inited.contracts = true; try { initContracts(); } catch (e) {} }
-  if (hash === "warehouse") { inited.warehouse = true; try { initWarehouse(); } catch (e) {} }
   if (hash === "allies") { inited.allies = true; try { initAllies(); } catch (e) {} }
   if (hash === "rules") { inited.rules = true; try { initRules(); } catch (e) {} }
   if (hash === "accolade") { inited.accolades = true; try { initAccolades(); } catch (e) {} }
