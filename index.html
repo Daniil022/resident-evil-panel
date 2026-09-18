@@ -97,6 +97,7 @@
   <button data-tab="rules">📖 Правила</button>
   <button data-tab="album">📸 Фотоальбом</button>
   <button data-tab="chat" id="navChat">💬 Общение <span class="badge" id="chatBadge" style="display:none;">0</span></button>
+  <button data-tab="applications" id="navApplications" class="hidden">📥 Заявки</button>
   <button data-tab="admin" id="navAdmin" class="hidden">⚙ ADMIN</button>
 </nav>
 
@@ -239,8 +240,34 @@
     </div>
   </section>
 
+  <section class="panel" id="applications">
+    <h2>📥 Заявки</h2>
+    <div class="music-tabs" id="applicationsTabs"></div>
+    <div id="applicationsPageContent">
+      <div class="grid" data-app-panel="registration" id="registrationList"></div>
+      <div class="grid" data-app-panel="attestation" id="applicationsList" style="display:none;"></div>
+      <div class="grid" data-app-panel="nicks" id="nickApplicationsList" style="display:none;"></div>
+    </div>
+  </section>
+
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора</h2>
+
+    <h2 class="sub">💾 Резервная копия</h2>
+    <div class="grid">
+      <div class="card clickable" data-admin-action="backupDownload">
+        <div class="name">💾 Скачать backup</div>
+        <div class="role gold">Резервная копия</div>
+        <div class="stat">Сохранить все данные в JSON-файл</div>
+      </div>
+      <div class="card clickable" data-admin-action="backupRestore">
+        <div class="name">📥 Загрузить backup</div>
+        <div class="role danger">Опасно</div>
+        <div class="stat">Восстановить данные из JSON-файла</div>
+      </div>
+    </div>
+
+    <h2 class="sub">⚙️ Управление участниками</h2>
     <div class="grid">
       <div class="card clickable" data-admin-action="createUser">
         <div class="name">Создать аккаунт</div>
@@ -273,15 +300,6 @@
         <div class="stat">Полное удаление</div>
       </div>
     </div>
-
-    <h2 class="sub">📥 Регистрация — заявки на аккаунт</h2>
-    <div class="grid" id="registrationList"></div>
-
-    <h2 class="sub">📥 Заявки на аттестацию (акколада)</h2>
-    <div class="grid" id="applicationsList"></div>
-
-    <h2 class="sub">🆔 Заявки на ники</h2>
-    <div class="grid" id="nickApplicationsList"></div>
 
     <h2 class="sub">🎖 Редактор ролей</h2>
     <div class="roles-toolbar">
