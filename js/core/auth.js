@@ -270,6 +270,24 @@ export async function incrementContracts(uid, by = 1) {
   return newVal;
 }
 
+export async function clearRoleFromUsers(roleId) {
+  const users = await listUsers(true);
+  for (const u of users) {
+    if (u.role === roleId) {
+      try { await changeRole(u.uid, "soul"); } catch (e) {}
+    }
+  }
+}
+
+export async function clearDivisionFromUsers(divId) {
+  const users = await listUsers(true);
+  for (const u of users) {
+    if (u.division === divId) {
+      try { await changeDivision(u.uid, null); } catch (e) {}
+    }
+  }
+}
+
 export const WARN_LIMIT = MAX_WARN;
 
 window.logout = logout;
