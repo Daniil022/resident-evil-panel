@@ -23,7 +23,11 @@ export async function initAdminRegistration() {
       rejected: { text: "Отказано", cls: "red" }
     };
     const st = statusMap[r.status] || statusMap.pending;
-    const borderColor = r.status === "approved" ? "var(--green)" : r.status === "rejected" ? "var(--red)" : "var(--gold)";
+    const isAlly = r.type === "ally";
+    const borderColor = r.status === "approved" ? "var(--green)" : r.status === "rejected" ? "var(--red)" : (isAlly ? "#ff7f00" : "var(--gold)");
+    const typeBadge = isAlly
+      ? '<span class="role-badge role-badge-rainbow" style="margin-left:8px;">Союзник</span>'
+      : '<span class="role-badge" style="background:rgba(0,200,212,0.15);color:var(--cyan);border:1px solid rgba(0,200,212,0.3);margin-left:8px;">Резидент</span>';
 
     let footer = "";
     if (r.status === "pending") {
@@ -41,7 +45,7 @@ export async function initAdminRegistration() {
     return '<div class="card" style="border-left-color:' + borderColor + ';">' +
       '<div class="contract-head">' +
         '<div>' +
-          '<div class="name">👤 ' + escapeHtml(r.nick) + '</div>' +
+          '<div class="name">👤 ' + escapeHtml(r.nick) + typeBadge + '</div>' +
           '<div class="role">PIN: <span class="val">●●●●</span></div>' +
         '</div>' +
         '<span class="contract-status ' + st.cls + '">' + st.text + '</span>' +
@@ -56,7 +60,7 @@ window.__regApprove = async function(id) {
   if (!confirm("Одобрить регистрацию? Аккаунт будет создан автоматически.")) return;
   try {
     const req = await approveRegistration(id);
-    toast("Аккаунт «" + req.nick + "» создан", "ok");
+    toast("Аккаунт «" + req.nick + "» создан как " + (req.type === "ally" ? "Союзник" : "Резидент"), "ok");
     await initAdminRegistration();
   } catch (e) { toast(e.message, "warn"); }
 };
