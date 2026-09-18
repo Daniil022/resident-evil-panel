@@ -7,9 +7,10 @@ import { createUser } from "../core/auth.js";
 
 const DEMO_KEY = "re_demo_registration_requests";
 
-export async function submitRegistrationRequest(nick, pin) {
+export async function submitRegistrationRequest(nick, pin, type = "resident") {
   if (!/^[A-Za-z0-9_]{3,32}$/.test(nick)) throw new Error("Ник: латиница, цифры, _ (3-32)");
   if (!/^[0-9]{4,8}$/.test(pin)) throw new Error("PIN: 4-8 цифр");
+  if (!["ally", "resident"].includes(type)) type = "resident";
 
   try {
     const usersSnap = await getDocs(query(collection(db, "users"), where("login", "==", nick)));
@@ -23,7 +24,7 @@ export async function submitRegistrationRequest(nick, pin) {
     if (hasPending) throw new Error("Заявка с таким ником уже на рассмотрении");
   } catch (e) { if (e.message === "Заявка с таким ником уже на рассмотрении") throw e; }
 
-  const data = { nick, pin, status: "pending", createdAt: Date.now() };
+  const data = { nick, pin, type, status: "pending", createdAt: Date.now() };
 
   try {
     const ref = await addDoc(collection(db, "registration_requests"), data);
@@ -60,7 +61,9 @@ export async function approveRegistration(reqId) {
   const req = requests.find(r => r.id === reqId);
   if (!req) throw new Error("Заявка не найдена");
 
-  await createUser({ login: req.nick, pin: req.pin, role: "soul", division: null });
+  const role = req.type === "ally" ? "ally" : "soul";
+
+  await createUser({ login: req.nick, pin: req.pin, role, division: null });
 
   try {
     await updateDoc(doc(db, "registration_requests", reqId), { status: "approved", approvedAt: Date.now() });
