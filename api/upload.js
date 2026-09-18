@@ -1,14 +1,9 @@
 // api/upload.js
 export const config = {
-  api: { bodyParser: false, sizeLimit: "50mb" }
-};
-
-const PEER_MAP = {
-  avatar:   "VK_PEER_AVATARS",
-  album:    "VK_PEER_ALBUM",
-  music:    "VK_PEER_MUSIC",
-  contract: "VK_PEER_ID",
-  default:  "VK_PEER_ID"
+  api: {
+    bodyParser: false,
+    sizeLimit: "50mb"
+  }
 };
 
 export default async function handler(req, res) {
@@ -21,8 +16,11 @@ export default async function handler(req, res) {
 
   try {
     const VK_TOKEN = process.env.VK_TOKEN;
+    const VK_PEER_ID = process.env.VK_PEER_ID;
     const VK_VERSION = "5.199";
+
     if (!VK_TOKEN) return res.status(500).json({ ok: false, error: "VK_TOKEN not configured" });
+    if (!VK_PEER_ID) return res.status(500).json({ ok: false, error: "VK_PEER_ID not configured" });
 
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
@@ -30,7 +28,7 @@ export default async function handler(req, res) {
 
     const contentType = req.headers["content-type"] || "";
     const boundaryMatch = contentType.match(/boundary=(.+)/);
-    if (!boundaryMatch) return res.status(400).json({ ok: false, error: "No boundary" });
+    if (!boundaryMatch) return res.status(400).json({ ok: false, error: "No boundary in content-type" });
 
     const boundary = "--" + boundaryMatch[1];
     const boundaryBuf = Buffer.from(boundary);
@@ -80,11 +78,7 @@ export default async function handler(req, res) {
 
     if (!fileData) return res.status(400).json({ ok: false, error: "No file" });
 
-    const peerKey = PEER_MAP[mediaType] || PEER_MAP.default;
-    const VK_PEER_ID = process.env[peerKey] || process.env.VK_PEER_ID;
-    if (!VK_PEER_ID) return res.status(500).json({ ok: false, error: "No peer_id for: " + mediaType });
-
-    console.log("Upload:", mediaType, peerKey, VK_PEER_ID, filename, fileType);
+    console.log("Upload:", { mediaType, VK_PEER_ID, filename, fileType, size: fileData.length });
 
     const isPhoto = fileType.startsWith("image/");
     const isVideo = fileType.startsWith("video/");
