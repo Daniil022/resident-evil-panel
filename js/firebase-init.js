@@ -1,23 +1,29 @@
 // js/firebase-init.js
-// ВАЖНО: замени конфиг на свой из Firebase Console
-// Project Settings → General → Your apps → SDK setup
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getFirestore,
+  enableIndexedDbPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-// ==== ЗАМЕНИ НА СВОЙ КОНФИГ ====
 const firebaseConfig = {
-  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  apiKey: "AIzaSyA181DPjF83z-f0petYl4wNCSi_rB01-HU",
   authDomain: "resident-evil-panel.firebaseapp.com",
   projectId: "resident-evil-panel",
-  storageBucket: "resident-evil-panel.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
+  storageBucket: "resident-evil-panel.firebasestorage.app",
+  messagingSenderId: "835247361154",
+  appId: "1:835247361154:web:4a2e2cbe57ed3ce091389b"
 };
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+
+// Локальный кэш Firestore — ускоряет повторные чтения
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === "failed-precondition") {
+    console.warn("Firestore cache: multiple tabs open");
+  } else if (err.code === "unimplemented") {
+    console.warn("Firestore cache: browser not supported");
+  }
+});
