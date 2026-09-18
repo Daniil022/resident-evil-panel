@@ -206,6 +206,11 @@
   <section class="panel" id="chat">
     <h2>Общение семьи</h2>
     <div class="chat-wrap">
+      <div class="chat-theme-picker" id="chatThemePicker">
+        <button class="chat-theme-btn" data-theme="default" title="Стиль по умолчанию"></button>
+        <button class="chat-theme-btn" data-theme="vk-classic" title="Классика ВК (синие/белые)"></button>
+        <button class="chat-theme-btn" data-theme="dark" title="Тёмная тема"></button>
+      </div>
       <div class="chat-pinned">
         <span class="pin-icon">📌</span>
         <span class="pin-text">Добро пожаловать в беседу RESIDENT EVIL.</span>
@@ -243,6 +248,15 @@
 
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора</h2>
+
+    <h2 class="sub">📢 Логи семьи</h2>
+    <div class="grid">
+      <div class="card clickable" data-admin-action="openLogs">
+        <div class="name">📢 Перейти в логи (ВК)</div>
+        <div class="role gold">Внешняя ссылка</div>
+        <div class="stat">Открыть сообщество с логами действий семьи</div>
+      </div>
+    </div>
 
     <h2 class="sub">💾 Резервная копия</h2>
     <div class="grid">
