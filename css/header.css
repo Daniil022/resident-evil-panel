@@ -279,6 +279,29 @@ nav button .badge {
   }
 }
 
+/* ============ РАДУЖНАЯ РОЛЬ ============ */
+.role-tag-rainbow {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 4s linear infinite;
+  font-weight: 700;
+}
+
+.avatar-rainbow {
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00c8d4, #0000ff, #4b0082, #9400d3) !important;
+  background-size: 300% 300% !important;
+  animation: rainbowShift 4s linear infinite;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
 @media (max-width: 768px) {
   header { padding: 14px 16px; }
   .logo { font-size: 16px; }
