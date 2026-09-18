@@ -37,6 +37,7 @@ function setupCards() {
       else if (action === "deleteUser") openDeleteUser();
       else if (action === "backupDownload") downloadBackup();
       else if (action === "backupRestore") openRestoreModal();
+      else if (action === "openLogs") window.open("https://vk.com/resident_panel", "_blank");
     });
   });
 }
