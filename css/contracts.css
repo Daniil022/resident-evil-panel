@@ -1,85 +1,244 @@
 /* ============ КОНТРАКТЫ ============ */
-.contracts-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
-  flex-wrap:wrap;
-  gap:12px;
+.contracts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-.contracts-head h2{margin-bottom:0;border-bottom:none;padding-bottom:0;}
-
-.contract-progress{
-  background:linear-gradient(135deg,var(--panel),var(--panel-2));
-  border:1px solid var(--border);
-  border-left:3px solid var(--cyan);
-  border-radius:var(--radius);
-  padding:20px 24px;
-  margin-bottom:24px;
-}
-.contract-progress-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  margin-bottom:12px;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.contract-progress-title{color:#fff;font-size:15px;font-weight:600;}
-.contract-progress-sub{color:var(--cyan);font-size:12px;margin-top:2px;}
-.contract-progress-next{
-  color:var(--text-2);font-size:12px;
-  background:var(--bg);padding:6px 12px;
-  border-radius:6px;border:1px solid var(--border);
-}
-.contract-progress-max{color:var(--gold);font-size:12px;font-weight:700;letter-spacing:1px;}
-.contract-progress-hint{color:var(--muted);font-size:11.5px;margin-top:6px;}
-.contract-earned{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
-.contract-badge{
-  background:rgba(251,191,36,0.1);
-  border:1px solid rgba(251,191,36,0.3);
-  color:var(--gold);
-  padding:4px 10px;
-  border-radius:4px;
-  font-size:11px;
+.contracts-head h2 {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
-.contract-card{display:flex;flex-direction:column;gap:12px;}
-.contract-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
-.contract-status{
-  padding:3px 10px;border-radius:4px;
-  font-size:10.5px;font-weight:600;letter-spacing:0.8px;
-  text-transform:uppercase;white-space:nowrap;
-}
-.contract-status.green{background:rgba(74,222,128,0.12);color:var(--green);}
-.contract-status.gold{background:rgba(251,191,36,0.12);color:var(--gold);}
-.contract-status.blue{background:rgba(59,130,246,0.12);color:var(--blue);}
-.contract-status.red{background:rgba(239,68,68,0.12);color:var(--red);}
-
-.contract-meta{
-  display:flex;gap:14px;flex-wrap:wrap;
-  color:var(--muted);font-size:11.5px;
-  padding-top:8px;border-top:1px solid var(--border);
+/* ============ ПРОГРЕСС ПРЕМИЙ ============ */
+.contract-progress {
+  background: linear-gradient(135deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
 }
 
-.contract-media{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.contract-media img{
-  width:100%;aspect-ratio:1/1;object-fit:cover;
-  border-radius:6px;cursor:pointer;
-  border:1px solid var(--border);
-  transition:transform 0.15s;
+.contract-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.contract-media img:hover{transform:scale(1.04);}
 
-.contract-review-actions{display:flex;gap:8px;}
-
-.contracts-empty{
-  grid-column:1/-1;text-align:center;
-  padding:60px 20px;background:var(--panel);
-  border:1px dashed var(--border);border-radius:var(--radius);
+.contract-progress-title {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
 }
-.contracts-empty-icon{font-size:48px;opacity:0.4;margin-bottom:12px;}
-.contracts-empty-text{color:#fff;font-size:15px;font-weight:600;margin-bottom:6px;}
-.contracts-empty-sub{color:var(--muted);font-size:12.5px;}
 
-@media (max-width:640px){.contract-media{grid-template-columns:repeat(2,1fr);}}
+.contract-progress-sub {
+  color: var(--accent);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.contract-progress-next {
+  color: var(--text-2);
+  font-size: 12px;
+  background: var(--bg);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.contract-progress-max {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.contract-progress-hint {
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 6px;
+}
+
+.contract-earned {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.contract-badge {
+  background: var(--panel-3);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ============ КАРТОЧКА КОНТРАКТА ============ */
+.contract-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.contract-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.contract-status {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.contract-status.green {
+  background: var(--panel-3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+}
+.contract-status.gold {
+  background: var(--panel-3);
+  color: var(--text-2);
+  border: 1px solid var(--border-light);
+}
+.contract-status.blue {
+  background: var(--panel-3);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+}
+.contract-status.red {
+  background: var(--panel-3);
+  color: var(--muted);
+  border: 1px solid var(--border-light);
+}
+
+.contract-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11.5px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.contract-media {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.contract-media img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: transform 0.15s;
+}
+.contract-media img:hover {
+  transform: scale(1.04);
+}
+
+.contract-review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============ ВЫПОЛНЕННЫЙ КОНТРАКТ ============ */
+.contract-card.contract-approved {
+  border-color: #4ade80 !important;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.06), var(--panel));
+  position: relative;
+  overflow: hidden;
+}
+
+.contract-card.contract-approved:hover {
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.4);
+  border-color: #4ade80 !important;
+}
+
+.contract-approved-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: rgba(74, 222, 128, 0.22);
+  pointer-events: none;
+  z-index: 1;
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  border: 4px solid rgba(74, 222, 128, 0.22);
+  padding: 10px 30px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-family: 'Arial Black', sans-serif;
+}
+
+.contract-card.contract-approved .contract-head,
+.contract-card.contract-approved .stat,
+.contract-card.contract-approved .contract-meta,
+.contract-card.contract-approved .contract-media,
+.contract-card.contract-approved > button,
+.contract-card.contract-approved > div {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============ ПУСТОЙ СПИСОК ============ */
+.contracts-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--panel);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.contracts-empty-icon {
+  font-size: 48px;
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+
+.contracts-empty-text {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.contracts-empty-sub {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* ============ АДАПТИВ ============ */
+@media (max-width: 640px) {
+  .contract-media {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .contract-approved-stamp {
+    font-size: 28px;
+    letter-spacing: 4px;
+    padding: 8px 20px;
+  }
+}
