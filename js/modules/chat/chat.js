@@ -11,6 +11,7 @@ import { toggleReaction } from "./chat-reactions.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
 import { notifyNewMessage, resetUnread, initChatNotifications } from "./chat-notifications.js";
+import { markChatRead, subscribeReadStatus } from "./chat-read.js";
 
 const CHATS = {
   residents: {
@@ -117,6 +118,9 @@ function initOneChat(chatId) {
   initThemeForChat(chatId);
   loadPinned(chatId);
 
+  markChatRead(chatId);
+  subscribeReadStatus(chatId);
+
   const msgsRef = collection(db, "chats", chatId, "messages");
   const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
 
@@ -182,6 +186,14 @@ function initOneChat(chatId) {
   } catch (e) {
     console.warn("Init chat failed for " + chatId, e);
   }
+
+  window.addEventListener("tabChange", (e) => {
+    if (e.detail.tab === chatId ||
+        (chatId === "residents" && e.detail.tab === "chat") ||
+        (chatId === "allies" && e.detail.tab === "chat-allies")) {
+      markChatRead(chatId);
+    }
+  });
 }
 
 export function destroyChat() {
@@ -393,6 +405,7 @@ async function sendMessageTo(chatId, text) {
   try {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
+    markChatRead(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
@@ -434,7 +447,6 @@ function setupInputForChat(chatId) {
     } catch (e) {}
   });
 
-  // Эмодзи-пикер
   if (emojiBtn && emojiPicker) {
     emojiPicker.innerHTML = EMOJIS.map(e => '<button type="button">' + e + '</button>').join("");
 
