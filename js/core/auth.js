@@ -127,7 +127,7 @@ export async function createUser({ login, pin, role, division = null }) {
 
 export async function listUsers(force = false) {
   if (!force) {
-    const cached = cacheGet(CACHE_KEY_USERS, 30000);
+    const cached = cacheGet(CACHE_KEY_USERS, 300000);
     if (cached) return cached;
   }
   try {
