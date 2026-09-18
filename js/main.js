@@ -5,6 +5,7 @@ import { initRouter } from "./core/router.js";
 import { toast } from "./core/utils.js";
 import { initDashboard } from "./core/dashboard.js";
 import { initAdmin } from "./admin/admin-panel.js";
+import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
 import { initContracts, destroyContracts, openCreateContract } from "./modules/contracts/contracts.js";
 import { initNicks, initRanks } from "./modules/nicks.js";
@@ -158,8 +159,10 @@ function enterApp(user) {
   }
 
   const navAdmin = document.getElementById("navAdmin");
+  const navApplications = document.getElementById("navApplications");
   const isAdminRole = ["emperor", "lord"].includes(user.role);
   if (navAdmin) navAdmin.classList.toggle("hidden", !isAdminRole);
+  if (navApplications) navApplications.classList.toggle("hidden", !isAdminRole);
 
   initRouter();
   initDashboard();
@@ -172,7 +175,7 @@ function enterApp(user) {
     chat: false, admin: false, contracts: false,
     warehouse: false, allies: false, rules: false,
     accolades: false, music: false, album: false,
-    captas: false, nicks: false, ranks: false
+    captas: false, nicks: false, ranks: false, applications: false
   };
 
   window.addEventListener("tabChange", (e) => {
@@ -180,6 +183,7 @@ function enterApp(user) {
 
     if (tab === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (err) {} }
     if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
+    if (tab === "applications" && isAdminRole && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
     if (tab === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
     if (tab === "warehouse" && !inited.warehouse) { inited.warehouse = true; try { initWarehouse(); } catch (err) {} }
     if (tab === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
@@ -194,6 +198,7 @@ function enterApp(user) {
 
   const hash = location.hash.replace("#", "");
   if (hash === "chat") { inited.chat = true; try { initChat(); } catch (e) {} }
+  if (hash === "applications" && isAdminRole) { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
   if (hash === "contracts") { inited.contracts = true; try { initContracts(); } catch (e) {} }
   if (hash === "warehouse") { inited.warehouse = true; try { initWarehouse(); } catch (e) {} }
   if (hash === "allies") { inited.allies = true; try { initAllies(); } catch (e) {} }
