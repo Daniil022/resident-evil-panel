@@ -302,6 +302,82 @@ nav button .badge {
   100% { background-position: 300% 50%; }
 }
 
+/* ============ КРАСИВАЯ КНОПКА ADMIN ============ */
+nav button[data-tab="admin"] {
+  color: #fff !important;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border: 2px solid #ff0000 !important;
+  border-radius: 8px;
+  padding: 10px 20px !important;
+  margin: 4px 6px;
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.15), rgba(255, 0, 0, 0.05));
+  text-shadow:
+    0 0 5px #fff,
+    0 0 10px #fff,
+    0 0 20px #fff,
+    0 0 30px #ff0000,
+    0 0 40px #ff0000;
+  box-shadow:
+    0 0 10px rgba(255, 0, 0, 0.5),
+    0 0 20px rgba(255, 0, 0, 0.3),
+    inset 0 0 10px rgba(255, 0, 0, 0.2);
+  animation: adminPulse 2s infinite;
+  position: relative;
+  overflow: visible;
+}
+
+nav button[data-tab="admin"]:hover {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.3), rgba(255, 0, 0, 0.1));
+  border-color: #ff3333 !important;
+  text-shadow:
+    0 0 8px #fff,
+    0 0 15px #fff,
+    0 0 25px #fff,
+    0 0 40px #ff0000,
+    0 0 60px #ff0000;
+  box-shadow:
+    0 0 15px rgba(255, 0, 0, 0.7),
+    0 0 30px rgba(255, 0, 0, 0.5),
+    inset 0 0 15px rgba(255, 0, 0, 0.3);
+  transform: translateY(-2px) scale(1.03);
+}
+
+nav button[data-tab="admin"].active {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.4), rgba(255, 0, 0, 0.15)) !important;
+  border-color: #ff0000 !important;
+  color: #fff !important;
+  text-shadow:
+    0 0 10px #fff,
+    0 0 20px #fff,
+    0 0 35px #ff0000,
+    0 0 50px #ff0000;
+  box-shadow:
+    0 0 20px rgba(255, 0, 0, 0.8),
+    0 0 40px rgba(255, 0, 0, 0.5),
+    inset 0 0 20px rgba(255, 0, 0, 0.4);
+}
+
+nav button[data-tab="admin"].active::after {
+  background: #ff0000;
+  box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+}
+
+@keyframes adminPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(255, 0, 0, 0.5),
+      0 0 20px rgba(255, 0, 0, 0.3),
+      inset 0 0 10px rgba(255, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 15px rgba(255, 0, 0, 0.7),
+      0 0 30px rgba(255, 0, 0, 0.5),
+      inset 0 0 15px rgba(255, 0, 0, 0.3);
+  }
+}
+
 @media (max-width: 768px) {
   header { padding: 14px 16px; }
   .logo { font-size: 16px; }
@@ -309,4 +385,5 @@ nav button .badge {
   nav { padding: 0 8px; overflow-x: auto; flex-wrap: nowrap; }
   nav button { padding: 12px 12px; font-size: 12px; white-space: nowrap; }
   .header-status { width: 100%; justify-content: space-between; }
+  nav button[data-tab="admin"] { padding: 8px 14px !important; font-size: 11px; letter-spacing: 1.5px; margin: 3px 4px; }
 }
