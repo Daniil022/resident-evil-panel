@@ -19,11 +19,9 @@ import { initCaptas } from "./modules/captas.js";
 import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
 import { setupProfileClicks } from "./modules/profile-view.js";
 import { initOnline, renderOnline } from "./modules/online.js";
-import { initTheme } from "./modules/theme.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTheme();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
   const session = tryRestoreSession();
