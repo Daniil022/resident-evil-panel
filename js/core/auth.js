@@ -288,6 +288,16 @@ export async function clearDivisionFromUsers(divId) {
   }
 }
 
+export function isAlly(user) {
+  if (!user) return false;
+  return user.role === "ally";
+}
+
+export function isResident(user) {
+  if (!user) return false;
+  return user.role !== "ally";
+}
+
 export const WARN_LIMIT = MAX_WARN;
 
 window.logout = logout;
