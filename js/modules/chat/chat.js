@@ -1,7 +1,7 @@
 // js/modules/chat/chat.js
 import {
   collection, addDoc, query, orderBy, limit,
-  onSnapshot, serverTimestamp, doc, getDoc, deleteDoc
+  onSnapshot, serverTimestamp, doc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "../../firebase-init.js";
 import { getCurrentUser } from "../../core/state.js";
@@ -12,11 +12,19 @@ import { scrollToBottom, setupScroll } from "./chat-scroll.js";
 import { toggleReaction } from "./chat-reactions.js";
 import { toast } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
+import {
+  notifyNewMessage,
+  resetUnread,
+  initChatNotifications
+} from "./chat-notifications.js";
 
 const CHAT_ID = "main";
 let unsubscribeMessages = null;
 let demoMode = false;
 let demoMessages = [];
+let lastMessageId = null;
+let firstLoad = true;
+let notificationsInited = false;
 
 export function initChat() {
   const container = document.getElementById("chatMessages");
@@ -25,6 +33,11 @@ export function initChat() {
   setupInput(sendMessage, onTyping);
   setupPresence();
   setupScroll();
+
+  if (!notificationsInited) {
+    notificationsInited = true;
+    initChatNotifications();
+  }
 
   const msgsRef = collection(db, "chats", CHAT_ID, "messages");
   const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
@@ -36,11 +49,13 @@ export function initChat() {
       let lastAuthor = null;
       const user = getCurrentUser();
       let count = 0;
+      let newestMsg = null;
 
       snapshot.forEach((docSnap) => {
         const msg = { id: docSnap.id, ...docSnap.data() };
         if (!msg.createdAt) return;
         count++;
+        newestMsg = msg;
 
         const msgDate = msg.createdAt.toDate ? msg.createdAt.toDate() : new Date();
 
@@ -62,6 +77,14 @@ export function initChat() {
         lastAuthor = msg.authorId;
       });
 
+      if (newestMsg && !firstLoad && newestMsg.id !== lastMessageId) {
+        const isOwn = newestMsg.authorId === getCurrentUser().uid;
+        notifyNewMessage(newestMsg, isOwn);
+      }
+
+      if (newestMsg) lastMessageId = newestMsg.id;
+      firstLoad = false;
+
       scrollToBottom();
       updateBadge(count);
       window.dispatchEvent(new CustomEvent("chatMessageCount", {
@@ -75,11 +98,9 @@ export function initChat() {
     enableDemoMode();
   }
 
-  // Отметка «прочитано» при открытии вкладки чата
   window.addEventListener("tabChange", (e) => {
     if (e.detail.tab === "chat") {
-      const badge = document.getElementById("chatBadge");
-      if (badge) badge.style.display = "none";
+      resetUnread();
     }
   });
 }
@@ -89,24 +110,16 @@ export function destroyChat() {
   destroyPresence();
 }
 
-// ==================== ДЕМО-РЕЖИМ ====================
 function enableDemoMode() {
   demoMode = true;
   const container = document.getElementById("chatMessages");
   if (!container) return;
 
-  // Загружаем демо-сообщения
   const raw = localStorage.getItem("re_demo_messages");
   demoMessages = raw ? JSON.parse(raw) : [
     { id: "d1", text: "Добро пожаловать в беседу симьи RESIDENT EVIL.",
-      authorLogin: "Emperor", authorRole: "Император", authorId: "demo-emperor",
+      authorLogin: "Emperor", authorRole: "emperor", authorId: "demo-emperor",
       createdAt: Date.now() - 3600000, reactions: {} },
-    { id: "d2", text: "Сегодня в 20:00 общий сбор на нефтезаводе.",
-      authorLogin: "Lord_Darkness", authorRole: "Лорд Тьмы", authorId: "demo-lord",
-      createdAt: Date.now() - 1800000, reactions: { "🔥": ["demo-emperor"] } },
-    { id: "d3", text: "Принял. Буду с отрядом.",
-      authorLogin: "Death_Knight", authorRole: "Рыцарь Смерти", authorId: "demo-knight",
-      createdAt: Date.now() - 600000, reactions: {} }
   ];
 
   renderDemo();
@@ -159,7 +172,6 @@ function demoDelete(id) {
   renderDemo();
 }
 
-// ==================== ОТПРАВКА ====================
 async function sendMessage(text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
@@ -187,25 +199,24 @@ async function sendMessage(text) {
     localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
     renderDemo();
     clearReply();
-    addDashEvent("💬", `${user.login}: ${text.substring(0, 40)}`);
+    addDashEvent("💬", user.login + ": " + text.substring(0, 40));
     return;
   }
 
   try {
     await addDoc(collection(db, "chats", CHAT_ID, "messages"), newMsg);
     clearReply();
-    addDashEvent("💬", `${user.login}: ${text.substring(0, 40)}`);
+    addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
     toast("Не удалось отправить сообщение", "warn");
   }
 }
 
-// ==================== УДАЛЕНИЕ ====================
 async function deleteMessage(msg) {
   const user = getCurrentUser();
   if (!user) return;
 
-  const isAdmin = ["Император", "Лорд Тьмы"].includes(user.role);
+  const isAdmin = ["emperor", "lord"].includes(user.role);
   if (msg.authorId !== user.uid && !isAdmin) {
     toast("Нет прав на удаление", "warn");
     return;
@@ -220,13 +231,12 @@ async function deleteMessage(msg) {
 
   try {
     await deleteDoc(doc(db, "chats", CHAT_ID, "messages", msg.id));
-    addDashEvent("🗑", `${user.login} удалил сообщение`);
+    addDashEvent("🗑", user.login + " удалил сообщение");
   } catch (e) {
     toast("Не удалось удалить", "warn");
   }
 }
 
-// ==================== ПЕЧАТАЕТ ====================
 let typingTimeout = null;
 function onTyping() {
   if (demoMode) return;
@@ -242,7 +252,10 @@ function updateBadge(count) {
   if (!badge) return;
   const chatPanel = document.getElementById("chat");
   const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-  if (isChatOpen) { badge.style.display = "none"; return; }
+  if (isChatOpen) {
+    badge.style.display = "none";
+    return;
+  }
   badge.textContent = count;
   badge.style.display = count > 0 ? "inline-block" : "none";
-}
+  }
