@@ -353,4 +353,212 @@ window.__contractEdit = function(contractId) {
       '<div class="form-field"><label>Награда, ₽</label><input type="number" id="ceReward" value="' + c.reward + '" min="0"></div>' +
       '<div class="form-field" style="grid-column:1/-1;"><label>Описание</label><textarea id="ceDesc">' + escapeHtml(c.description || "") + '</textarea></div>' +
       '<div class="form-field"><label>Статус</label><select id="ceStatus" class="role-select">' +
-       
+        '<option value="open"' + (c.status === "open" ? " selected" : "") + '>Открыт</option>' +
+        '<option value="review"' + (c.status === "review" ? " selected" : "") + '>На проверке</option>' +
+        '<option value="approved"' + (c.status === "approved" ? " selected" : "") + '>Выполнен</option>' +
+        '<option value="rejected"' + (c.status === "rejected" ? " selected" : "") + '>Отклонён</option>' +
+      '</select></div>' +
+      '</div>' +
+      '<div id="ceError" style="color:var(--red);font-size:12px;display:none;"></div>',
+    confirmText: "СОХРАНИТЬ",
+    onConfirm: async () => {
+      const title = document.getElementById("ceTitle").value.trim();
+      const reward = parseInt(document.getElementById("ceReward").value) || 0;
+      const description = document.getElementById("ceDesc").value.trim();
+      const status = document.getElementById("ceStatus").value;
+      const err = document.getElementById("ceError");
+      if (!title) { err.textContent = "Введите название"; err.style.display = "block"; return; }
+
+      try {
+        if (!demoMode) {
+          await updateDoc(doc(db, "contracts", contractId), {
+            title, reward, description, status, editedAt: Date.now()
+          });
+        }
+      } catch (e) {}
+
+      const idx = currentContracts.findIndex(x => x.id === contractId);
+      if (idx >= 0) {
+        currentContracts[idx].title = title;
+        currentContracts[idx].reward = reward;
+        currentContracts[idx].description = description;
+        currentContracts[idx].status = status;
+        currentContracts[idx].editedAt = Date.now();
+        if (demoMode) saveDemo();
+        renderAll();
+      }
+      toast("Контракт обновлён", "ok");
+      closeModal();
+    }
+  });
+};
+
+// ==================== ОТЧЁТ ====================
+window.__contractSubmit = function(contractId) {
+  const c = currentContracts.find(x => x.id === contractId);
+  if (!c) return;
+
+  openModal({
+    title: "СДАТЬ ОТЧЁТ",
+    html: '<div class="form-grid">' +
+      '<div class="form-field"><label>Твой ник</label><input type="text" id="rNick" value="' + getCurrentUser().login + '" readonly></div>' +
+      '<div class="form-field"><label>Сколько контрактов выполнил</label><input type="number" id="rCount" value="1" min="1" max="100"></div>' +
+      '<div class="form-field" style="grid-column:1/-1;"><label>Фото/видео доказательство</label><input type="file" id="rMedia" accept="image/*,video/*" multiple>' +
+      '<div class="form-hint">До 50 МБ. JPG/PNG/WEBP/GIF или MP4/WEBM/MOV.</div></div>' +
+      '<div class="form-field" style="grid-column:1/-1;"><label>Комментарий</label><textarea id="rComment" placeholder="Кратко о выполнении..."></textarea></div>' +
+      '</div>' +
+      '<div id="rError" style="color:var(--red);font-size:12px;display:none;"></div>',
+    confirmText: "ОТПРАВИТЬ",
+    onConfirm: async () => {
+      const nick = document.getElementById("rNick").value;
+      const count = parseInt(document.getElementById("rCount").value) || 1;
+      const files = document.getElementById("rMedia").files;
+      const comment = document.getElementById("rComment").value.trim();
+      const err = document.getElementById("rError");
+
+      if (!files || files.length === 0) {
+        err.textContent = "Прикрепите хотя бы одно фото или видео";
+        err.style.display = "block";
+        return;
+      }
+
+      err.style.display = "none";
+      err.textContent = "Загрузка...";
+      err.style.display = "block";
+      err.style.color = "var(--accent)";
+
+      const media = [];
+      for (const file of Array.from(files).slice(0, 5)) {
+        try {
+          const result = await uploadMedia(file, contractId, nick);
+          media.push(result);
+        } catch (e) {
+          err.textContent = e.message;
+          err.style.color = "var(--red)";
+          return;
+        }
+      }
+
+      const update = {
+        status: "review",
+        submittedBy: { uid: getCurrentUser().uid, login: nick, count: count, comment: comment },
+        media: media,
+        submittedAt: Date.now()
+      };
+
+      try {
+        if (!demoMode) {
+          await updateDoc(doc(db, "contracts", contractId), update);
+        }
+      } catch (e) {}
+
+      const idx = currentContracts.findIndex(x => x.id === contractId);
+      if (idx >= 0) {
+        Object.assign(currentContracts[idx], update);
+        if (demoMode) saveDemo();
+        renderAll();
+      }
+      toast("Отчёт отправлен на проверку", "ok");
+      closeModal();
+    }
+  });
+};
+
+// ==================== ОДОБРЕНИЕ ====================
+window.__contractApprove = async function(contractId) {
+  const me = getCurrentUser();
+  if (!me || !["emperor", "lord"].includes(me.role)) {
+    toast("Только лидер и зам могут одобрять", "warn");
+    return;
+  }
+
+  const c = currentContracts.find(x => x.id === contractId);
+  if (!c || !c.submittedBy) return;
+  const count = c.submittedBy.count || 1;
+  await incrementContracts(c.submittedBy.uid, count);
+
+  const update = { status: "approved", approvedAt: Date.now() };
+
+  try {
+    if (!demoMode) {
+      await updateDoc(doc(db, "contracts", contractId), update);
+    }
+  } catch (e) {}
+
+  const idx = currentContracts.findIndex(x => x.id === contractId);
+  if (idx >= 0) {
+    Object.assign(currentContracts[idx], update);
+    if (demoMode) saveDemo();
+    renderAll();
+  }
+
+  const users = await listUsers(true);
+  const fullMe = users.find(u => u.uid === me.uid);
+  const progressEl = document.getElementById("contractProgress");
+  if (progressEl && fullMe) progressEl.innerHTML = renderProgress(fullMe);
+
+  toast("Одобрено: +" + count + " контрактов для " + c.submittedBy.login, "ok");
+};
+
+window.__contractReject = async function(contractId) {
+  const me = getCurrentUser();
+  if (!me || !["emperor", "lord"].includes(me.role)) {
+    toast("Только лидер и зам могут отклонять", "warn");
+    return;
+  }
+
+  if (!confirm("Отклонить отчёт?")) return;
+
+  const update = { status: "rejected", rejectedAt: Date.now() };
+
+  try {
+    if (!demoMode) {
+      await updateDoc(doc(db, "contracts", contractId), update);
+    }
+  } catch (e) {}
+
+  const idx = currentContracts.findIndex(x => x.id === contractId);
+  if (idx >= 0) {
+    Object.assign(currentContracts[idx], update);
+    if (demoMode) saveDemo();
+    renderAll();
+  }
+  toast("Отчёт отклонён", "warn");
+};
+
+window.__contractDelete = async function(contractId) {
+  const me = getCurrentUser();
+  if (!me || !["emperor", "lord"].includes(me.role)) {
+    toast("Нет прав", "warn");
+    return;
+  }
+
+  if (!confirm("Удалить контракт?")) return;
+
+  try {
+    if (!demoMode) {
+      await deleteDoc(doc(db, "contracts", contractId));
+    }
+  } catch (e) {}
+
+  currentContracts = currentContracts.filter(c => c.id !== contractId);
+  if (demoMode) saveDemo();
+  renderAll();
+  toast("Контракт удалён", "ok");
+};
+
+window.__openMedia = function(url, type) {
+  openModal({
+    title: type === "video" ? "ВИДЕО" : "ФОТО",
+    html: type === "video"
+      ? '<video src="' + url + '" controls style="width:100%;border-radius:8px;"></video>'
+      : '<img src="' + url + '" style="width:100%;border-radius:8px;">',
+    confirmText: "ЗАКРЫТЬ",
+    onConfirm: () => closeModal()
+  });
+};
+
+export function destroyContracts() {
+  if (unsub) unsub();
+  if (resetTimer) clearTimeout(resetTimer);
+}
