@@ -6,31 +6,35 @@ import { getCurrentUser } from "../../core/state.js";
 
 let presenceUnsub = null;
 let heartbeatTimer = null;
-let demoHeartbeat = null;
+let typingTimeout = null;
 
 export function setupPresence() {
   const user = getCurrentUser();
   if (!user) return;
 
+  const presenceRef = doc(db, "presence", user.uid);
+
+  // Отмечаем онлайн
+  setDoc(presenceRef, {
+    login: user.login,
+    role: user.role,
+    online: true,
+    typing: false,
+    lastSeen: Date.now()
+  }, { merge: true }).catch(() => {});
+
+  // Heartbeat каждые 30 секунд
+  heartbeatTimer = setInterval(() => {
+    setDoc(presenceRef, { lastSeen: Date.now(), online: true }, { merge: true }).catch(() => {});
+  }, 30000);
+
+  // Отмечаем офлайн при выходе
+  window.addEventListener("beforeunload", () => {
+    setDoc(presenceRef, { online: false, typing: false }, { merge: true }).catch(() => {});
+  });
+
+  // Подписка на «печатает» и онлайн
   try {
-    const presenceRef = doc(db, "presence", user.uid);
-
-    setDoc(presenceRef, {
-      login: user.login,
-      role: user.role,
-      online: true,
-      typing: false,
-      lastSeen: Date.now()
-    }, { merge: true }).catch(() => {});
-
-    heartbeatTimer = setInterval(() => {
-      setDoc(presenceRef, { lastSeen: Date.now() }, { merge: true }).catch(() => {});
-    }, 30000);
-
-    window.addEventListener("beforeunload", () => {
-      setDoc(presenceRef, { online: false, typing: false }, { merge: true }).catch(() => {});
-    });
-
     presenceUnsub = onSnapshot(collection(db, "presence"), (snap) => {
       const typers = [];
       let onlineCount = 0;
@@ -47,11 +51,7 @@ export function setupPresence() {
       }));
     });
   } catch (e) {
-    console.warn("Presence в демо-режиме");
-    // Демо: локальный heartbeat
-    window.dispatchEvent(new CustomEvent("presenceUpdate", {
-      detail: { online: 3, total: 5 }
-    }));
+    console.warn("Presence failed:", e);
   }
 }
 
@@ -61,23 +61,26 @@ export async function setTyping(isTyping) {
   try {
     await setDoc(doc(db, "presence", user.uid),
       { typing: isTyping }, { merge: true });
-  } catch {}
+  } catch (e) {}
 }
 
 function renderTyping(typers) {
   const el = document.getElementById("chatTyping");
-  if (!el) return;
-  if (typers.length === 0) { el.innerHTML = ""; return; }
-  if (typers.length === 1) {
-    el.innerHTML = `${typers[0]} печатает<span class="dots"></span>`;
-  } else if (typers.length === 2) {
-    el.innerHTML = `${typers[0]} и ${typers[1]} печатают<span class="dots"></span>`;
-  } else {
-    el.innerHTML = `${typers[0]} и ещё ${typers.length - 1} печатают<span class="dots"></span>`;
-  }
+  const elAllies = document.getElementById("chatAlliesTyping");
+  const text = typers.length === 0 ? "" :
+    (typers.length === 1 ? typers[0] + " печатает<span class='dots'></span>"
+                        : typers.slice(0, 2).join(", ") + " печатают<span class='dots'></span>");
+  if (el) el.innerHTML = text;
+  if (elAllies) elAllies.innerHTML = text;
 }
 
 export function destroyPresence() {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      setDoc(doc(db, "presence", user.uid), { online: false, typing: false }, { merge: true });
+    } catch (e) {}
+  }
   if (presenceUnsub) presenceUnsub();
   if (heartbeatTimer) clearInterval(heartbeatTimer);
 }
