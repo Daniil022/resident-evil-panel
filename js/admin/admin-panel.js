@@ -8,9 +8,7 @@ import { listDivisions } from "../core/divisions.js";
 import { renderUsersTable } from "./admin-users.js";
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
-import { initAdminApplications } from "./admin-applications.js";
-import { initAdminNickApplications } from "./admin-nick-applications.js";
-import { initAdminRegistration } from "./admin-registration.js";
+import { downloadBackup, openRestoreModal } from "../modules/backup.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
 let initialized = false;
@@ -23,9 +21,6 @@ export async function initAdmin() {
   }
   await initAdminRoles();
   await initAdminDivisions();
-  await initAdminApplications();
-  await initAdminNickApplications();
-  await initAdminRegistration();
   await renderUsersTable(true);
 }
 
@@ -40,6 +35,8 @@ function setupCards() {
       else if (action === "changeDivision") openChangeDivision();
       else if (action === "warn") openWarn();
       else if (action === "deleteUser") openDeleteUser();
+      else if (action === "backupDownload") downloadBackup();
+      else if (action === "backupRestore") openRestoreModal();
     });
   });
 }
