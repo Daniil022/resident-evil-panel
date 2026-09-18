@@ -73,13 +73,13 @@ function renderTabs() {
   const editable = canEdit();
 
   let html = '<button class="music-tab ' + (currentAlbumId === "all" ? "active" : "") + '" onclick="window.__musicTab(\'all\')">' +
-    '🎼 Все треки (' + tracks.length + ')</button>';
+    'Все треки (' + tracks.length + ')</button>';
 
   albums.forEach(a => {
     const count = tracks.filter(t => t.albumId === a.id).length;
     html += '<button class="music-tab ' + (currentAlbumId === a.id ? "active" : "") + '" onclick="window.__musicTab(\'' + a.id + '\')">' +
-      '📁 ' + escapeHtml(a.name) + ' (' + count + ')' +
-      (editable ? '<span class="tab-del" onclick="event.stopPropagation();window.__albumDelete(\'' + a.id + '\')">✕</span>' : '') +
+      a.name + ' (' + count + ')' +
+      (editable ? '<span class="tab-del" onclick="event.stopPropagation();window.__albumDelete(\'' + a.id + '\')">X</span>' : '') +
       '</button>';
   });
 
@@ -100,7 +100,7 @@ function renderTracks() {
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="contracts-empty" style="grid-column:1/-1;">' +
-      '<div class="contracts-empty-icon">🎵</div>' +
+      '<div class="contracts-empty-icon">Ноты</div>' +
       '<div class="contracts-empty-text">Треков пока нет</div>' +
       '<div class="contracts-empty-sub">Лидер или зам может добавить первый трек</div>' +
       '</div>';
@@ -113,7 +113,7 @@ function renderTracks() {
     const isCurrent = currentTrack && currentTrack.id === t.id;
     return '<div class="card track-card ' + (isCurrent ? "track-current" : "") + '">' +
       '<div class="track-head">' +
-        '<span class="track-icon">🎵</span>' +
+        '<span class="track-icon">♪</span>' +
         '<div style="flex:1;min-width:0;">' +
           '<div class="name">' + escapeHtml(t.title) + '</div>' +
           (t.artist ? '<div class="role">' + escapeHtml(t.artist) + '</div>' : '') +
@@ -122,9 +122,9 @@ function renderTracks() {
       (t.albumName ? '<div class="stat">Альбом: <b>' + escapeHtml(t.albumName) + '</b></div>' : '') +
       '<div class="stat">Добавил: <b>' + escapeHtml(t.addedBy || "—") + '</b></div>' +
       '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">' +
-        '<button class="btn small" onclick="window.__musicPlay(\'' + t.id + '\')">▶ Слушать</button>' +
-        (editable ? '<button class="btn small secondary" onclick="window.__musicEdit(\'' + t.id + '\')">✏️</button>' : '') +
-        (editable ? '<button class="btn small danger" onclick="window.__musicDelete(\'' + t.id + '\')">🗑</button>' : '') +
+        '<button class="btn small" onclick="window.__musicPlay(\'' + t.id + '\')">Слушать</button>' +
+        (editable ? '<button class="btn small secondary" onclick="window.__musicEdit(\'' + t.id + '\')">Ред.</button>' : '') +
+        (editable ? '<button class="btn small danger" onclick="window.__musicDelete(\'' + t.id + '\')">Удл.</button>' : '') +
       '</div>' +
     '</div>';
   }).join("");
@@ -136,15 +136,13 @@ function renderPlayer(track) {
   currentTrack = track;
 
   if (!track.url) {
-    player.innerHTML = '<div class="contracts-empty" style="padding:20px;">' +
-      '<div class="contracts-empty-text">У трека нет аудиофайла</div>' +
-      '</div>';
+    player.innerHTML = '<div class="contracts-empty" style="padding:20px;"><div class="contracts-empty-text">У трека нет аудиофайла</div></div>';
     return;
   }
 
   player.innerHTML = '<div class="now-playing-bar">' +
-    '<div class="now-playing">🎧 Сейчас играет</div>' +
-    '<button class="close-player" onclick="window.__musicClosePlayer()">✕</button>' +
+    '<div class="now-playing">Сейчас играет</div>' +
+    '<button class="close-player" onclick="window.__musicClosePlayer()">X</button>' +
     '</div>' +
     '<div class="track-info" style="border-top:none;">' +
       '<div class="track-title">' + escapeHtml(track.title) + '</div>' +
@@ -161,7 +159,6 @@ function renderPlayer(track) {
   const audio = document.getElementById("globalAudio");
   if (audio) {
     audio.addEventListener("ended", () => {
-      // Автопереход к следующему треку
       const filtered = currentAlbumId === "all" ? tracks : tracks.filter(t => t.albumId === currentAlbumId);
       const idx = filtered.findIndex(t => t.id === track.id);
       if (idx >= 0 && idx < filtered.length - 1) {
@@ -193,9 +190,9 @@ function openTrackModal(track) {
     title: isEdit ? "РЕДАКТИРОВАТЬ ТРЕК" : "ДОБАВИТЬ ТРЕК",
     html: '<div class="form-grid">' +
       '<div class="form-field"><label>Название</label><input type="text" id="trTitle" value="' + (track ? escapeHtml(track.title) : "") + '" placeholder="Umbrella Theme" autocomplete="off"></div>' +
-      '<div class="form-field"><label>Исполнитель (опционально)</label><input type="text" id="trArtist" value="' + (track ? escapeHtml(track.artist || "") : "") + '" placeholder="Resident Evil OST" autocomplete="off"></div>' +
-      '<div class="form-field" style="grid-column:1/-1;"><label>Аудиофайл ' + (isEdit ? '(оставь пустым — не менять)' : '') + '</label><input type="file" id="trFile" accept="audio/*"><div class="form-hint">MP3, WAV, OGG. До 20 МБ.</div></div>' +
-      '<div class="form-field"><label>Альбом</label><select id="trAlbum" class="role-select"><option value="">— без альбома —</option>' + albums.map(a => '<option value="' + a.id + '"' + (track?.albumId === a.id ? " selected" : "") + '>' + escapeHtml(a.name) + '</option>').join("") + '</select></div>' +
+      '<div class="form-field"><label>Исполнитель</label><input type="text" id="trArtist" value="' + (track ? escapeHtml(track.artist || "") : "") + '" placeholder="Resident Evil OST" autocomplete="off"></div>' +
+      '<div class="form-field" style="grid-column:1/-1;"><label>Аудиофайл ' + (isEdit ? '(оставь пустым — не менять)' : '') + '</label><input type="file" id="trFile" accept="audio/*"><div class="form-hint">MP3, WAV, OGG. До 20 МБ. Файл уйдёт в ВК-беседу MUSIC.</div></div>' +
+      '<div class="form-field"><label>Альбом</label><select id="trAlbum" class="role-select"><option value="">— без альбома —</option>' + albums.map(a => '<option value="' + a.id + '"' + (track && track.albumId === a.id ? " selected" : "") + '>' + escapeHtml(a.name) + '</option>').join("") + '</select></div>' +
       '</div>' +
       '<div id="trError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: isEdit ? "СОХРАНИТЬ" : "ДОБАВИТЬ",
@@ -215,7 +212,6 @@ async function saveTrack(existing) {
 
   err.style.display = "none";
   if (!title) { err.textContent = "Введите название"; err.style.display = "block"; return; }
-
   if (!existing && !file) { err.textContent = "Выберите аудиофайл"; err.style.display = "block"; return; }
 
   let url = existing?.url || "";
@@ -228,7 +224,7 @@ async function saveTrack(existing) {
     err.style.display = "block";
 
     try {
-      const media = await uploadMedia(file, "music", "music", "🎵 " + title);
+      const media = await uploadMedia(file, "music", "music", "Трек: " + title, "music");
       url = media.url;
     } catch (e) {
       err.textContent = e.message;
@@ -305,7 +301,7 @@ function openAlbumModal() {
     title: "СОЗДАТЬ АЛЬБОМ",
     html: '<div class="form-grid">' +
       '<div class="form-field"><label>Название альбома</label><input type="text" id="alName" placeholder="Umbrella OST" autocomplete="off"></div>' +
-      '<div class="form-field" style="grid-column:1/-1;"><label>Описание (опционально)</label><input type="text" id="alDesc" placeholder="Сборник треков" autocomplete="off"></div>' +
+      '<div class="form-field" style="grid-column:1/-1;"><label>Описание</label><input type="text" id="alDesc" placeholder="Сборник треков" autocomplete="off"></div>' +
       '</div><div id="alError" style="color:var(--red);font-size:12px;display:none;"></div>',
     confirmText: "СОЗДАТЬ",
     onConfirm: () => saveAlbum()
