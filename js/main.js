@@ -188,10 +188,12 @@ function enterApp(user) {
     captas: false, nicks: false, ranks: false, applications: false
   };
 
+  // Запускаем чаты сразу
+  try { initChat(); inited.chat = true; } catch (err) { console.warn("Chat init failed:", err); }
+
   window.addEventListener("tabChange", (e) => {
     const tab = e.detail.tab;
 
-    if (tab === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (err) {} }
     if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
     if (tab === "applications" && isAdminRole && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
     if (tab === "contracts" && !ally && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
@@ -206,7 +208,6 @@ function enterApp(user) {
   });
 
   const hash = location.hash.replace("#", "");
-  if (hash === "chat") { inited.chat = true; try { initChat(); } catch (e) {} }
   if (hash === "admin" && isAdminRole) { inited.admin = true; try { initAdmin(); } catch (e) {} }
   if (hash === "applications" && isAdminRole) { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
   if (hash === "contracts" && !ally) { inited.contracts = true; try { initContracts(); } catch (e) {} }
