@@ -19,7 +19,6 @@
 <link rel="stylesheet" href="css/album.css">
 <link rel="stylesheet" href="css/profile.css">
 <link rel="stylesheet" href="css/modal.css">
-<link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
 
@@ -93,10 +92,6 @@
         <span class="nick" id="userName">—</span>
         <span class="role-tag" id="userRoleTag">—</span>
       </div>
-    </div>
-    <div class="platform-switch" id="platformSwitch">
-      <button class="platform-btn" data-platform="pc" title="Версия для ПК">🖥 ПК</button>
-      <button class="platform-btn" data-platform="mobile" title="Версия для телефона">📱 Android</button>
     </div>
     <button class="logout-btn" onclick="logout()">ВЫЙТИ</button>
   </div>
@@ -386,39 +381,6 @@
   </section>
 
 </main>
-</div>
-
-<!-- НИЖНЯЯ ПАНЕЛЬ (мобильная) -->
-<nav class="bottom-nav" id="bottomNav">
-  <button class="bottom-nav-btn active" data-bottom-tab="dashboard" onclick="window.__bottomTab('dashboard')">
-    <span class="bottom-nav-icon">🏠</span>
-    <span class="bottom-nav-label">Даш</span>
-  </button>
-  <button class="bottom-nav-btn" data-bottom-tab="nicks" onclick="window.__bottomTab('nicks')">
-    <span class="bottom-nav-icon">👤</span>
-    <span class="bottom-nav-label">Ники</span>
-  </button>
-  <button class="bottom-nav-btn" data-bottom-tab="contracts" onclick="window.__bottomTab('contracts')">
-    <span class="bottom-nav-icon">📜</span>
-    <span class="bottom-nav-label">Конт</span>
-  </button>
-  <button class="bottom-nav-btn" data-bottom-tab="chat" onclick="window.__bottomTab('chat')">
-    <span class="bottom-nav-icon">💬</span>
-    <span class="bottom-nav-label">Чат</span>
-  </button>
-  <button class="bottom-nav-btn" data-bottom-tab="more" onclick="window.__bottomMore()">
-    <span class="bottom-nav-icon">⋮</span>
-    <span class="bottom-nav-label">Ещё</span>
-  </button>
-</nav>
-
-<!-- BOTTOM SHEET "ЕЩЁ" -->
-<div class="more-menu-overlay" id="moreMenuOverlay">
-  <div class="more-menu" id="moreMenu">
-    <div class="more-menu-handle"></div>
-    <div class="more-menu-title">Все разделы</div>
-    <div class="more-menu-items" id="moreMenuItems"></div>
-  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
