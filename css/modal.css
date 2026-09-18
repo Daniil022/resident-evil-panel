@@ -1,0 +1,46 @@
+/* ============ КРАСИВАЯ МОДАЛКА ============ */
+.modal-overlay {
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--blue), var(--cyan));
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.modal input, .modal textarea, .modal select {
+  transition: all 0.25s;
+}
+
+.modal input:focus, .modal textarea:focus, .modal select:focus {
+  transform: scale(1.01);
+}
+
+.modal-actions button {
+  transition: all 0.2s;
+}
+
+.modal-actions button:hover {
+  transform: translateY(-2px);
+}
