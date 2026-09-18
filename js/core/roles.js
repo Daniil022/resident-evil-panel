@@ -9,11 +9,12 @@ const CACHE_KEY = "roles_list";
 const DEMO_KEY = "re_demo_roles";
 
 export const DEFAULT_ROLES = [
-  { id: "emperor",  name: "Император",     color: "#fbbf24", desc: "Лидер симьи",  order: 1, system: true },
-  { id: "lord",     name: "Лорд Тьмы",     color: "#ef4444", desc: "Заместитель",  order: 2, system: true },
-  { id: "knight",   name: "Рыцарь Смерти", color: "#3b82f6", desc: "Офицер",       order: 3, system: true },
-  { id: "skeleton", name: "Скелет Ужаса",  color: "#a855f7", desc: "Офицер",       order: 4, system: true },
-  { id: "soul",     name: "Тёмная душа",   color: "#a4b1c0", desc: "Боец",         order: 5, system: true }
+  { id: "emperor",  name: "Император",     color: "#fbbf24", desc: "Лидер семьи",   order: 1, system: true },
+  { id: "lord",     name: "Лорд Тьмы",     color: "#ef4444", desc: "Заместитель",   order: 2, system: true },
+  { id: "knight",   name: "Рыцарь Смерти", color: "#3b82f6", desc: "Офицер",        order: 3, system: true },
+  { id: "skeleton", name: "Скелет Ужаса",  color: "#a855f7", desc: "Офицер",        order: 4, system: true },
+  { id: "soul",     name: "Тёмная душа",   color: "#a4b1c0", desc: "Боец",          order: 5, system: true },
+  { id: "ally",     name: "Союзник",       color: "rainbow", desc: "Союзник семьи", order: 99, system: true, isAlly: true }
 ];
 
 function getDemoRoles() {
@@ -71,7 +72,7 @@ export async function getRole(roleId) {
 
 export async function createRole({ name, color, desc = "" }) {
   if (!name || !name.trim()) throw new Error("Введите название");
-  if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Неверный HEX-цвет");
+  if (color !== "rainbow" && !/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Неверный HEX-цвет");
 
   const roles = await listRoles(true);
   if (roles.find(r => r.name.toLowerCase() === name.toLowerCase())) {
@@ -107,7 +108,7 @@ export async function updateRole(roleId, updates) {
     patch.name = updates.name.trim();
   }
   if (updates.color !== undefined) {
-    if (!/^#[0-9a-fA-F]{6}$/.test(updates.color)) throw new Error("Неверный HEX");
+    if (updates.color !== "rainbow" && !/^#[0-9a-fA-F]{6}$/.test(updates.color)) throw new Error("Неверный HEX");
     patch.color = updates.color;
   }
   if (updates.desc !== undefined) patch.desc = updates.desc.trim();
