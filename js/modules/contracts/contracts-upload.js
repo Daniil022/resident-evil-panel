@@ -1,5 +1,4 @@
 // js/modules/contracts/contracts-upload.js
-
 const API_URL = "https://resident-evil-panel.vercel.app/api/upload";
 
 export async function uploadMedia(file, contextId, userLogin, message = "", mediaType = "contract") {
@@ -19,10 +18,13 @@ export async function uploadMedia(file, contextId, userLogin, message = "", medi
   if (!data.ok) throw new Error(data.error || "Ошибка загрузки");
 
   return {
-    url: data.vk_link,
+    // ⚠️ Прямая ссылка на изображение
+    url: data.url || data.vk_link,
+    vk_link: data.vk_link,
     attachment: data.attachment,
     message_id: data.message_id,
     peer_id: data.peer_id,
+    mediaType: data.mediaType,
     type: file.type.startsWith("video") ? "video"
         : file.type.startsWith("audio") ? "audio"
         : "image",
