@@ -97,6 +97,8 @@ function setupAuthScreen() {
     const nick = document.getElementById("regNick").value.trim();
     const pin = document.getElementById("regPin").value.trim();
     const pin2 = document.getElementById("regPin2").value.trim();
+    const typeEl = document.querySelector('input[name="regType"]:checked');
+    const type = typeEl ? typeEl.value : "resident";
 
     if (pin !== pin2) {
       regError.textContent = "PIN-коды не совпадают";
@@ -108,7 +110,7 @@ function setupAuthScreen() {
     registerBtn.textContent = "ОТПРАВКА...";
 
     try {
-      await submitRegistrationRequest(nick, pin);
+      await submitRegistrationRequest(nick, pin, type);
       toast("Заявка отправлена! Ожидайте одобрения лидера.", "ok");
       registerForm.style.display = "none";
       loginForm.style.display = "block";
@@ -137,11 +139,17 @@ function enterApp(user) {
 
   if (nameEl) nameEl.textContent = user.login;
 
+  const ally = user.role === "ally";
+
   if (roleEl) {
     try {
       roleEl.textContent = getRoleName(user.role);
       roleEl.className = "role-tag";
-      roleEl.style.color = getRoleColor(user.role);
+      if (ally) {
+        roleEl.classList.add("role-tag-rainbow");
+      } else {
+        roleEl.style.color = getRoleColor(user.role);
+      }
     } catch (e) {
       roleEl.textContent = user.role || "—";
     }
@@ -155,7 +163,10 @@ function enterApp(user) {
     } else {
       avatarEl.textContent = user.login.charAt(0).toUpperCase();
     }
+    if (ally) avatarEl.classList.add("avatar-rainbow");
   }
+
+  applyRoleVisibility(ally);
 
   const navAdmin = document.getElementById("navAdmin");
   const navApplications = document.getElementById("navApplications");
@@ -183,34 +194,52 @@ function enterApp(user) {
     if (tab === "chat" && !inited.chat) { inited.chat = true; try { initChat(); } catch (err) {} }
     if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
     if (tab === "applications" && isAdminRole && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
-    if (tab === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
-    if (tab === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
-    if (tab === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
-    if (tab === "accolade" && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
-    if (tab === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
-    if (tab === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
-    if (tab === "containers" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
-    if (tab === "nicks" && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
-    if (tab === "ranks" && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
+    if (tab === "contracts" && !ally && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
+    if (tab === "allies" && !ally && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
+    if (tab === "rules" && !ally && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
+    if (tab === "accolade" && !ally && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
+    if (tab === "music" && !ally && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
+    if (tab === "album" && !ally && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
+    if (tab === "containers" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
+    if (tab === "nicks" && !ally && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
+    if (tab === "ranks" && !ally && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
   });
 
   const hash = location.hash.replace("#", "");
   if (hash === "chat") { inited.chat = true; try { initChat(); } catch (e) {} }
+  if (hash === "admin" && isAdminRole) { inited.admin = true; try { initAdmin(); } catch (e) {} }
   if (hash === "applications" && isAdminRole) { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
-  if (hash === "contracts") { inited.contracts = true; try { initContracts(); } catch (e) {} }
-  if (hash === "allies") { inited.allies = true; try { initAllies(); } catch (e) {} }
-  if (hash === "rules") { inited.rules = true; try { initRules(); } catch (e) {} }
-  if (hash === "accolade") { inited.accolades = true; try { initAccolades(); } catch (e) {} }
-  if (hash === "music") { inited.music = true; try { initMusic(); } catch (e) {} }
-  if (hash === "album") { inited.album = true; try { initAlbum(); } catch (e) {} }
-  if (hash === "containers") { inited.captas = true; try { initCaptas(); } catch (e) {} }
-  if (hash === "nicks") { inited.nicks = true; try { initNicks(); } catch (e) {} }
-  if (hash === "ranks") { inited.ranks = true; try { initRanks(); } catch (e) {} }
+  if (hash === "contracts" && !ally) { inited.contracts = true; try { initContracts(); } catch (e) {} }
+  if (hash === "allies" && !ally) { inited.allies = true; try { initAllies(); } catch (e) {} }
+  if (hash === "rules" && !ally) { inited.rules = true; try { initRules(); } catch (e) {} }
+  if (hash === "accolade" && !ally) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
+  if (hash === "music" && !ally) { inited.music = true; try { initMusic(); } catch (e) {} }
+  if (hash === "album" && !ally) { inited.album = true; try { initAlbum(); } catch (e) {} }
+  if (hash === "containers" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "nicks" && !ally) { inited.nicks = true; try { initNicks(); } catch (e) {} }
+  if (hash === "ranks" && !ally) { inited.ranks = true; try { initRanks(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
   if (createBtn) createBtn.addEventListener("click", openCreateContract);
 
   toast('Добро пожаловать, ' + user.login, "ok");
+}
+
+function applyRoleVisibility(isAlly) {
+  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "containers", "allies", "music", "rules", "album", "applications"];
+
+  document.querySelectorAll("#mainNav button").forEach(btn => {
+    const tab = btn.dataset.tab;
+    if (isAlly) {
+      if (hideForAlly.includes(tab)) {
+        btn.classList.add("hidden");
+      } else {
+        btn.classList.remove("hidden");
+      }
+    } else {
+      btn.classList.remove("hidden");
+    }
+  });
 }
 
 window.addEventListener("beforeunload", () => {
