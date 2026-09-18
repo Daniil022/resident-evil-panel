@@ -1,7 +1,7 @@
 // js/modules/chat/chat-notifications.js
 
-let unreadCount = 0;
-let originalTitle = "LIVE RUSSIA // Панель симьи RESIDENT EVIL";
+let unreadCount = { residents: 0, allies: 0 };
+let originalTitle = "LIVE RUSSIA // Панель семьи RESIDENT EVIL";
 let titleInterval = null;
 
 export function playNotificationSound() {
@@ -19,28 +19,7 @@ export function playNotificationSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
-  } catch (e) {
-    console.warn("Sound not supported:", e.message);
-  }
-}
-
-export function updateChatBadge(count) {
-  const badge = document.getElementById("chatBadge");
-  if (!badge) return;
-
-  const chatPanel = document.getElementById("chat");
-  const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-
-  if (count <= 0 || isChatOpen) {
-    badge.style.display = "none";
-    unreadCount = 0;
-    stopTitleBlink();
-    return;
-  }
-
-  badge.textContent = count > 99 ? "99+" : count;
-  badge.style.display = "inline-block";
-  unreadCount = count;
+  } catch (e) {}
 }
 
 function startTitleBlink() {
@@ -60,43 +39,36 @@ function stopTitleBlink() {
   document.title = originalTitle;
 }
 
-export function notifyNewMessage(msg, isOwnMessage) {
-  const chatPanel = document.getElementById("chat");
-  const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-
+export function notifyNewMessage(msg, isOwnMessage, chatId = "residents") {
   if (isOwnMessage) return;
-  if (isChatOpen) return;
+
+  const panelId = chatId === "allies" ? "chat-allies" : "chat";
+  const panel = document.getElementById(panelId);
+  const isOpen = panel && panel.classList.contains("active");
+
+  if (isOpen) return;
 
   playNotificationSound();
 
-  if (unreadCount === 0) {
-    startTitleBlink();
-  }
+  const totalUnread = unreadCount.residents + unreadCount.allies;
+  if (totalUnread === 0) startTitleBlink();
 
-  unreadCount++;
-  updateChatBadge(unreadCount);
+  unreadCount[chatId]++;
 }
 
-export function resetUnread() {
-  unreadCount = 0;
-  updateChatBadge(0);
-  stopTitleBlink();
+export function resetUnread(tab) {
+  if (tab === "chat") unreadCount.residents = 0;
+  if (tab === "chat-allies") unreadCount.allies = 0;
+
+  if (unreadCount.residents + unreadCount.allies === 0) {
+    stopTitleBlink();
+  }
 }
 
 export function initChatNotifications() {
   window.addEventListener("tabChange", (e) => {
-    if (e.detail.tab === "chat") {
-      resetUnread();
-    }
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      const chatPanel = document.getElementById("chat");
-      const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-      if (isChatOpen) {
-        resetUnread();
-      }
+    if (e.detail.tab === "chat" || e.detail.tab === "chat-allies") {
+      resetUnread(e.detail.tab);
     }
   });
 }
