@@ -2,9 +2,7 @@
 import { getCurrentUser } from "./state.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName } from "./colorize.js";
 import { db } from "../firebase-init.js";
-import {
-  collection, getDocs, query, where
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let clockInterval = null;
 
@@ -22,16 +20,17 @@ export async function initDashboard() {
     const roleName = getRoleName(user.role);
     const divName = user.division ? getDivisionName(user.division) : null;
     const roleColor = getRoleColor(user.role);
-    dashRole.textContent = divName ? `${roleName} · ${divName}` : roleName;
+    dashRole.textContent = divName ? (roleName + " · " + divName) : roleName;
     dashRole.className = "dash-role";
     dashRole.style.color = roleColor;
   }
 
   if (dashAvatar) {
     if (user.avatar) {
-      dashAvatar.innerHTML = `<img src="${user.avatar}" alt="avatar">`;
+      dashAvatar.innerHTML = '<img src="' + user.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      dashAvatar.style.padding = "0";
+      dashAvatar.style.overflow = "hidden";
       dashAvatar.style.background = "transparent";
-      dashAvatar.style.boxShadow = "0 0 30px rgba(0,200,212,0.4)";
     } else {
       dashAvatar.textContent = user.login.charAt(0).toUpperCase();
     }
@@ -41,70 +40,80 @@ export async function initDashboard() {
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
 
-  // Реальные счётчики
   loadRealStats();
 }
 
 async function loadRealStats() {
+  // Кэш 60 секунд
+  const lastLoad = window.__lastStatsLoad || 0;
+  if (Date.now() - lastLoad < 60000) return;
+  window.__lastStatsLoad = Date.now();
+
   try {
+    // ПАРАЛЛЕЛЬНЫЕ запросы — все 4 сразу
+    const [usersRes, presenceRes, contractsRes, alliesRes] = await Promise.all([
+      getDocs(collection(db, "users")).catch(() => null),
+      getDocs(collection(db, "presence")).catch(() => null),
+      getDocs(collection(db, "contracts")).catch(() => null),
+      getDocs(collection(db, "allies")).catch(() => null)
+    ]);
+
     // Участники
-    const usersSnap = await getDocs(collection(db, "users"));
-    const usersCount = usersSnap.size;
-    setCounter("dashMembers", usersCount);
+    setCounter("dashMembers", usersRes ? usersRes.size : 0);
 
     // Онлайн
-    const presenceSnap = await getDocs(collection(db, "presence"));
     let onlineCount = 0;
-    presenceSnap.forEach(d => {
-      if (d.data().online) onlineCount++;
-    });
+    if (presenceRes) {
+      presenceRes.forEach(d => { if (d.data().online) onlineCount++; });
+    }
     setCounter("dashOnline", onlineCount);
 
-    // Казна — сумма reward одобренных контрактов
-    const contractsSnap = await getDocs(collection(db, "contracts"));
+    // Казна + контракты
     let treasury = 0;
-    let contractsCount = contractsSnap.size;
-    contractsSnap.forEach(d => {
-      const c = d.data();
-      if (c.status === "approved") treasury += (c.reward || 0);
-    });
+    let contractsCount = 0;
+    if (contractsRes) {
+      contractsCount = contractsRes.size;
+      contractsRes.forEach(d => {
+        const c = d.data();
+        if (c.status === "approved") treasury += (c.reward || 0);
+      });
+    }
     setCounter("dashTreasury", treasury.toLocaleString("ru-RU"));
     setCounter("dashContracts", contractsCount);
 
-    // Активные войны
-    const alliesSnap = await getDocs(collection(db, "allies"));
+    // Войны
     let wars = 0;
-    alliesSnap.forEach(d => {
-      if (d.data().status === "war") wars++;
-    });
+    if (alliesRes) {
+      alliesRes.forEach(d => { if (d.data().status === "war") wars++; });
+    }
     setCounter("dashWars", wars);
 
-    // Сообщения
-    try {
-      const msgsSnap = await getDocs(collection(db, "chats", "main", "messages"));
-      setCounter("dashMessages", msgsSnap.size);
-    } catch (e) {
-      setCounter("dashMessages", 0);
-    }
+    // Сообщения — отдельно (не критично)
+    getDocs(collection(db, "chats", "main", "messages"))
+      .then(snap => setCounter("dashMessages", snap.size))
+      .catch(() => setCounter("dashMessages", 0));
+
   } catch (e) {
-    console.warn("Stats load failed, using demo", e);
-
-    // Демо-режим
-    try {
-      const demoUsers = JSON.parse(localStorage.getItem("re_panel_demo_users") || "[]");
-      setCounter("dashMembers", demoUsers.length);
-
-      const demoContracts = JSON.parse(localStorage.getItem("re_demo_contracts") || "[]");
-      setCounter("dashContracts", demoContracts.length);
-      const treasury = demoContracts
-        .filter(c => c.status === "approved")
-        .reduce((sum, c) => sum + (c.reward || 0), 0);
-      setCounter("dashTreasury", treasury.toLocaleString("ru-RU"));
-
-      const demoAllies = JSON.parse(localStorage.getItem("re_demo_allies") || "[]");
-      setCounter("dashWars", demoAllies.filter(a => a.status === "war").length);
-    } catch (err) {}
+    console.warn("Stats load failed, demo mode");
+    loadDemoStats();
   }
+}
+
+function loadDemoStats() {
+  try {
+    const demoUsers = JSON.parse(localStorage.getItem("re_panel_demo_users") || "[]");
+    setCounter("dashMembers", demoUsers.length);
+
+    const demoContracts = JSON.parse(localStorage.getItem("re_demo_contracts") || "[]");
+    setCounter("dashContracts", demoContracts.length);
+    const treasury = demoContracts
+      .filter(c => c.status === "approved")
+      .reduce((sum, c) => sum + (c.reward || 0), 0);
+    setCounter("dashTreasury", treasury.toLocaleString("ru-RU"));
+
+    const demoAllies = JSON.parse(localStorage.getItem("re_demo_allies") || "[]");
+    setCounter("dashWars", demoAllies.filter(a => a.status === "war").length);
+  } catch (e) {}
 }
 
 function setCounter(id, value) {
@@ -132,11 +141,9 @@ export function addDashEvent(icon, text) {
                String(now.getMinutes()).padStart(2, "0");
   const event = document.createElement("div");
   event.className = "dash-event";
-  event.innerHTML = `
-    <span class="dash-event-icon">${icon}</span>
-    <span class="dash-event-time">${time}</span>
-    <span class="dash-event-text">${text}</span>
-  `;
+  event.innerHTML = '<span class="dash-event-icon">' + icon + '</span>' +
+    '<span class="dash-event-time">' + time + '</span>' +
+    '<span class="dash-event-text">' + text + '</span>';
   feed.insertBefore(event, feed.firstChild);
   while (feed.children.length > 30) feed.removeChild(feed.lastChild);
 }
