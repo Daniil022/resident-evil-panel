@@ -1,9 +1,6 @@
 // api/upload.js
 export const config = {
-  api: {
-    bodyParser: false,
-    sizeLimit: "50mb"
-  }
+  api: { bodyParser: false, sizeLimit: "50mb" }
 };
 
 const PEER_MAP = {
@@ -25,7 +22,6 @@ export default async function handler(req, res) {
   try {
     const VK_TOKEN = process.env.VK_TOKEN;
     const VK_VERSION = "5.199";
-
     if (!VK_TOKEN) return res.status(500).json({ ok: false, error: "VK_TOKEN not configured" });
 
     const chunks = [];
@@ -37,7 +33,8 @@ export default async function handler(req, res) {
     if (!boundaryMatch) return res.status(400).json({ ok: false, error: "No boundary" });
 
     const boundary = "--" + boundaryMatch[1];
-    const parts = buffer.toString("binary").split(boundary).filter(p => p && p !== "--\r\n");
+    const boundaryBuf = Buffer.from(boundary);
+    const crlf = Buffer.from("\r\n\r\n");
 
     let fileData = null;
     let filename = "file";
@@ -45,12 +42,24 @@ export default async function handler(req, res) {
     let fileType = "";
     let mediaType = "contract";
 
+    const parts = [];
+    let start = 0;
+    while (true) {
+      const idx = buffer.indexOf(boundaryBuf, start);
+      if (idx === -1) break;
+      if (start > 0) parts.push(buffer.slice(start, idx - 2));
+      start = idx + boundaryBuf.length;
+    }
+
     for (const part of parts) {
-      const headerEnd = part.indexOf("\r\n\r\n");
+      const headerEnd = part.indexOf(crlf);
       if (headerEnd === -1) continue;
 
-      const headers = part.substring(0, headerEnd);
-      const body = part.substring(headerEnd + 4, part.lastIndexOf("\r\n"));
+      const headers = part.slice(0, headerEnd).toString("utf-8");
+      let bodyBuf = part.slice(headerEnd + crlf.length);
+      if (bodyBuf.length >= 2 && bodyBuf[bodyBuf.length - 2] === 0x0D && bodyBuf[bodyBuf.length - 1] === 0x0A) {
+        bodyBuf = bodyBuf.slice(0, bodyBuf.length - 2);
+      }
 
       const nameMatch = headers.match(/name="([^"]+)"/);
       const fileMatch = headers.match(/filename="([^"]+)"/);
@@ -61,11 +70,11 @@ export default async function handler(req, res) {
       if (fileMatch) {
         filename = fileMatch[1];
         fileType = typeMatch ? typeMatch[1].trim() : "application/octet-stream";
-        fileData = Buffer.from(body, "binary");
+        fileData = bodyBuf;
       } else if (nameMatch[1] === "message") {
-        message = body;
+        message = bodyBuf.toString("utf-8");
       } else if (nameMatch[1] === "mediaType") {
-        mediaType = body;
+        mediaType = bodyBuf.toString("utf-8").trim();
       }
     }
 
@@ -73,8 +82,9 @@ export default async function handler(req, res) {
 
     const peerKey = PEER_MAP[mediaType] || PEER_MAP.default;
     const VK_PEER_ID = process.env[peerKey] || process.env.VK_PEER_ID;
-
     if (!VK_PEER_ID) return res.status(500).json({ ok: false, error: "No peer_id for: " + mediaType });
+
+    console.log("Upload:", mediaType, peerKey, VK_PEER_ID, filename, fileType);
 
     const isPhoto = fileType.startsWith("image/");
     const isVideo = fileType.startsWith("video/");
@@ -91,7 +101,6 @@ export default async function handler(req, res) {
 
       const fd = new FormData();
       fd.append("file", new Blob([fileData], { type: fileType }), filename);
-
       const uploadResp = await fetch(serverData.response.upload_url, { method: "POST", body: fd });
       const uploadData = await uploadResp.json();
 
@@ -113,7 +122,6 @@ export default async function handler(req, res) {
 
       const fd = new FormData();
       fd.append("file", new Blob([fileData], { type: fileType }), filename);
-
       const uploadResp = await fetch(serverData.response.upload_url, { method: "POST", body: fd });
       const uploadData = await uploadResp.json();
 
