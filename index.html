@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LIVE RUSSIA // Панель семьи RESIDENT EVIL</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 90,85 10,85' fill='%236b7280'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 90,85 10,85' fill='%2300c8d4'/></svg>">
 
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
@@ -37,7 +37,7 @@
       <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
       <button class="auth-btn" id="loginBtn">ВОЙТИ В СИСТЕМУ</button>
       <div class="auth-default" id="authDefaultHint"></div>
-      <button type="button" class="auth-btn" id="showRegisterBtn" style="margin-top:10px;background:transparent;border:1px solid var(--accent);color:var(--accent);">📝 ЗАРЕГИСТРИРОВАТЬСЯ</button>
+      <button type="button" class="auth-btn" id="showRegisterBtn" style="margin-top:10px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);">📝 ЗАРЕГИСТРИРОВАТЬСЯ</button>
     </div>
 
     <div id="registerForm" style="display:none;">
@@ -55,7 +55,7 @@
       <div style="display:flex;gap:10px;margin-bottom:16px;">
         <label style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg-2);padding:10px;border-radius:8px;border:1px solid var(--border);transition:all 0.2s;">
           <input type="radio" name="regType" value="resident" checked style="cursor:pointer;">
-          <span style="color:var(--text);font-size:13px;">🏠 Резидент</span>
+          <span style="color:#fff;font-size:13px;">🏠 Резидент</span>
         </label>
         <label style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg-2);padding:10px;border-radius:8px;border:1px solid var(--border);transition:all 0.2s;">
           <input type="radio" name="regType" value="ally" style="cursor:pointer;">
@@ -85,10 +85,6 @@
     <div class="header-info">
       <div class="status-line">СИСТЕМА АКТИВНА</div>
       <div class="fam-name">СЕМЬЯ: <span>RESIDENT EVIL</span></div>
-    </div>
-    <div class="theme-switch" id="themeSwitch">
-      <button class="theme-btn" data-theme="dark" title="Тёмная тема">🌙</button>
-      <button class="theme-btn" data-theme="light" title="Светлая тема">☀️</button>
     </div>
     <div class="user-info" onclick="window.__openMyProfile && window.__openMyProfile()" style="cursor:pointer;">
       <div class="user-avatar" id="userAvatar">?</div>
@@ -227,7 +223,7 @@
     <div class="chat-wrap">
       <div class="chat-theme-picker" id="chatThemePicker">
         <button class="chat-theme-btn" data-theme="default" title="Стиль по умолчанию"></button>
-        <button class="chat-theme-btn" data-theme="vk-classic" title="Светлая тема"></button>
+        <button class="chat-theme-btn" data-theme="vk-classic" title="Классика ВК"></button>
         <button class="chat-theme-btn" data-theme="dark" title="Тёмная тема"></button>
       </div>
       <div class="chat-pin-bar" id="chatPinBar">
@@ -268,7 +264,7 @@
     <div class="chat-wrap">
       <div class="chat-theme-picker" id="chatAlliesThemePicker">
         <button class="chat-theme-btn" data-theme="default" title="Стиль по умолчанию"></button>
-        <button class="chat-theme-btn" data-theme="vk-classic" title="Светлая тема"></button>
+        <button class="chat-theme-btn" data-theme="vk-classic" title="Классика ВК"></button>
         <button class="chat-theme-btn" data-theme="dark" title="Тёмная тема"></button>
       </div>
       <div class="chat-pin-bar" id="chatAlliesPinBar">
