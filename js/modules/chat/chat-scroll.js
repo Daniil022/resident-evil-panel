@@ -36,10 +36,10 @@ export function scrollToBottom(force = false) {
 export function scrollToMessage(msgId) {
   const container = document.getElementById("chatMessages");
   if (!container) return;
-  const el = container.querySelector(`[data-id="${msgId}"]`);
+  const el = container.querySelector('[data-id="' + msgId + '"]');
   if (el) {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.style.background = "rgba(193,18,31,0.3)";
-    setTimeout(() => { el.style.background = ""; }, 1500);
+    el.classList.add("msg-highlight");
+    setTimeout(() => el.classList.remove("msg-highlight"), 1500);
   }
 }
