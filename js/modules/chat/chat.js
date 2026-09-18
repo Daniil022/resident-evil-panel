@@ -1,46 +1,96 @@
 // js/modules/chat/chat.js
 import {
   collection, addDoc, query, orderBy, limit,
-  onSnapshot, serverTimestamp, doc, getDoc, updateDoc, deleteDoc
+  onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "../../firebase-init.js";
 import { getCurrentUser } from "../../core/state.js";
 import { renderMessage, renderDateSeparator, isSameDay } from "./chat-render.js";
-import { setupInput, setReplyTo, clearReply } from "./chat-input.js";
-import { setupPresence, setTyping, destroyPresence } from "./chat-presence.js";
-import { scrollToBottom, setupScroll, scrollToMessage } from "./chat-scroll.js";
+import { setTyping, destroyPresence, setupPresence } from "./chat-presence.js";
 import { toggleReaction } from "./chat-reactions.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
 import { notifyNewMessage, resetUnread, initChatNotifications } from "./chat-notifications.js";
 
-const CHAT_ID = "main";
-let unsubscribeMessages = null;
+const CHATS = {
+  residents: {
+    containerId: "chatMessages",
+    inputId: "chatInput",
+    sendId: "chatSend",
+    emojiBtnId: "emojiBtn",
+    emojiPickerId: "emojiPicker",
+    newBtnId: "chatNewBtn",
+    replyBarId: "chatReplyBar",
+    replyNameId: "replyToName",
+    replyTextId: "replyToText",
+    badgeId: "chatBadge",
+    themePickerId: "chatThemePicker",
+    panelId: "chat"
+  },
+  allies: {
+    containerId: "chatAlliesMessages",
+    inputId: "chatAlliesInput",
+    sendId: "chatAlliesSend",
+    emojiBtnId: "chatAlliesEmojiBtn",
+    emojiPickerId: "chatAlliesEmojiPicker",
+    newBtnId: "chatAlliesNewBtn",
+    replyBarId: "chatAlliesReplyBar",
+    replyNameId: "chatAlliesReplyToName",
+    replyTextId: "chatAlliesReplyToText",
+    badgeId: "chatAlliesBadge",
+    themePickerId: "chatAlliesThemePicker",
+    panelId: "chat-allies"
+  }
+};
+
+const unsubscribers = { residents: null, allies: null };
+const lastMessageId = { residents: null, allies: null };
+const firstLoad = { residents: true, allies: true };
+const autoScroll = { residents: true, allies: true };
+
 let demoMode = false;
-let demoMessages = [];
-let lastMessageId = null;
-let firstLoad = true;
+let demoMessages = { residents: [], allies: [] };
 let notificationsInited = false;
 
 export function initChat() {
-  const container = document.getElementById("chatMessages");
-  if (!container) return;
+  const user = getCurrentUser();
+  if (!user) return;
 
-  setupInput(sendMessage, onTyping);
+  const isAlly = user.role === "ally";
+
+  initOneChat("residents");
+  if (!isAlly) initOneChat("allies");
+
   setupPresence();
-  setupScroll();
-  initChatTheme();
 
   if (!notificationsInited) {
     notificationsInited = true;
     initChatNotifications();
   }
 
-  const msgsRef = collection(db, "chats", CHAT_ID, "messages");
+  window.addEventListener("tabChange", (e) => {
+    if (e.detail.tab === "chat" || e.detail.tab === "chat-allies") {
+      resetUnread(e.detail.tab);
+    }
+  });
+}
+
+function initOneChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+
+  const container = document.getElementById(cfg.containerId);
+  if (!container) return;
+
+  setupInputForChat(chatId);
+  setupScrollForChat(chatId);
+  initThemeForChat(chatId);
+
+  const msgsRef = collection(db, "chats", chatId, "messages");
   const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
 
   try {
-    unsubscribeMessages = onSnapshot(q, (snapshot) => {
+    unsubscribers[chatId] = onSnapshot(q, (snapshot) => {
       container.innerHTML = "";
       let lastDate = null;
       let lastAuthor = null;
@@ -66,45 +116,49 @@ export function initChat() {
           (msgDate - (lastDate || 0)) < 5 * 60 * 1000;
 
         container.appendChild(renderMessage(msg, grouped, {
-          onReply: (m) => setReplyTo(m),
-          onReact: (id, emoji) => toggleReaction(id, emoji),
-          onEdit: (m) => openEditModal(m),
-          onDelete: (m) => deleteMessage(m)
+          onReply: (m) => setReplyToChat(chatId, m),
+          onReact: (id, emoji) => toggleReaction(id, emoji, chatId),
+          onEdit: (m) => openEditModal(m, chatId),
+          onDelete: (m) => deleteMessage(m, chatId)
         }, user.uid));
 
         lastAuthor = msg.authorId;
       });
 
-      if (newestMsg && !firstLoad && newestMsg.id !== lastMessageId) {
-        const isOwn = newestMsg.authorId === getCurrentUser().uid;
-        notifyNewMessage(newestMsg, isOwn);
+      if (count === 0) {
+        const emptyMsg = chatId === "allies"
+          ? "Беседа союзников пуста. Будьте первым!"
+          : "Беседа резидентов пуста. Будьте первым!";
+        container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">' + emptyMsg + '</div>';
       }
 
-      if (newestMsg) lastMessageId = newestMsg.id;
-      firstLoad = false;
+      if (newestMsg && !firstLoad[chatId] && newestMsg.id !== lastMessageId[chatId]) {
+        const isOwn = newestMsg.authorId === getCurrentUser().uid;
+        notifyNewMessage(newestMsg, isOwn, chatId);
+      }
 
-      scrollToBottom();
-      updateBadge(count);
-      window.dispatchEvent(new CustomEvent("chatMessageCount", { detail: { count } }));
+      if (newestMsg) lastMessageId[chatId] = newestMsg.id;
+      firstLoad[chatId] = false;
+
+      scrollToBottomForChat(chatId);
+      updateBadgeForChat(chatId, count);
     }, (err) => {
-      console.warn("Firebase offline, демо-режим");
+      console.warn("Firebase offline для " + chatId);
       enableDemoMode();
     });
   } catch (e) {
     enableDemoMode();
   }
-
-  window.addEventListener("tabChange", (e) => {
-    if (e.detail.tab === "chat") resetUnread();
-  });
 }
 
 export function destroyChat() {
-  if (unsubscribeMessages) unsubscribeMessages();
+  for (const id of Object.keys(unsubscribers)) {
+    if (unsubscribers[id]) unsubscribers[id]();
+  }
   destroyPresence();
 }
 
-function openEditModal(msg) {
+function openEditModal(msg, chatId) {
   if (!msg) return;
   openModal({
     title: "РЕДАКТИРОВАТЬ СООБЩЕНИЕ",
@@ -117,16 +171,17 @@ function openEditModal(msg) {
       if (!newText) { err.textContent = "Введите текст"; err.style.display = "block"; return; }
 
       if (demoMode) {
-        const m = demoMessages.find(x => x.id === msg.id);
+        const arr = demoMessages[chatId];
+        const m = arr.find(x => x.id === msg.id);
         if (m) { m.text = newText; m.editedAt = Date.now(); }
-        localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
-        renderDemo();
+        saveDemoMessages();
+        renderDemoForChat(chatId);
         closeModal();
         return;
       }
 
       try {
-        await updateDoc(doc(db, "chats", CHAT_ID, "messages", msg.id), {
+        await updateDoc(doc(db, "chats", chatId, "messages", msg.id), {
           text: newText,
           editedAt: Date.now()
         });
@@ -142,42 +197,57 @@ function openEditModal(msg) {
 
 function enableDemoMode() {
   demoMode = true;
-  const raw = localStorage.getItem("re_demo_messages");
-  demoMessages = raw ? JSON.parse(raw) : [
-    { id: "d1", text: "Добро пожаловать в беседу семьи RESIDENT EVIL.",
-      authorLogin: "Emperor", authorRole: "emperor", authorId: "demo-emperor",
-      createdAt: Date.now() - 3600000, reactions: {} },
-  ];
-  renderDemo();
+  const raw = localStorage.getItem("re_demo_messages_multi");
+  if (raw) {
+    try { demoMessages = JSON.parse(raw); } catch {}
+  } else {
+    demoMessages = { residents: [], allies: [] };
+    saveDemoMessages();
+  }
+  renderDemoForChat("residents");
+  renderDemoForChat("allies");
 }
 
-function renderDemo() {
-  const container = document.getElementById("chatMessages");
+function saveDemoMessages() {
+  localStorage.setItem("re_demo_messages_multi", JSON.stringify(demoMessages));
+}
+
+function renderDemoForChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+  const container = document.getElementById(cfg.containerId);
   if (!container) return;
   container.innerHTML = "";
   const user = getCurrentUser();
   let lastDate = null;
+  const arr = demoMessages[chatId] || [];
 
-  demoMessages.forEach(msg => {
+  if (arr.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">Нет сообщений</div>';
+    return;
+  }
+
+  arr.forEach(msg => {
     const msgDate = new Date(msg.createdAt);
     if (!lastDate || !isSameDay(lastDate, msgDate)) {
       container.appendChild(renderDateSeparator(msgDate));
       lastDate = msgDate;
     }
     container.appendChild(renderMessage(msg, false, {
-      onReply: (m) => setReplyTo(m),
-      onReact: (id, emoji) => demoReact(id, emoji),
-      onEdit: (m) => openEditModal(m),
-      onDelete: (m) => demoDelete(m.id)
+      onReply: (m) => setReplyToChat(chatId, m),
+      onReact: (id, emoji) => demoReact(chatId, id, emoji),
+      onEdit: (m) => openEditModal(m, chatId),
+      onDelete: (m) => demoDelete(chatId, m.id)
     }, user.uid));
   });
 
-  scrollToBottom(true);
-  window.dispatchEvent(new CustomEvent("chatMessageCount", { detail: { count: demoMessages.length } }));
+  scrollToBottomForChat(chatId);
+  updateBadgeForChat(chatId, arr.length);
 }
 
-function demoReact(id, emoji) {
-  const msg = demoMessages.find(m => m.id === id);
+function demoReact(chatId, id, emoji) {
+  const arr = demoMessages[chatId] || [];
+  const msg = arr.find(m => m.id === id);
   if (!msg) return;
   msg.reactions = msg.reactions || {};
   msg.reactions[emoji] = msg.reactions[emoji] || [];
@@ -185,31 +255,37 @@ function demoReact(id, emoji) {
   const idx = msg.reactions[emoji].indexOf(user.uid);
   if (idx >= 0) msg.reactions[emoji].splice(idx, 1);
   else msg.reactions[emoji].push(user.uid);
-  localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
-  renderDemo();
+  saveDemoMessages();
+  renderDemoForChat(chatId);
 }
 
-function demoDelete(id) {
+function demoDelete(chatId, id) {
   if (!confirm("Удалить сообщение?")) return;
-  demoMessages = demoMessages.filter(m => m.id !== id);
-  localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
-  renderDemo();
+  demoMessages[chatId] = demoMessages[chatId].filter(m => m.id !== id);
+  saveDemoMessages();
+  renderDemoForChat(chatId);
 }
 
-async function sendMessage(text) {
+async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
-  const replyTo = window.__currentReply || null;
+
+  if (user.role === "ally" && chatId === "residents") {
+    toast("Союзники не могут писать в беседу резидентов", "warn");
+    return;
+  }
+
+  const reply = window.__currentReplies && window.__currentReplies[chatId];
 
   const newMsg = {
     text: text.trim(),
     authorId: user.uid,
     authorLogin: user.login,
     authorRole: user.role,
-    replyTo: replyTo ? {
-      id: replyTo.id,
-      author: replyTo.authorLogin,
-      text: replyTo.text.substring(0, 80)
+    replyTo: reply ? {
+      id: reply.id,
+      author: reply.authorLogin,
+      text: reply.text.substring(0, 80)
     } : null,
     reactions: {},
     createdAt: serverTimestamp()
@@ -218,24 +294,25 @@ async function sendMessage(text) {
   if (demoMode) {
     newMsg.id = "demo-" + Date.now();
     newMsg.createdAt = Date.now();
-    demoMessages.push(newMsg);
-    localStorage.setItem("re_demo_messages", JSON.stringify(demoMessages));
-    renderDemo();
-    clearReply();
+    demoMessages[chatId] = demoMessages[chatId] || [];
+    demoMessages[chatId].push(newMsg);
+    saveDemoMessages();
+    renderDemoForChat(chatId);
+    clearReplyForChat(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
     return;
   }
 
   try {
-    await addDoc(collection(db, "chats", CHAT_ID, "messages"), newMsg);
-    clearReply();
+    await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
+    clearReplyForChat(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
     toast("Не удалось отправить сообщение", "warn");
   }
 }
 
-async function deleteMessage(msg) {
+async function deleteMessage(msg, chatId) {
   const user = getCurrentUser();
   if (!user) return;
   const isAdmin = ["emperor", "lord"].includes(user.role);
@@ -245,57 +322,178 @@ async function deleteMessage(msg) {
   }
   if (!confirm("Удалить сообщение?")) return;
 
-  if (demoMode) { demoDelete(msg.id); return; }
+  if (demoMode) { demoDelete(chatId, msg.id); return; }
 
   try {
-    await deleteDoc(doc(db, "chats", CHAT_ID, "messages", msg.id));
+    await deleteDoc(doc(db, "chats", chatId, "messages", msg.id));
     addDashEvent("🗑", user.login + " удалил сообщение");
   } catch (e) {
     toast("Не удалось удалить", "warn");
   }
 }
 
-let typingTimeout = null;
-function onTyping() {
-  if (demoMode) return;
-  const user = getCurrentUser();
-  if (!user) return;
-  setTyping(true);
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => setTyping(false), 2000);
+function setupInputForChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+
+  const input = document.getElementById(cfg.inputId);
+  const sendBtn = document.getElementById(cfg.sendId);
+  const emojiBtn = document.getElementById(cfg.emojiBtnId);
+  const emojiPicker = document.getElementById(cfg.emojiPickerId);
+
+  if (!input || !sendBtn) return;
+
+  const send = () => {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendMessageTo(chatId, text);
+  };
+
+  sendBtn.addEventListener("click", send);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  let typingTimeout = null;
+  input.addEventListener("input", () => {
+    if (demoMode) return;
+    setTyping(true);
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => setTyping(false), 2000);
+  });
+
+  if (emojiBtn && emojiPicker) {
+    const EMOJIS = ["😀","😂","🤣","😊","😎","🤔","😴","😡","🥶","🤯",
+      "❤️","🔥","💀","⚔️","🛡️","🏆","🎯","💰","💎","⚠️",
+      "👍","👎","👏","🙏","💪","✊","🤝","🖕","✌️","👀",
+      "☣️","🧬","🩸","🧟","👻","🎃","🌑","⚡","❄️","☠️"];
+
+    emojiPicker.innerHTML = EMOJIS.map(e => '<button type="button">' + e + '</button>').join("");
+    emojiPicker.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        input.value += btn.textContent;
+        input.focus();
+      });
+    });
+
+    emojiBtn.addEventListener("click", () => {
+      emojiPicker.classList.toggle("active");
+    });
+  }
 }
 
-function updateBadge(count) {
-  const badge = document.getElementById("chatBadge");
+function setReplyToChat(chatId, msg) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+
+  if (!window.__currentReplies) window.__currentReplies = {};
+  window.__currentReplies[chatId] = msg;
+
+  const bar = document.getElementById(cfg.replyBarId);
+  const name = document.getElementById(cfg.replyNameId);
+  const txt = document.getElementById(cfg.replyTextId);
+
+  if (name) name.textContent = msg.authorLogin;
+  if (txt) txt.textContent = msg.text.substring(0, 80);
+  if (bar) bar.classList.add("active");
+
+  const input = document.getElementById(cfg.inputId);
+  if (input) input.focus();
+}
+
+function clearReplyForChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+  if (window.__currentReplies) window.__currentReplies[chatId] = null;
+  const bar = document.getElementById(cfg.replyBarId);
+  if (bar) bar.classList.remove("active");
+}
+
+window.__clearReply = function() { clearReplyForChat("residents"); };
+window.__clearReplyAllies = function() { clearReplyForChat("allies"); };
+
+function setupScrollForChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+
+  const container = document.getElementById(cfg.containerId);
+  const newBtn = document.getElementById(cfg.newBtnId);
+  if (!container) return;
+
+  container.addEventListener("scroll", () => {
+    const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+    autoScroll[chatId] = atBottom;
+    if (autoScroll[chatId] && newBtn) newBtn.classList.remove("show");
+  });
+
+  if (newBtn) {
+    newBtn.addEventListener("click", () => {
+      container.scrollTop = container.scrollHeight;
+      autoScroll[chatId] = true;
+      newBtn.classList.remove("show");
+    });
+  }
+}
+
+function scrollToBottomForChat(chatId, force = false) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+  const container = document.getElementById(cfg.containerId);
+  const newBtn = document.getElementById(cfg.newBtnId);
+  if (!container) return;
+
+  if (autoScroll[chatId] || force) {
+    container.scrollTop = container.scrollHeight;
+  } else if (newBtn) {
+    newBtn.classList.add("show");
+  }
+}
+
+function updateBadgeForChat(chatId, count) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
+  const badge = document.getElementById(cfg.badgeId);
   if (!badge) return;
-  const chatPanel = document.getElementById("chat");
-  const isChatOpen = chatPanel && chatPanel.classList.contains("active");
-  if (isChatOpen) { badge.style.display = "none"; return; }
+
+  const panel = document.getElementById(cfg.panelId);
+  const isOpen = panel && panel.classList.contains("active");
+  if (isOpen) {
+    badge.style.display = "none";
+    return;
+  }
+
   badge.textContent = count;
   badge.style.display = count > 0 ? "inline-block" : "none";
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
+function initThemeForChat(chatId) {
+  const cfg = CHATS[chatId];
+  if (!cfg) return;
 
-function initChatTheme() {
-  const saved = localStorage.getItem("chat_theme") || "default";
-  document.body.setAttribute("data-chat-theme", saved);
-
-  const picker = document.getElementById("chatThemePicker");
+  const picker = document.getElementById(cfg.themePickerId);
   if (!picker) return;
+
+  const saved = localStorage.getItem("chat_theme_" + chatId) || "default";
+  document.body.setAttribute("data-chat-theme-" + chatId, saved);
 
   picker.querySelectorAll(".chat-theme-btn").forEach(btn => {
     if (btn.dataset.theme === saved) btn.classList.add("active");
     btn.addEventListener("click", () => {
       const theme = btn.dataset.theme;
-      document.body.setAttribute("data-chat-theme", theme);
-      localStorage.setItem("chat_theme", theme);
+      document.body.setAttribute("data-chat-theme-" + chatId, theme);
+      localStorage.setItem("chat_theme_" + chatId, theme);
       picker.querySelectorAll(".chat-theme-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       toast("Тема чата изменена", "ok");
     });
   });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
