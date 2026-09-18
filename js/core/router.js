@@ -43,6 +43,3 @@ export function switchTab(tab, updateHash = true) {
   // Событие для модулей
   window.dispatchEvent(new CustomEvent("tabChange", { detail: { tab } }));
 }
-
-// Экспорт в window для нижней панели мобильной версии
-window.switchTab = switchTab;
