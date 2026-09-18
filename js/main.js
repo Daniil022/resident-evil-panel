@@ -16,6 +16,7 @@ import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
 import { initCaptas } from "./modules/captas.js";
 import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
+import { initPlatformSwitch } from "./modules/platform-switch.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -181,6 +182,10 @@ function enterApp(user) {
   setupAvatarClick();
   if (user.avatar) updateDashAvatar(user);
 
+  initPlatformSwitch();
+  window.__currentUser = user;
+  window.dispatchEvent(new CustomEvent("userLoaded", { detail: user }));
+
   const inited = {
     chat: false, admin: false, contracts: false,
     allies: false, rules: false,
@@ -188,7 +193,6 @@ function enterApp(user) {
     captas: false, nicks: false, ranks: false, applications: false
   };
 
-  // Запускаем чаты сразу
   try { initChat(); inited.chat = true; } catch (err) { console.warn("Chat init failed:", err); }
 
   window.addEventListener("tabChange", (e) => {
