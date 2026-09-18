@@ -1,4 +1,5 @@
 // js/modules/chat/chat-render.js
+import { getCurrentUser } from "../../core/state.js";
 
 export function renderMessage(msg, grouped, handlers, currentUid) {
   const isOwn = msg.authorId === currentUid;
@@ -81,22 +82,30 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     body.appendChild(reactWrap);
   }
 
+  const user = getCurrentUser();
+  const isAdmin = user && ["emperor", "lord"].includes(user.role);
+
   const actions = document.createElement("div");
   actions.className = "msg-actions";
-  actions.innerHTML =
-    '<button title="Ответить">↩</button>' +
-    '<button title="Реакция">☺</button>' +
-    (isOwn ? '<button title="Редактировать">✏️</button>' : '') +
-    '<button title="Удалить">✕</button>';
 
-  actions.children[0].onclick = () => handlers.onReply(msg);
-  actions.children[1].onclick = () => quickReact(msg.id, handlers);
+  let actionsHTML = '<button title="Ответить">↩</button>';
+  actionsHTML += '<button title="Реакция">☺</button>';
+  if (isOwn) actionsHTML += '<button title="Редактировать">✏️</button>';
+  if (isAdmin) actionsHTML += '<button title="Закрепить">📌</button>';
+  actionsHTML += '<button title="Удалить">🗑</button>';
+  actions.innerHTML = actionsHTML;
+
+  let idx = 0;
+  actions.children[idx++].onclick = () => handlers.onReply(msg);
+  actions.children[idx++].onclick = () => quickReact(msg.id, handlers);
   if (isOwn) {
-    actions.children[2].onclick = () => handlers.onEdit && handlers.onEdit(msg);
-    actions.children[3].onclick = () => handlers.onDelete(msg);
-  } else {
-    actions.children[2].onclick = () => handlers.onDelete(msg);
+    actions.children[idx++].onclick = () => handlers.onEdit && handlers.onEdit(msg);
   }
+  if (isAdmin) {
+    actions.children[idx++].onclick = () => handlers.onPin && handlers.onPin(msg);
+  }
+  actions.children[idx++].onclick = () => handlers.onDelete(msg);
+
   body.appendChild(actions);
 
   wrap.appendChild(body);
@@ -183,6 +192,7 @@ function roleToClass(role) {
   if (role === "emperor") return "gold";
   if (role === "lord") return "red";
   if (role === "knight" || role === "skeleton") return "blue";
+  if (role === "ally") return "rainbow";
   return "";
 }
 
