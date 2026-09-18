@@ -8,7 +8,6 @@ import { cacheGet, cacheSet, cacheInvalidate } from "./cache.js";
 const CACHE_KEY = "divisions_list";
 const DEMO_KEY = "re_demo_divisions";
 
-// ==================== ДЕФОЛТНЫЕ ПОДРАЗДЕЛЕНИЯ ====================
 export const DEFAULT_DIVISIONS = [
   { id: "guard",      name: "Охраник",      color: "#22c55e", desc: "Охрана",        order: 1 },
   { id: "shooter",    name: "Стрелок",      color: "#ef4444", desc: "Стрельба",      order: 2 },
@@ -34,10 +33,9 @@ function saveDemoDivisions(divisions) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(divisions));
 }
 
-// ==================== LIST ====================
 export async function listDivisions(force = false) {
   if (!force) {
-    const cached = cacheGet(CACHE_KEY, 60000);
+    const cached = cacheGet(CACHE_KEY, 300000);
     if (cached) return cached;
   }
 
@@ -75,7 +73,6 @@ export async function getDivision(divisionId) {
   return divisions.find(d => d.id === divisionId) || null;
 }
 
-// ==================== CREATE ====================
 export async function createDivision({ name, color, desc = "" }) {
   if (!name || !name.trim()) throw new Error("Введите название");
   if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Неверный HEX-цвет");
@@ -103,7 +100,6 @@ export async function createDivision({ name, color, desc = "" }) {
   return div;
 }
 
-// ==================== UPDATE ====================
 export async function updateDivision(divId, updates) {
   const divisions = await listDivisions();
   const div = divisions.find(d => d.id === divId);
@@ -133,7 +129,6 @@ export async function updateDivision(divId, updates) {
   cacheInvalidate(CACHE_KEY);
 }
 
-// ==================== DELETE ====================
 export async function deleteDivision(divId) {
   try {
     await deleteDoc(doc(db, "divisions", divId));
@@ -144,7 +139,6 @@ export async function deleteDivision(divId) {
   cacheInvalidate(CACHE_KEY);
 }
 
-// ==================== REORDER ====================
 export async function moveDivision(divId, direction) {
   const divisions = await listDivisions(true);
   const idx = divisions.findIndex(d => d.id === divId);
