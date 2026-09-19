@@ -11,6 +11,7 @@ const PEER_MAP = {
   album:    "VK_PEER_ALBUM",
   music:    "VK_PEER_MUSIC",
   contract: "VK_PEER_ID",
+  voice:    "VK_PEER_ID",
   default:  "VK_PEER_ID"
 };
 
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
     const isAudio = fileType.startsWith("audio/");
 
     let attachmentId = null;
-    let directUrl = null; // ⚠️ Прямая ссылка на файл
+    let directUrl = null;
 
     if (isPhoto) {
       const serverResp = await fetch(
@@ -119,7 +120,6 @@ export default async function handler(req, res) {
       const photo = saveData.response[0];
       attachmentId = "photo" + photo.owner_id + "_" + photo.id;
 
-      // ⚠️ Берём самое большое изображение
       if (photo.sizes && photo.sizes.length) {
         const biggest = photo.sizes[photo.sizes.length - 1];
         directUrl = biggest.url;
@@ -145,12 +145,11 @@ export default async function handler(req, res) {
 
       const doc = saveData.response.doc || saveData.response[0];
       attachmentId = "doc" + doc.owner_id + "_" + doc.id;
-      directUrl = doc.url || null; // У документов тоже есть прямая ссылка
+      directUrl = doc.url || null;
     } else {
       return res.status(400).json({ ok: false, error: "Unsupported type: " + fileType });
     }
 
-    // Отправляем сообщение в беседу
     const randomId = Math.floor(Math.random() * 1e15);
     const sendResp = await fetch(
       "https://api.vk.com/method/messages.send?peer_id=" + peerId + "&attachment=" + attachmentId + "&message=" + encodeURIComponent(message) + "&random_id=" + randomId + "&access_token=" + VK_TOKEN + "&v=" + VK_VERSION
@@ -164,9 +163,7 @@ export default async function handler(req, res) {
       message_id: sendData.response,
       peer_id: peerId,
       mediaType: mediaType,
-      // ⚠️ ПРЯМАЯ ССЫЛКА (для <img src="">)
       url: directUrl,
-      // Ссылка на сообщение в ВК (для перехода)
       vk_link: "https://vk.com/im?sel=" + peerId + "&msgid=" + sendData.response
     });
 
