@@ -4,6 +4,8 @@ import { submitRegistrationRequest } from "./modules/registration.js";
 import { initRouter } from "./core/router.js";
 import { toast } from "./core/utils.js";
 import { initDashboard } from "./core/dashboard.js";
+import { initSounds } from "./core/sounds.js";
+import { setupSoundButton } from "./core/sounds-panel.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
@@ -22,6 +24,7 @@ import { initOnline, renderOnline } from "./modules/online.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  initSounds();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
   const session = tryRestoreSession();
@@ -182,6 +185,7 @@ function enterApp(user) {
   applyColorsToDOM();
 
   setupAvatarClick();
+  setupSoundButton();
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
@@ -254,4 +258,4 @@ window.addEventListener("beforeunload", () => {
   try { destroyChat(); } catch (e) {}
   try { destroyReadSubs(); } catch (e) {}
   try { destroyContracts(); } catch (e) {}
-});
+});м
