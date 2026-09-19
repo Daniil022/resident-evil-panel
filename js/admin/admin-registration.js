@@ -3,6 +3,7 @@ import {
   listRegistrationRequests, approveRegistration, rejectRegistration, deleteRegistration
 } from "../modules/registration.js";
 import { toast } from "../core/utils.js";
+import { playSound } from "../core/sounds.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
 
 export async function initAdminRegistration() {
@@ -60,6 +61,7 @@ window.__regApprove = async function(id) {
   if (!confirm("Одобрить регистрацию? Аккаунт будет создан автоматически.")) return;
   try {
     const req = await approveRegistration(id);
+    playSound("application");
     toast("Аккаунт «" + req.nick + "» создан как " + (req.type === "ally" ? "Союзник" : "Резидент"), "ok");
     await initAdminRegistration();
   } catch (e) { toast(e.message, "warn"); }
@@ -70,6 +72,7 @@ window.__regReject = async function(id) {
   if (reason === null) return;
   try {
     await rejectRegistration(id, reason.trim());
+    playSound("application");
     toast("Заявка отклонена", "warn");
     await initAdminRegistration();
   } catch (e) { toast(e.message, "warn"); }
