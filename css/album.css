@@ -1,10 +1,110 @@
-/* ============ ФОТОАЛЬБОМ ============ */
+/* ============ ГАЛЕРЕЯ С АЛЬБОМАМИ ============ */
 #albumGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
+/* ============ КАРТОЧКА АЛЬБОМА ============ */
+.album-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  flex-direction: column;
+}
+.album-card:hover {
+  border-color: var(--cyan);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--cyan);
+}
+
+.album-cover {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+.album-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s;
+  display: block;
+}
+.album-card:hover .album-cover img { transform: scale(1.08); }
+
+.album-cover-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  opacity: 0.3;
+  background: linear-gradient(135deg, var(--panel-2), var(--bg-2));
+}
+
+.album-count {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+}
+
+.album-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+.album-card:hover .album-del { opacity: 1; }
+.album-del:hover {
+  background: var(--red);
+  border-color: var(--red);
+  transform: scale(1.1);
+}
+
+.album-meta {
+  padding: 14px 16px;
+}
+.album-name {
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.album-sub {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* ============ КАРТОЧКА ФОТО (внутри альбома) ============ */
 .photo-card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -26,7 +126,6 @@
   overflow: hidden;
   background: var(--bg-2);
 }
-
 .photo-img-wrap img {
   width: 100%;
   height: 100%;
@@ -35,20 +134,15 @@
   transition: transform 0.3s;
   display: block;
 }
+.photo-card:hover .photo-img-wrap img { transform: scale(1.05); }
 
-.photo-card:hover .photo-img-wrap img {
-  transform: scale(1.05);
-}
-
-.photo-del {
+.photo-del,
+.photo-move {
   position: absolute;
-  top: 8px;
-  right: 8px;
   width: 30px;
   height: 30px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(239, 68, 68, 0.5);
   color: #fff;
   font-size: 14px;
   cursor: pointer;
@@ -58,21 +152,33 @@
   justify-content: center;
   opacity: 0;
 }
-
-.photo-card:hover .photo-del {
-  opacity: 1;
+.photo-del {
+  top: 8px;
+  right: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
 }
-
+.photo-move {
+  top: 8px;
+  left: 8px;
+  border: 1px solid rgba(0, 200, 212, 0.5);
+}
+.photo-card:hover .photo-del,
+.photo-card:hover .photo-move { opacity: 1; }
 .photo-del:hover {
   background: var(--red);
   border-color: var(--red);
+  transform: scale(1.1);
+}
+.photo-move:hover {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #001417;
   transform: scale(1.1);
 }
 
 .photo-meta {
   padding: 12px 14px;
 }
-
 .photo-title {
   color: #fff;
   font-size: 13.5px;
@@ -82,7 +188,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .photo-author {
   display: flex;
   justify-content: space-between;
@@ -91,9 +196,119 @@
   gap: 8px;
 }
 
+/* ============ ЛАЙТБОКС ============ */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 10003;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.2s;
+}
+.lightbox-overlay.active { display: flex; }
+
+.lb-stage {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lb-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  animation: lbZoom 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes lbZoom {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.lb-close,
+.lb-prev,
+.lb-next {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.lb-close {
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+}
+.lb-prev,
+.lb-next {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 32px;
+  font-family: serif;
+  line-height: 1;
+}
+.lb-prev { left: 20px; }
+.lb-next { right: 20px; }
+
+.lb-close:hover,
+.lb-prev:hover,
+.lb-next:hover {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #001417;
+  transform: translateY(-50%) scale(1.1);
+}
+.lb-close:hover { transform: scale(1.1); }
+
+.lb-caption {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: #fff;
+  max-width: 80vw;
+}
+.lb-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.lb-counter {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+/* ============ АДАПТИВ ============ */
 @media (max-width: 640px) {
   #albumGrid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
   }
+  .lb-prev, .lb-next {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+  .lb-prev { left: 8px; }
+  .lb-next { right: 8px; }
+  .lb-close { top: 10px; right: 10px; }
 }
