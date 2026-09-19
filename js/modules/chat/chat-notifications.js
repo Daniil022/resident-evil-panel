@@ -1,4 +1,5 @@
 // js/modules/chat/chat-notifications.js
+import { playSound } from "../../core/sounds.js";
 
 let originalTitle = "LIVE RUSSIA // Панель семьи RESIDENT EVIL";
 let titleInterval = null;
@@ -59,21 +60,7 @@ export function markChatAsRead(chatId) {
 }
 
 export function playNotificationSound() {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = "sine";
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.3);
-  } catch (e) {}
+  playSound("chat");
 }
 
 function startTitleBlink() {
