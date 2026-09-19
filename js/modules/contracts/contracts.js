@@ -6,6 +6,7 @@ import {
 import { getCurrentUser } from "../../core/state.js";
 import { listUsers, incrementContracts } from "../../core/auth.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
+import { playSound } from "../../core/sounds.js";
 import { uploadMedia } from "./contracts-upload.js";
 import { getNextReward, getEarnedRewards } from "./contracts-rewards.js";
 
@@ -90,7 +91,7 @@ function saveDemo() {
   localStorage.setItem(DEMO_KEY, JSON.stringify(currentContracts));
 }
 
-// ==================== АВТООБНОВЛЕНИЕ В 00:00 ====================
+// ==================== АВТООБНОВЛЕНИЕ ====================
 function scheduleReset() {
   if (resetTimer) clearTimeout(resetTimer);
 
@@ -104,7 +105,7 @@ function scheduleReset() {
 
   resetTimer = setTimeout(async () => {
     await resetCompletedContracts();
-    scheduleReset(); // Планируем следующий
+    scheduleReset();
   }, msUntil);
 }
 
@@ -324,6 +325,7 @@ export function openCreateContract() {
       try {
         if (demoMode) throw new Error("demo");
         await addDoc(collection(db, "contracts"), contract);
+        playSound("contract");
         toast("Контракт создан", "ok");
         closeModal();
       } catch (e) {
@@ -331,6 +333,7 @@ export function openCreateContract() {
         currentContracts.unshift(contract);
         saveDemo();
         renderAll();
+        playSound("contract");
         toast("Контракт создан", "ok");
         closeModal();
       }
@@ -458,6 +461,7 @@ window.__contractSubmit = function(contractId) {
         if (demoMode) saveDemo();
         renderAll();
       }
+      playSound("contract");
       toast("Отчёт отправлен на проверку", "ok");
       closeModal();
     }
@@ -497,6 +501,7 @@ window.__contractApprove = async function(contractId) {
   const progressEl = document.getElementById("contractProgress");
   if (progressEl && fullMe) progressEl.innerHTML = renderProgress(fullMe);
 
+  playSound("contract");
   toast("Одобрено: +" + count + " контрактов для " + c.submittedBy.login, "ok");
 };
 
