@@ -411,6 +411,57 @@ async function sendMessageTo(chatId, text) {
   }
 }
 
+async function sendVoiceTo(chatId, blob, durationMs) {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  if (user.role === "ally" && chatId === "residents") {
+    toast("Союзники не могут писать в беседу резидентов", "warn");
+    return;
+  }
+
+  let url;
+  try {
+    const { uploadMedia } = await import("../contracts/contracts-upload.js");
+    const file = new File([blob], "voice-" + Date.now() + ".webm", { type: blob.type || "audio/webm" });
+    const media = await uploadMedia(file, chatId, user.login, "🎤 Голосовое", "voice");
+    url = media.url || media.vk_link;
+    if (!url) throw new Error("Пустая ссылка на голосовое");
+  } catch (e) {
+    toast("Не удалось загрузить голосовое: " + e.message, "warn");
+    return;
+  }
+
+  const reply = window.__currentReplies && window.__currentReplies[chatId];
+
+  const newMsg = {
+    type: "voice",
+    text: "🎤 Голосовое сообщение",
+    voiceUrl: url,
+    voiceDuration: durationMs,
+    authorId: user.uid,
+    authorLogin: user.login,
+    authorRole: user.role,
+    authorAvatar: user.avatar || null,
+    replyTo: reply ? {
+      id: reply.id,
+      author: reply.authorLogin,
+      text: reply.text ? reply.text.substring(0, 80) : "🎤 Голосовое"
+    } : null,
+    reactions: {},
+    createdAt: serverTimestamp()
+  };
+
+  try {
+    await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
+    clearReplyForChat(chatId);
+    markChatAsRead(chatId);
+    addDashEvent("🎤", user.login + ": голосовое " + Math.round(durationMs / 1000) + "с");
+  } catch (e) {
+    toast("Ошибка: " + e.message, "warn");
+  }
+}
+
 function setupInputForChat(chatId) {
   const cfg = CHATS[chatId];
   if (!cfg) return;
@@ -469,6 +520,11 @@ function setupInputForChat(chatId) {
       }
     });
   }
+
+  // Голосовые — подключаем UI-кнопку
+  import("./chat-voice-ui.js")
+    .then(m => m.setupVoiceForChat(chatId, sendVoiceTo))
+    .catch(err => console.warn("Voice UI init failed:", err));
 }
 
 function setReplyToChat(chatId, msg) {
@@ -483,7 +539,7 @@ function setReplyToChat(chatId, msg) {
   const txt = document.getElementById(cfg.replyTextId);
 
   if (name) name.textContent = msg.authorLogin;
-  if (txt) txt.textContent = msg.text.substring(0, 80);
+  if (txt) txt.textContent = msg.text ? msg.text.substring(0, 80) : "🎤 Голосовое";
   if (bar) bar.classList.add("active");
 
   const input = document.getElementById(cfg.inputId);
