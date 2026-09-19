@@ -4,6 +4,7 @@ import {
   collection, getDocs, doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { toast } from "../core/utils.js";
+import { playSound } from "../core/sounds.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
 
 const DEMO_NICK_APPS = "re_demo_nick_applications";
@@ -117,6 +118,7 @@ window.__nickApprove = async function(id) {
     updateDemoAppStatus(id, "approved");
   }
 
+  playSound("application");
   toast("Заявка одобрена", "ok");
   await initAdminNickApplications();
 };
@@ -135,6 +137,7 @@ window.__nickReject = async function(id) {
     updateDemoAppStatus(id, "rejected", reason);
   }
 
+  playSound("application");
   toast("Заявка отклонена", "warn");
   await initAdminNickApplications();
 };
