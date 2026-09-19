@@ -4,6 +4,7 @@ import {
   collection, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { toast } from "../core/utils.js";
+import { playSound } from "../core/sounds.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
 import { setApplicationsCache } from "../modules/accolades.js";
 
@@ -91,6 +92,7 @@ window.__appApprove = async function(id) {
       localStorage.setItem("re_demo_applications", JSON.stringify(demo));
     }
   }
+  playSound("application");
   toast("Заявка одобрена", "ok");
   await initAdminApplications();
 };
@@ -114,6 +116,7 @@ window.__appReject = async function(id) {
       localStorage.setItem("re_demo_applications", JSON.stringify(demo));
     }
   }
+  playSound("application");
   toast("Заявка отклонена", "warn");
   await initAdminApplications();
 };
