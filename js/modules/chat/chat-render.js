@@ -246,4 +246,61 @@ function renderText(text) {
   );
 
   html = html.replace(
-    /@([
+    /@([A-Za-z0-9_]{3,32})/g,
+    '<span class="chat-mention" data-mention="$1">@$1</span>'
+  );
+
+  return { html, isBigEmoji };
+}
+
+export function renderDateSeparator(date) {
+  const el = document.createElement("div");
+  el.className = "chat-date-sep";
+  el.innerHTML = "<span>" + formatDate(date) + "</span>";
+  return el;
+}
+
+export function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
+
+function quickReact(msgId, handlers) {
+  const emojis = ["❤️", "🔥", "💀", "⚔️", "😂", "👍"];
+  const choice = prompt("Реакция:\n" + emojis.map((e, i) => (i + 1) + ". " + e).join("\n"), "1");
+  if (!choice) return;
+  const idx = parseInt(choice) - 1;
+  if (idx >= 0 && idx < emojis.length) {
+    handlers.onReact(msgId, emojis[idx]);
+  }
+}
+
+function formatTime(ts) {
+  if (!ts) return "--:--";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return String(d.getHours()).padStart(2, "0") + ":" +
+         String(d.getMinutes()).padStart(2, "0");
+}
+
+function formatDate(d) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (isSameDay(d, today)) return "Сегодня";
+  if (isSameDay(d, yesterday)) return "Вчера";
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+}
+
+function roleToClass(role) {
+  if (role === "emperor") return "gold";
+  if (role === "lord") return "red";
+  if (role === "knight" || role === "skeleton") return "blue";
+  if (role === "ally") return "rainbow";
+  return "";
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
