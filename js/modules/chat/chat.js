@@ -180,7 +180,6 @@ function initOneChat(chatId) {
         container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">' + emptyMsg + '</div>';
       }
 
-      // Уведомление о новом сообщении
       if (newestMsg && !firstLoad[chatId] && newestMsg.id !== lastMessageId[chatId]) {
         const isOwn = newestMsg.authorId === getCurrentUser().uid;
         notifyNewMessage(newestMsg, isOwn, chatId);
@@ -206,7 +205,6 @@ export function destroyChat() {
   try { destroyPresence(); } catch (e) {}
 }
 
-// ==================== РЕДАКТИРОВАНИЕ ====================
 function openEditModal(msg, chatId) {
   if (!msg) return;
   openModal({
@@ -234,7 +232,6 @@ function openEditModal(msg, chatId) {
   setTimeout(() => document.getElementById("editText")?.focus(), 80);
 }
 
-// ==================== УДАЛЕНИЕ ====================
 function openDeleteModal(msg, chatId) {
   const user = getCurrentUser();
   const isAdmin = ["emperor", "lord"].includes(user.role);
@@ -290,7 +287,6 @@ window.__deleteForAll = async function(chatId, msgId) {
   }
 };
 
-// ==================== PIN ====================
 async function pinMessage(chatId, msg) {
   const user = getCurrentUser();
   const isAdmin = ["emperor", "lord"].includes(user.role);
@@ -379,7 +375,6 @@ function updatePinBar(chatId, pinData) {
   };
 }
 
-// ==================== ОТПРАВКА ====================
 async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
@@ -396,6 +391,7 @@ async function sendMessageTo(chatId, text) {
     authorId: user.uid,
     authorLogin: user.login,
     authorRole: user.role,
+    authorAvatar: user.avatar || null,
     replyTo: reply ? {
       id: reply.id,
       author: reply.authorLogin,
