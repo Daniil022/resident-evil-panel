@@ -160,7 +160,7 @@ function enterApp(user) {
 
   if (avatarEl) {
     if (user.avatar) {
-      avatarEl.innerHTML = '<img src="' + user.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      avatarEl.innerHTML = '<img src="' + user.avatar + '" alt="avatar">';
       avatarEl.style.padding = "0";
       avatarEl.style.overflow = "hidden";
     } else {
