@@ -48,11 +48,10 @@ async function saveAvatar() {
 
   if (file) {
     err.textContent = "Загрузка в ВК...";
-    err.style.color = "var(--accent)";
+    err.style.color = "var(--cyan)";
     err.style.display = "block";
     try {
       const media = await uploadMedia(file, "avatar", me.login, "Аватар: " + me.login, "avatar");
-      // ⚠️ Берём ПРЯМУЮ ссылку
       avatarUrl = media.url;
       console.log("Avatar uploaded:", avatarUrl);
     } catch (e) {
@@ -114,10 +113,35 @@ export function updateDashAvatar(user) {
 }
 
 export function setupAvatarClick() {
-  const el = document.getElementById("userAvatar");
-  if (!el || el.__bound) return;
-  el.__bound = true;
-  el.style.cursor = "pointer";
-  el.title = "Нажми, чтобы загрузить аватар";
-  el.addEventListener("click", openAvatarModal);
+  const avatarEl = document.getElementById("userAvatar");
+  const metaEl = document.getElementById("userMeta");
+
+  if (avatarEl && !avatarEl.__bound) {
+    avatarEl.__bound = true;
+    avatarEl.style.cursor = "pointer";
+    avatarEl.title = "Клик — загрузить аватарку";
+    avatarEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      openAvatarModal();
+    });
+  }
+
+  if (metaEl && !metaEl.__bound) {
+    metaEl.__bound = true;
+    metaEl.style.cursor = "pointer";
+    metaEl.title = "Клик — открыть профиль";
+    metaEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (typeof window.__openMyProfile === "function") {
+        window.__openMyProfile();
+      }
+    });
+  }
 }
+
+window.__forceOpenAvatarModal = function() {
+  openAvatarModal();
+};
+window.__openAvatarModalReal = openAvatarModal;
