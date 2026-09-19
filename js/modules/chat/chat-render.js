@@ -11,10 +11,21 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   const initial = (msg.authorLogin || "?").charAt(0).toUpperCase();
   const roleClass = roleToClass(msg.authorRole);
 
+  const avatarHtml = msg.authorAvatar
+    ? '<img src="' + msg.authorAvatar + '" alt="">'
+    : initial;
+
   if (!grouped && !isOwn) {
     const av = document.createElement("div");
     av.className = "msg-avatar " + roleClass;
-    av.textContent = initial;
+    av.innerHTML = avatarHtml;
+    av.dataset.login = msg.authorLogin;
+    av.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (window.__openProfileByName) {
+        window.__openProfileByName(msg.authorLogin);
+      }
+    });
     wrap.appendChild(av);
   } else if (!isOwn) {
     const spacer = document.createElement("div");
@@ -113,7 +124,14 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   if (!grouped && isOwn) {
     const av = document.createElement("div");
     av.className = "msg-avatar " + roleClass;
-    av.textContent = initial;
+    av.innerHTML = avatarHtml;
+    av.dataset.login = msg.authorLogin;
+    av.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (window.__openProfileByName) {
+        window.__openProfileByName(msg.authorLogin);
+      }
+    });
     wrap.appendChild(av);
   }
 
