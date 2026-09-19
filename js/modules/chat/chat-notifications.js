@@ -1,220 +1,147 @@
-// js/modules/chat/chat-render.js
-import { getCurrentUser } from "../../core/state.js";
+// js/modules/chat/chat-notifications.js
 
-export function renderMessage(msg, grouped, handlers, currentUid) {
-  const isOwn = msg.authorId === currentUid;
+let originalTitle = "LIVE RUSSIA // Панель семьи RESIDENT EVIL";
+let titleInterval = null;
 
-  const wrap = document.createElement("div");
-  wrap.className = "msg " + (isOwn ? "msg-own" : "msg-other");
-  wrap.dataset.id = msg.id;
+function getLastReadAt(chatId) {
+  const key = "chat_last_read_" + chatId;
+  const raw = localStorage.getItem(key);
+  return raw ? parseInt(raw) : 0;
+}
 
-  const initial = (msg.authorLogin || "?").charAt(0).toUpperCase();
-  const roleClass = roleToClass(msg.authorRole);
+function setLastReadAt(chatId, timestamp) {
+  const key = "chat_last_read_" + chatId;
+  localStorage.setItem(key, timestamp.toString());
+}
 
-  const avatarHtml = msg.authorAvatar
-    ? '<img src="' + msg.authorAvatar + '" alt="">'
-    : initial;
+export function updateUnreadBadge(chatId, allMessages) {
+  const badgeId = chatId === "allies" ? "chatAlliesBadge" : "chatBadge";
+  const panelId = chatId === "allies" ? "chat-allies" : "chat";
+  const badge = document.getElementById(badgeId);
+  const panel = document.getElementById(panelId);
 
-  if (!grouped && !isOwn) {
-    const av = document.createElement("div");
-    av.className = "msg-avatar " + roleClass;
-    av.innerHTML = avatarHtml;
-    av.dataset.login = msg.authorLogin;
-    av.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (window.__openProfileByName) {
-        window.__openProfileByName(msg.authorLogin);
-      }
+  if (!badge) return;
+
+  const isOpen = panel && panel.classList.contains("active");
+  if (isOpen) {
+    badge.style.display = "none";
+    return;
+  }
+
+  const lastRead = getLastReadAt(chatId);
+  let unreadCount = 0;
+
+  if (lastRead === 0) {
+    unreadCount = allMessages.length;
+  } else {
+    allMessages.forEach(m => {
+      const time = m.createdAt && m.createdAt.toDate
+        ? m.createdAt.toDate().getTime()
+        : (typeof m.createdAt === "number" ? m.createdAt : 0);
+      if (time > lastRead) unreadCount++;
     });
-    wrap.appendChild(av);
-  } else if (!isOwn) {
-    const spacer = document.createElement("div");
-    spacer.style.width = "42px";
-    spacer.style.minWidth = "42px";
-    wrap.appendChild(spacer);
   }
 
-  const body = document.createElement("div");
-  body.className = "msg-body";
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+}
 
-  if (!grouped && !isOwn) {
-    const head = document.createElement("div");
-    head.className = "msg-head";
-    head.innerHTML =
-      '<span class="msg-author ' + roleClass + '">' + escapeHtml(msg.authorLogin) + '</span>' +
-      '<span class="msg-role-badge ' + roleClass + '">' + escapeHtml(msg.authorRole || "—") + '</span>';
-    body.appendChild(head);
+export function markChatAsRead(chatId) {
+  setLastReadAt(chatId, Date.now());
+
+  const badgeId = chatId === "allies" ? "chatAlliesBadge" : "chatBadge";
+  const badge = document.getElementById(badgeId);
+  if (badge) badge.style.display = "none";
+}
+
+export function playNotificationSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+}
+
+function startTitleBlink() {
+  if (titleInterval) return;
+  let on = false;
+  titleInterval = setInterval(() => {
+    document.title = on ? originalTitle : "🔴 Новое сообщение!";
+    on = !on;
+  }, 1000);
+}
+
+function stopTitleBlink() {
+  if (titleInterval) {
+    clearInterval(titleInterval);
+    titleInterval = null;
+  }
+  document.title = originalTitle;
+}
+
+export function hasUnread() {
+  const residentsUnread = hasUnreadForChat("residents");
+  const alliesUnread = hasUnreadForChat("allies");
+  return residentsUnread || alliesUnread;
+}
+
+function hasUnreadForChat(chatId) {
+  const badgeId = chatId === "allies" ? "chatAlliesBadge" : "chatBadge";
+  const badge = document.getElementById(badgeId);
+  if (!badge) return false;
+  return badge.style.display !== "none" && badge.textContent !== "0";
+}
+
+export function notifyNewMessage(msg, isOwnMessage, chatId) {
+  if (isOwnMessage) return;
+
+  const panelId = chatId === "allies" ? "chat-allies" : "chat";
+  const panel = document.getElementById(panelId);
+  const isOpen = panel && panel.classList.contains("active");
+
+  if (isOpen) {
+    markChatAsRead(chatId);
+    return;
   }
 
-  if (msg.replyTo) {
-    const reply = document.createElement("div");
-    reply.className = "msg-reply";
-    reply.dataset.replyId = msg.replyTo.id;
-    reply.title = "Перейти к сообщению";
-    reply.innerHTML =
-      '<div class="reply-author">' + escapeHtml(msg.replyTo.author) + '</div>' +
-      '<div class="reply-text">' + escapeHtml(msg.replyTo.text) + '</div>';
-    reply.addEventListener("click", () => {
-      const targetId = msg.replyTo.id;
-      const el = document.querySelector('[data-id="' + targetId + '"]');
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("msg-highlight");
-        setTimeout(() => el.classList.remove("msg-highlight"), 1500);
-      }
-    });
-    body.appendChild(reply);
+  playNotificationSound();
+
+  if (!hasUnread()) {
+    startTitleBlink();
+  }
+}
+
+export function resetUnread(tab) {
+  if (tab === "chat") {
+    markChatAsRead("residents");
+  }
+  if (tab === "chat-allies") {
+    markChatAsRead("allies");
   }
 
-  const text = document.createElement("div");
-  text.className = "msg-text";
-  const rendered = renderText(msg.text);
-  text.innerHTML = rendered.html;
-  if (rendered.isBigEmoji) text.classList.add("msg-text-big-emoji");
-  body.appendChild(text);
+  if (!hasUnread()) {
+    stopTitleBlink();
+  }
+}
 
-  const time = document.createElement("div");
-  time.className = "msg-time";
-  const editedMark = msg.editedAt ? ' <span class="msg-edited" title="Изменено">(ред.)</span>' : '';
-  time.innerHTML = formatTime(msg.createdAt) + editedMark;
-  body.appendChild(time);
-
-  if (msg.reactions && Object.keys(msg.reactions).length) {
-    const reactWrap = document.createElement("div");
-    reactWrap.className = "msg-reactions";
-    for (const [emoji, users] of Object.entries(msg.reactions)) {
-      if (!users || !users.length) continue;
-      const r = document.createElement("div");
-      r.className = "reaction" + (users.includes(currentUid) ? " mine" : "");
-      r.innerHTML = emoji + ' <span class="count">' + users.length + '</span>';
-      r.onclick = () => handlers.onReact(msg.id, emoji);
-      reactWrap.appendChild(r);
+export function initChatNotifications() {
+  window.addEventListener("tabChange", (e) => {
+    if (e.detail.tab === "chat" || e.detail.tab === "chat-allies") {
+      resetUnread(e.detail.tab);
     }
-    body.appendChild(reactWrap);
-  }
-
-  const user = getCurrentUser();
-  const isAdmin = user && ["emperor", "lord"].includes(user.role);
-
-  const actions = document.createElement("div");
-  actions.className = "msg-actions";
-
-  let actionsHTML = '<button title="Ответить">↩</button>';
-  actionsHTML += '<button title="Реакция">☺</button>';
-  if (isOwn) actionsHTML += '<button title="Редактировать">✏️</button>';
-  if (isAdmin) actionsHTML += '<button title="Закрепить">📌</button>';
-  actionsHTML += '<button title="Удалить">🗑</button>';
-  actions.innerHTML = actionsHTML;
-
-  let idx = 0;
-  actions.children[idx++].onclick = () => handlers.onReply(msg);
-  actions.children[idx++].onclick = () => quickReact(msg.id, handlers);
-  if (isOwn) {
-    actions.children[idx++].onclick = () => handlers.onEdit && handlers.onEdit(msg);
-  }
-  if (isAdmin) {
-    actions.children[idx++].onclick = () => handlers.onPin && handlers.onPin(msg);
-  }
-  actions.children[idx++].onclick = () => handlers.onDelete(msg);
-
-  body.appendChild(actions);
-
-  wrap.appendChild(body);
-
-  if (!grouped && isOwn) {
-    const av = document.createElement("div");
-    av.className = "msg-avatar " + roleClass;
-    av.innerHTML = avatarHtml;
-    av.dataset.login = msg.authorLogin;
-    av.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (window.__openProfileByName) {
-        window.__openProfileByName(msg.authorLogin);
-      }
-    });
-    wrap.appendChild(av);
-  }
-
-  return wrap;
-}
-
-function renderText(text) {
-  if (!text) return { html: "", isBigEmoji: false };
-
-  const trimmed = text.trim();
-  const emojiOnly = /^(?:[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F0FF}]\u{FE0F}?\s*){1,3}$/u;
-  const isBigEmoji = emojiOnly.test(trimmed);
-
-  let html = escapeHtml(text);
-  html = html.replace(
-    /(https?:\/\/[^\s<]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
-  );
-  html = html.replace(
-    /(^|\s)(www\.[^\s<]+)/g,
-    '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="chat-link">$2</a>'
-  );
-  html = html.replace(
-    /(^|\s)(vk\.com\/[^\s<]+)/g,
-    '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="chat-link">$2</a>'
-  );
-
-  html = html.replace(
-    /@([A-Za-z0-9_]{3,32})/g,
-    '<span class="chat-mention" data-mention="$1">@$1</span>'
-  );
-
-  return { html, isBigEmoji };
-}
-
-export function renderDateSeparator(date) {
-  const el = document.createElement("div");
-  el.className = "chat-date-sep";
-  el.innerHTML = "<span>" + formatDate(date) + "</span>";
-  return el;
-}
-
-export function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
-}
-
-function quickReact(msgId, handlers) {
-  const emojis = ["❤️", "🔥", "💀", "⚔️", "😂", "👍"];
-  const choice = prompt("Реакция:\n" + emojis.map((e, i) => (i + 1) + ". " + e).join("\n"), "1");
-  if (!choice) return;
-  const idx = parseInt(choice) - 1;
-  if (idx >= 0 && idx < emojis.length) {
-    handlers.onReact(msgId, emojis[idx]);
-  }
-}
-
-function formatTime(ts) {
-  if (!ts) return "--:--";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return String(d.getHours()).padStart(2, "0") + ":" +
-         String(d.getMinutes()).padStart(2, "0");
-}
-
-function formatDate(d) {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (isSameDay(d, today)) return "Сегодня";
-  if (isSameDay(d, yesterday)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-}
-
-function roleToClass(role) {
-  if (role === "emperor") return "gold";
-  if (role === "lord") return "red";
-  if (role === "knight" || role === "skeleton") return "blue";
-  if (role === "ally") return "rainbow";
-  return "";
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  });
 }
