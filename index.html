@@ -22,6 +22,7 @@
 </head>
 <body>
 
+<!-- ============ АВТОРИЗАЦИЯ ============ -->
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo"><div class="umbrella"></div></div>
@@ -71,7 +72,9 @@
   </div>
 </div>
 
+<!-- ============ ОСНОВНОЙ ИНТЕРФЕЙС ============ -->
 <div id="app" style="display:none;">
+
 <header>
   <div class="logo">
     <div class="umbrella"></div>
@@ -88,7 +91,7 @@
     </div>
     <div class="user-info">
       <div class="user-avatar" id="userAvatar" title="Клик — загрузить аватарку">?</div>
-      <div class="user-meta" onclick="window.__openMyProfile && window.__openMyProfile()" style="cursor:pointer;">
+      <div class="user-meta" id="userMeta" title="Клик — открыть профиль">
         <span class="nick" id="userName">—</span>
         <span class="role-tag" id="userRoleTag">—</span>
       </div>
@@ -100,16 +103,16 @@
 <nav id="mainNav">
   <button class="active" data-tab="dashboard">📊 Дашборд</button>
   <button data-tab="nicks">👤 Игровые ники</button>
-  <button data-tab="ranks">🎖 Ранги семьи</button>
+  <button data-tab="ranks">🎖 Ранги</button>
   <button data-tab="contracts">📜 Контракты</button>
   <button data-tab="accolade">🏅 Акколада</button>
   <button data-tab="containers">🎯 Капты</button>
   <button data-tab="allies">🤝 Союз семьи</button>
   <button data-tab="music">🎵 Музыка</button>
   <button data-tab="rules">📖 Правила</button>
-  <button data-tab="album">📸 Фотоальбом</button>
+  <button data-tab="album">📸 Фото</button>
   <button data-tab="chat" id="navChat">💬 Общение <span class="badge" id="chatBadge" style="display:none;">0</span></button>
-  <button data-tab="chat-allies" id="navChatAllies">🤝 Общение союз <span class="badge badge-rainbow" id="chatAlliesBadge" style="display:none;">0</span></button>
+  <button data-tab="chat-allies" id="navChatAllies">🤝 Союз чат <span class="badge badge-rainbow" id="chatAlliesBadge" style="display:none;">0</span></button>
   <button data-tab="online" id="navOnline">👥 Онлайн <span class="badge" id="onlineBadge">0</span></button>
   <button data-tab="applications" id="navApplications" class="hidden">📥 Заявки</button>
   <button data-tab="admin" id="navAdmin" class="hidden">⚙ ADMIN</button>
@@ -117,6 +120,7 @@
 
 <main>
 
+  <!-- ДАШБОРД -->
   <section class="panel active" id="dashboard">
     <h2>Командный центр семьи</h2>
     <div class="dash-welcome">
@@ -146,6 +150,7 @@
     </div>
   </section>
 
+  <!-- ИГРОВЫЕ НИКИ -->
   <section class="panel" id="nicks">
     <div class="contracts-head">
       <h2>Реестр игровых ников</h2>
@@ -154,11 +159,13 @@
     <div class="grid" id="nicksGrid"></div>
   </section>
 
+  <!-- РАНГИ -->
   <section class="panel" id="ranks">
     <h2>Ранги семьи</h2>
     <div class="grid" id="ranksGrid"></div>
   </section>
 
+  <!-- КОНТРАКТЫ -->
   <section class="panel" id="contracts">
     <div class="contracts-head">
       <h2>Контракты семьи</h2>
@@ -168,6 +175,7 @@
     <div class="grid" id="contractsGrid"></div>
   </section>
 
+  <!-- АККОЛАДА -->
   <section class="panel" id="accolade">
     <div class="contracts-head">
       <h2>Акколада — заслуги семьи</h2>
@@ -176,6 +184,7 @@
     <div class="grid" id="accoladeGrid"></div>
   </section>
 
+  <!-- КАПТЫ -->
   <section class="panel" id="containers">
     <div class="contracts-head">
       <h2>Капты — доска объявлений</h2>
@@ -184,6 +193,7 @@
     <div class="grid" id="captasGrid"></div>
   </section>
 
+  <!-- СОЮЗ -->
   <section class="panel" id="allies">
     <div class="contracts-head">
       <h2>Союзы семьи</h2>
@@ -192,6 +202,7 @@
     <div class="grid" id="alliesGrid"></div>
   </section>
 
+  <!-- МУЗЫКА -->
   <section class="panel" id="music">
     <div class="contracts-head">
       <h2>Музыка семьи</h2>
@@ -202,6 +213,7 @@
     <div class="grid" id="musicGrid"></div>
   </section>
 
+  <!-- ПРАВИЛА -->
   <section class="panel" id="rules">
     <div class="contracts-head">
       <h2>Правила семьи</h2>
@@ -210,6 +222,7 @@
     <div class="grid" id="rulesGrid"></div>
   </section>
 
+  <!-- ФОТОАЛЬБОМ -->
   <section class="panel" id="album">
     <div class="contracts-head">
       <h2>Фотоальбом</h2>
@@ -218,6 +231,7 @@
     <div id="albumGrid"></div>
   </section>
 
+  <!-- ЧАТ РЕЗИДЕНТОВ -->
   <section class="panel" id="chat">
     <h2>💬 Общение резидентов</h2>
     <div class="chat-wrap">
@@ -259,6 +273,7 @@
     </div>
   </section>
 
+  <!-- ЧАТ СОЮЗНИКОВ -->
   <section class="panel" id="chat-allies">
     <h2 class="h2-rainbow">🤝 Общение союзников</h2>
     <div class="chat-wrap">
@@ -300,11 +315,13 @@
     </div>
   </section>
 
+  <!-- ОНЛАЙН -->
   <section class="panel" id="online">
     <h2>👥 Кто онлайн</h2>
     <div class="grid" id="onlineGrid"></div>
   </section>
 
+  <!-- ЗАЯВКИ -->
   <section class="panel" id="applications">
     <h2>📥 Заявки</h2>
     <div class="music-tabs" id="applicationsTabs"></div>
@@ -315,6 +332,7 @@
     </div>
   </section>
 
+  <!-- ADMIN -->
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора</h2>
 
@@ -405,6 +423,7 @@
 </main>
 </div>
 
+<!-- ============ МОДАЛКА ============ -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 id="modalTitle">ПОДТВЕРЖДЕНИЕ</h3>
