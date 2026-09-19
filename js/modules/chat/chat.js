@@ -10,8 +10,13 @@ import { setTyping, destroyPresence, setupPresence } from "./chat-presence.js";
 import { toggleReaction } from "./chat-reactions.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
-import { notifyNewMessage, resetUnread, initChatNotifications } from "./chat-notifications.js";
-import { markChatRead, subscribeReadStatus } from "./chat-read.js";
+import {
+  notifyNewMessage,
+  resetUnread,
+  initChatNotifications,
+  updateUnreadBadge,
+  markChatAsRead
+} from "./chat-notifications.js";
 
 const CHATS = {
   residents: {
@@ -55,6 +60,7 @@ const lastMessageId = { residents: null, allies: null };
 const firstLoad = { residents: true, allies: true };
 const autoScroll = { residents: true, allies: true };
 const hiddenMessages = { residents: new Set(), allies: new Set() };
+const currentMessages = { residents: [], allies: [] };
 
 let demoMode = false;
 let notificationsInited = false;
@@ -100,8 +106,13 @@ export function initChat() {
   }
 
   window.addEventListener("tabChange", (e) => {
-    if (e.detail.tab === "chat" || e.detail.tab === "chat-allies") {
-      resetUnread(e.detail.tab);
+    if (e.detail.tab === "chat") {
+      markChatAsRead("residents");
+      resetUnread("chat");
+    }
+    if (e.detail.tab === "chat-allies") {
+      markChatAsRead("allies");
+      resetUnread("chat-allies");
     }
   });
 }
@@ -118,9 +129,6 @@ function initOneChat(chatId) {
   initThemeForChat(chatId);
   loadPinned(chatId);
 
-  markChatRead(chatId);
-  subscribeReadStatus(chatId);
-
   const msgsRef = collection(db, "chats", chatId, "messages");
   const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
 
@@ -132,12 +140,14 @@ function initOneChat(chatId) {
       const user = getCurrentUser();
       let count = 0;
       let newestMsg = null;
+      currentMessages[chatId] = [];
 
       snapshot.forEach((docSnap) => {
         const msg = { id: docSnap.id, ...docSnap.data() };
         if (!msg.createdAt) return;
         count++;
         newestMsg = msg;
+        currentMessages[chatId].push(msg);
 
         if (hiddenMessages[chatId].has(msg.id)) return;
 
@@ -170,6 +180,7 @@ function initOneChat(chatId) {
         container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">' + emptyMsg + '</div>';
       }
 
+      // Уведомление о новом сообщении
       if (newestMsg && !firstLoad[chatId] && newestMsg.id !== lastMessageId[chatId]) {
         const isOwn = newestMsg.authorId === getCurrentUser().uid;
         notifyNewMessage(newestMsg, isOwn, chatId);
@@ -179,21 +190,13 @@ function initOneChat(chatId) {
       firstLoad[chatId] = false;
 
       scrollToBottomForChat(chatId);
-      updateBadgeForChat(chatId, count);
+      updateUnreadBadge(chatId, currentMessages[chatId]);
     }, (err) => {
       console.warn("Firebase offline для " + chatId, err);
     });
   } catch (e) {
     console.warn("Init chat failed for " + chatId, e);
   }
-
-  window.addEventListener("tabChange", (e) => {
-    if (e.detail.tab === chatId ||
-        (chatId === "residents" && e.detail.tab === "chat") ||
-        (chatId === "allies" && e.detail.tab === "chat-allies")) {
-      markChatRead(chatId);
-    }
-  });
 }
 
 export function destroyChat() {
@@ -405,7 +408,7 @@ async function sendMessageTo(chatId, text) {
   try {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
-    markChatRead(chatId);
+    markChatAsRead(chatId);
     addDashEvent("💬", user.login + ": " + text.substring(0, 40));
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
@@ -537,23 +540,6 @@ function scrollToBottomForChat(chatId, force = false) {
   } else if (newBtn) {
     newBtn.classList.add("show");
   }
-}
-
-function updateBadgeForChat(chatId, count) {
-  const cfg = CHATS[chatId];
-  if (!cfg) return;
-  const badge = document.getElementById(cfg.badgeId);
-  if (!badge) return;
-
-  const panel = document.getElementById(cfg.panelId);
-  const isOpen = panel && panel.classList.contains("active");
-  if (isOpen) {
-    badge.style.display = "none";
-    return;
-  }
-
-  badge.textContent = count;
-  badge.style.display = count > 0 ? "inline-block" : "none";
 }
 
 function initThemeForChat(chatId) {
