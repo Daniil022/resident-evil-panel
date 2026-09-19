@@ -666,3 +666,16 @@ nav button[data-tab="chat-allies"].active {
   .msg { max-width: 88%; }
   .chat-wrap { height: calc(100vh - 220px); border-radius: 0; }
 }
+
+/* ============ АВАТАРКИ В ЧАТЕ ============ */
+.msg-avatar {
+  overflow: hidden;
+}
+
+.msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
