@@ -14,7 +14,6 @@ import { initContracts, destroyContracts, openCreateContract } from "./modules/c
 import { initNicks, initRanks } from "./modules/nicks.js";
 import { initAllies } from "./modules/allies.js";
 import { initRules } from "./modules/rules.js";
-import { initAccolades } from "./modules/accolades.js";
 import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
 import { initCaptas } from "./modules/captas.js";
@@ -189,7 +188,6 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
-  // Авто-бэкап для админов (раз в сутки)
   if (isAdminRole) {
     import("./core/backup-manager.js")
       .then(m => m.checkAutoBackup())
@@ -199,7 +197,7 @@ function enterApp(user) {
   const inited = {
     chat: false, admin: false, contracts: false,
     allies: false, rules: false,
-    accolades: false, music: false, album: false,
+    music: false, album: false,
     captas: false, nicks: false, ranks: false,
     applications: false, online: false
   };
@@ -214,7 +212,6 @@ function enterApp(user) {
     if (tab === "contracts" && !ally && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
     if (tab === "allies" && !ally && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
     if (tab === "rules" && !ally && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
-    if (tab === "accolade" && !ally && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
     if (tab === "music" && !ally && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
     if (tab === "album" && !ally && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
     if (tab === "news" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
@@ -230,7 +227,6 @@ function enterApp(user) {
   if (hash === "contracts" && !ally) { inited.contracts = true; try { initContracts(); } catch (e) {} }
   if (hash === "allies" && !ally) { inited.allies = true; try { initAllies(); } catch (e) {} }
   if (hash === "rules" && !ally) { inited.rules = true; try { initRules(); } catch (e) {} }
-  if (hash === "accolade" && !ally) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
   if (hash === "music" && !ally) { inited.music = true; try { initMusic(); } catch (e) {} }
   if (hash === "album" && !ally) { inited.album = true; try { initAlbum(); } catch (e) {} }
   if (hash === "news" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
@@ -245,7 +241,7 @@ function enterApp(user) {
 }
 
 function applyRoleVisibility(isAlly) {
-  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "news", "allies", "music", "rules", "album", "applications", "online"];
+  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "news", "allies", "music", "rules", "album", "applications", "online"];
 
   document.querySelectorAll("#mainNav button").forEach(btn => {
     const tab = btn.dataset.tab;
