@@ -8,6 +8,8 @@ import { uploadMedia } from "./contracts/contracts-upload.js";
 import { canEdit, requireEdit, escapeHtml, formatDate } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { openLightbox } from "./album-lightbox.js";
+import { setupAlbumUpload, setupBulkUploadButton } from "./album-upload.js";
+import { setupAlbumSort } from "./album-sort.js";
 
 const DEMO_ALBUMS_KEY = "re_demo_albums_v2";
 const DEMO_PHOTOS_KEY = "re_demo_album_photos_v2";
@@ -24,6 +26,13 @@ export async function initAlbum() {
   await loadAll();
   renderAlbumsScreen();
   bindToolbar();
+
+  // Drag-n-drop на сетке
+  setupAlbumUpload(async () => {
+    await loadAll();
+    if (currentAlbumId) renderAlbumScreen();
+    else renderAlbumsScreen();
+  });
 }
 
 async function loadAll() {
@@ -77,7 +86,7 @@ function renderToolbar() {
     let html = '<button class="btn secondary" id="albumBackBtn">← К альбомам</button>';
     html += '<button class="btn" id="addPhotoBtn" style="margin-left:8px;">+ Добавить фото</button>';
     if (editable) {
-      html += '<button class="btn secondary" id="editAlbumBtn" style="margin-left:8px;">✏️ Редактировать альбом</button>';
+      html += '<button class="btn secondary" id="editAlbumBtn" style="margin-left:8px;">✏️ Редактировать</button>';
     }
     toolbar.innerHTML = html;
 
@@ -89,6 +98,14 @@ function renderToolbar() {
     document.getElementById("addPhotoBtn").onclick = () => openPhotoModal();
     const editBtn = document.getElementById("editAlbumBtn");
     if (editBtn) editBtn.onclick = () => openAlbumModal(currentAlbumId);
+
+    // Кнопка массовой загрузки
+    if (editable) {
+      setupBulkUploadButton(currentAlbumId, async () => {
+        await loadAll();
+        renderAlbumScreen();
+      });
+    }
   } else {
     // Экран альбомов
     let html = "";
@@ -122,7 +139,7 @@ function renderAlbumsScreen() {
     grid.innerHTML = '<div class="contracts-empty" style="grid-column:1/-1;">' +
       '<div class="contracts-empty-icon">📸</div>' +
       '<div class="contracts-empty-text">Фотоальбом пуст</div>' +
-      '<div class="contracts-empty-sub">Создай первый альбом или добавь фото</div>' +
+      '<div class="contracts-empty-sub">Создай первый альбом или перетащи фото</div>' +
       '</div>';
     return;
   }
@@ -188,7 +205,12 @@ function renderAlbumScreen() {
 
   const albumPhotos = photos
     .filter(p => p.albumId === currentAlbumId)
-    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    .sort((a, b) => {
+      // Если у обоих есть order — сортируем по нему
+      if (a.order != null && b.order != null) return a.order - b.order;
+      // Иначе — по дате (новые сверху)
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
 
   const album = currentAlbumId
     ? albums.find(a => a.id === currentAlbumId)
@@ -200,14 +222,14 @@ function renderAlbumScreen() {
     grid.innerHTML = '<div class="contracts-empty" style="grid-column:1/-1;">' +
       '<div class="contracts-empty-icon">📷</div>' +
       '<div class="contracts-empty-text">В альбоме «' + escapeHtml(title) + '» пока пусто</div>' +
-      '<div class="contracts-empty-sub">Нажми «+ Добавить фото»</div>' +
+      '<div class="contracts-empty-sub">Нажми «+ Добавить фото» или перетащи файлы</div>' +
       '</div>';
     return;
   }
 
   const editable = canEdit();
 
-  grid.innerHTML = albumPhotos.map((p, idx) => {
+  grid.innerHTML = albumPhotos.map((p) => {
     const canMove = editable && albums.length > 0;
     return '<div class="photo-card" data-photo-id="' + p.id + '">' +
       '<div class="photo-img-wrap">' +
@@ -233,6 +255,12 @@ function renderAlbumScreen() {
       const idx = albumPhotos.findIndex(p => p.id === photoId);
       openLightbox(albumPhotos, idx);
     });
+  });
+
+  // Сортировка вручную (только для админов)
+  setupAlbumSort(albumPhotos, () => {
+    // Перечитываем порядок после сортировки
+    albumPhotos.sort((a, b) => (a.order || 0) - (b.order || 0));
   });
 }
 
@@ -337,8 +365,6 @@ window.__albumDelete = async function(albumId) {
 
 // ==================== ДОБАВЛЕНИЕ ФОТО ====================
 function openPhotoModal() {
-  if (!canEdit() && !getCurrentUser()) return;
-
   const albumOptions = albums.map(a =>
     '<option value="' + a.id + '"' + (currentAlbumId === a.id ? " selected" : "") + '>' + escapeHtml(a.name) + '</option>'
   ).join("");
@@ -421,7 +447,8 @@ async function savePhoto() {
     title,
     albumId,
     addedBy: me?.login || "—",
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    order: Date.now()
   };
 
   try {
