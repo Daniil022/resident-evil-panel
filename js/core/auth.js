@@ -130,15 +130,33 @@ export async function listUsers(force = false) {
     const cached = cacheGet(CACHE_KEY_USERS, 300000);
     if (cached) return cached;
   }
+
+  let users = [];
+
   try {
     const snap = await getDocs(collection(db, "users"));
     if (!snap.empty) {
-      const users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      cacheSet(CACHE_KEY_USERS, users);
-      return users;
+      users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
     }
   } catch (e) {}
-  const users = getDemoUsers();
+
+  if (users.length === 0) {
+    users = getDemoUsers();
+  }
+
+  // Обогащаем lastSeen из presence
+  try {
+    const presenceSnap = await getDocs(collection(db, "presence"));
+    const seenMap = {};
+    presenceSnap.forEach(d => {
+      const data = d.data();
+      if (data.lastSeen) seenMap[d.id] = data.lastSeen;
+    });
+    users.forEach(u => {
+      if (seenMap[u.uid]) u.lastSeen = seenMap[u.uid];
+    });
+  } catch (e) {}
+
   cacheSet(CACHE_KEY_USERS, users);
   return users;
 }
