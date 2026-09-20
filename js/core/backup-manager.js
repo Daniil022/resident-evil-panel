@@ -22,11 +22,9 @@ const BACKUP_COLLECTIONS = [
   "music_albums",
   "allies",
   "rules",
-  "accolades",
   "captas",
   "warehouse",
   "registration_requests",
-  "applications",
   "admin_logs"
 ];
 
