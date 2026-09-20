@@ -455,3 +455,158 @@ footer {
               border-color 0.2s ease,
               color 0.15s ease;
 }
+
+/* ============ TOOLBAR УЧАСТНИКОВ ============ */
+.users-toolbar {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.users-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.users-bulk-row {
+  background: linear-gradient(90deg, rgba(0, 200, 212, 0.08), var(--panel));
+  border-color: rgba(0, 200, 212, 0.3);
+  animation: fadeIn 0.2s;
+}
+
+.users-search {
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+}
+.users-search:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-glow);
+}
+
+.users-filter {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  min-width: 130px;
+}
+.users-filter:focus {
+  outline: none;
+  border-color: var(--cyan);
+}
+
+.users-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.users-check:hover {
+  border-color: var(--cyan);
+  color: #fff;
+}
+.users-check input[type="checkbox"] {
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.users-selected-info {
+  color: var(--cyan);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-right: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 200, 212, 0.1);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 200, 212, 0.3);
+}
+
+.btn-reset {
+  font-size: 11.5px;
+  padding: 6px 12px;
+}
+
+/* ============ ЧЕКБОКСЫ В ТАБЛИЦЕ ============ */
+.users-table .check-cell {
+  width: 36px;
+  text-align: center;
+  padding: 8px 6px;
+}
+.users-table .check-cell input[type="checkbox"] {
+  accent-color: var(--cyan);
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.users-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+.users-table th.sortable:hover {
+  color: var(--cyan);
+}
+
+.users-table tr.user-banned {
+  background: rgba(239, 68, 68, 0.04);
+}
+.users-table tr.user-banned td {
+  opacity: 0.8;
+}
+
+.last-seen-cell {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .users-toolbar-row {
+    padding: 10px;
+  }
+  .users-search {
+    min-width: 100%;
+  }
+  .users-filter {
+    flex: 1;
+    min-width: 120px;
+  }
+  .users-check {
+    flex: 1;
+    justify-content: center;
+  }
+  .last-seen-cell {
+    display: none;
+  }
+  .users-table th:nth-child(6),
+  .users-table td:nth-child(6) {
+    display: none;
+  }
+}
