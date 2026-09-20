@@ -5,7 +5,7 @@ import {
 } from "../core/auth.js";
 import { listRoles } from "../core/roles.js";
 import { listDivisions } from "../core/divisions.js";
-import { renderUsersTable } from "./admin-users.js";
+import { initUsersModule, bindSelectAll, renderUsersTable } from "./admin-users.js";
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
 import { downloadBackup, openRestoreModal } from "../modules/backup.js";
@@ -21,7 +21,8 @@ export async function initAdmin() {
   }
   await initAdminRoles();
   await initAdminDivisions();
-  await renderUsersTable(true);
+  await initUsersModule();
+  bindSelectAll();
 }
 
 function setupCards() {
