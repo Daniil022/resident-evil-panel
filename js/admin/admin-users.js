@@ -215,7 +215,7 @@ window.__adminChangePin = async function(uid) {
   try {
     await changePin(uid, newPin);
     toast("PIN обновлён", "ok");
-    addAdminLog("Смена PIN у " + u.login, "ok");
+    addAdminLog("Смена PIN у " + u.login, "ok", { target: u.uid, targetLogin: u.login });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -233,7 +233,7 @@ window.__adminChangeRole = async function(uid) {
   try {
     await changeRole(uid, roles[idx].id);
     toast("Роль изменена", "ok");
-    addAdminLog("Смена роли " + u.login + " → " + roles[idx].name, "ok");
+    addAdminLog("Смена роли " + u.login + " → " + roles[idx].name, "ok", { target: u.uid, targetLogin: u.login, type: "role" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -253,7 +253,7 @@ window.__adminChangeDivision = async function(uid) {
     const { changeDivision } = await import("../core/auth.js");
     await changeDivision(uid, division);
     toast("Подразделение обновлено", "ok");
-    addAdminLog("Смена отряда " + u.login, "ok");
+    addAdminLog("Смена отряда " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "division" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -269,7 +269,7 @@ window.__adminWarn = async function(uid) {
   try {
     const res = await warnUser(uid, reason.trim());
     toast(res.banned ? `${u.login} ЗАБАНЕН` : `Warn (${res.warn}/3)`, "warn");
-    addAdminLog("Warn " + u.login + ": " + reason, "warn");
+    addAdminLog("Warn " + u.login + ": " + reason, "warn", { target: u.uid, targetLogin: u.login, type: "warn" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -282,7 +282,7 @@ window.__adminUnwarn = async function(uid) {
   try {
     const res = await unwarnUser(uid);
     toast(`Warn снят (${res.warn}/3)`, "ok");
-    addAdminLog("Снятие warn у " + u.login, "ok");
+    addAdminLog("Снятие warn у " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unwarn" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -293,9 +293,9 @@ window.__adminDelete = async function(uid) {
   if (!u) return;
   if (!confirm(`УДАЛИТЬ ${u.login}?`)) return;
   try {
+    addAdminLog("Удаление " + u.login, "crit", { target: u.uid, targetLogin: u.login, type: "delete" });
     await deleteUser(uid);
     toast(`${u.login} удалён`, "ok");
-    addAdminLog("Удаление " + u.login, "crit");
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -330,7 +330,7 @@ window.__adminMute = async function(uid) {
         const { muteUser } = await import("../core/punishments.js");
         await muteUser(uid, duration, reason);
         toast(u.login + " замучен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
-        addAdminLog("Мут " + u.login + ": " + reason, "warn");
+        addAdminLog("Мут " + u.login + ": " + reason, "warn", { target: u.uid, targetLogin: u.login, type: "mute" });
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -347,7 +347,7 @@ window.__adminUnmute = async function(uid) {
     const { unmuteUser } = await import("../core/punishments.js");
     await unmuteUser(uid, "Ручное снятие");
     toast("Мут снят", "ok");
-    addAdminLog("Снятие мута " + u.login, "ok");
+    addAdminLog("Снятие мута " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unmute" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -384,7 +384,7 @@ window.__adminBan = async function(uid) {
         const { banUser } = await import("../core/punishments.js");
         await banUser(uid, duration, reason);
         toast(u.login + " забанен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
-        addAdminLog("Бан " + u.login + ": " + reason, "crit");
+        addAdminLog("Бан " + u.login + ": " + reason, "crit", { target: u.uid, targetLogin: u.login, type: "ban" });
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -401,7 +401,7 @@ window.__adminUnban = async function(uid) {
     const { unbanUser } = await import("../core/punishments.js");
     await unbanUser(uid, "Ручной разбан");
     toast(u.login + " разбанен", "ok");
-    addAdminLog("Разбан " + u.login, "ok");
+    addAdminLog("Разбан " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unban" });
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
