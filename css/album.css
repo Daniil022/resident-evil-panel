@@ -372,4 +372,71 @@
   display: block;
   height: 100%;
   background: linear-gradient(90deg, var(--cyan), var(--blue));
-  box-shadow: 0 0 10px
+  box-shadow: 0 0 10px var(--cyan-glow);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.aup-text {
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============ СОРТИРОВКА (DRAG) ============ */
+.photo-card[draggable="true"] {
+  cursor: grab;
+}
+.photo-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.photo-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+.photo-card.drag-over {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px var(--cyan), 0 0 20px var(--cyan-glow);
+  transform: scale(1.03);
+}
+
+.photo-card.drag-over .photo-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 200, 212, 0.2);
+  pointer-events: none;
+  border-radius: 8px 8px 0 0;
+}
+
+/* ============ АДАПТИВ ============ */
+@media (max-width: 640px) {
+  #albumGrid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .lb-prev, .lb-next {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+  .lb-prev { left: 8px; }
+  .lb-next { right: 8px; }
+  .lb-close { top: 10px; right: 10px; }
+
+  .album-upload-progress {
+    min-width: 0;
+    width: calc(100% - 32px);
+    left: 16px;
+    transform: translateX(0) translateY(120%);
+  }
+  .album-upload-progress.active {
+    transform: translateX(0) translateY(0);
+  }
+}
