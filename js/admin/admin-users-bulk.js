@@ -14,7 +14,6 @@ import { renderUsersTable } from "./admin-users.js";
 export async function bulkWarn(uids) {
   if (!uids.length) return;
 
-  // Проверяем, кого можно предупредить
   const all = await listUsers();
   const users = all.filter(u => uids.includes(u.uid));
 
@@ -32,10 +31,8 @@ export async function bulkWarn(uids) {
   }
   if (!confirm(msg)) return;
 
-  // Прогресс
   toast("Обработка 0 из " + warnable.length + "...", "info");
 
-  // Параллельно, но с ограничением (батчами по 5)
   const results = await batchPromises(warnable, async (u) => {
     try {
       const res = await warnUser(u.uid, "Массовый warn");
@@ -62,7 +59,6 @@ export async function bulkWarn(uids) {
   toast(summary, "warn");
   playSound("application");
 
-  // Обновляем таблицу один раз
   await renderUsersTable(true);
 }
 
@@ -189,14 +185,103 @@ export async function bulkExport(uids) {
   exportUsers(selected, "selected");
 }
 
+// ==================== BULK MUTE ====================
+export async function bulkMute(uids) {
+  if (!uids.length) return;
+
+  openModal({
+    title: "ЗАМУТИТЬ (" + uids.length + ")",
+    html:
+      '<div class="form-grid">' +
+        '<div class="form-field"><label>Длительность</label>' +
+          '<select id="bulkMuteDuration" class="role-select">' +
+            '<option value="0">Навсегда</option>' +
+            '<option value="3600000">1 час</option>' +
+            '<option value="86400000">1 день</option>' +
+            '<option value="604800000">7 дней</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-field"><label>Причина</label><input type="text" id="bulkMuteReason" placeholder="Причина" autocomplete="off"></div>' +
+      '</div>',
+    confirmText: "ЗАМУТИТЬ",
+    danger: true,
+    onConfirm: async () => {
+      const duration = parseInt(document.getElementById("bulkMuteDuration").value) || 0;
+      const reason = document.getElementById("bulkMuteReason").value.trim();
+      const { muteUser } = await import("../core/punishments.js");
+
+      const results = await batchPromises(uids, async (uid) => {
+        try { await muteUser(uid, duration, reason); return { ok: true }; }
+        catch (e) { return { ok: false }; }
+      }, 5);
+
+      const ok = results.filter(r => r.ok).length;
+      addAdminLog("Массовый мут: " + ok + " успешно", "warn");
+      toast("Замучено: " + ok, "warn");
+      closeModal();
+      await renderUsersTable(true);
+    }
+  });
+}
+
+// ==================== BULK BAN ====================
+export async function bulkBan(uids) {
+  if (!uids.length) return;
+  if (!confirm("Забанить " + uids.length + " участников?")) return;
+
+  openModal({
+    title: "ЗАБАНИТЬ (" + uids.length + ")",
+    html:
+      '<div class="form-grid">' +
+        '<div class="form-field"><label>Длительность</label>' +
+          '<select id="bulkBanDuration" class="role-select">' +
+            '<option value="0">Навсегда</option>' +
+            '<option value="3600000">1 час</option>' +
+            '<option value="86400000">1 день</option>' +
+            '<option value="604800000">7 дней</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-field"><label>Причина</label><input type="text" id="bulkBanReason" placeholder="Причина" autocomplete="off"></div>' +
+      '</div>',
+    confirmText: "ЗАБАНИТЬ",
+    danger: true,
+    onConfirm: async () => {
+      const duration = parseInt(document.getElementById("bulkBanDuration").value) || 0;
+      const reason = document.getElementById("bulkBanReason").value.trim();
+      const { banUser } = await import("../core/punishments.js");
+
+      const results = await batchPromises(uids, async (uid) => {
+        try { await banUser(uid, duration, reason); return { ok: true }; }
+        catch (e) { return { ok: false }; }
+      }, 5);
+
+      const ok = results.filter(r => r.ok).length;
+      addAdminLog("Массовый бан: " + ok + " успешно", "crit");
+      toast("Забанено: " + ok, "warn");
+      closeModal();
+      await renderUsersTable(true);
+    }
+  });
+}
+
+// ==================== BULK UNBAN ====================
+export async function bulkUnban(uids) {
+  if (!uids.length) return;
+  if (!confirm("Разбанить " + uids.length + " участников?")) return;
+
+  const { unbanUser } = await import("../core/punishments.js");
+  const results = await batchPromises(uids, async (uid) => {
+    try { await unbanUser(uid, "Массовый разбан"); return { ok: true }; }
+    catch (e) { return { ok: false }; }
+  }, 5);
+
+  const ok = results.filter(r => r.ok).length;
+  addAdminLog("Массовый разбан: " + ok, "ok");
+  toast("Разбанено: " + ok, "ok");
+  await renderUsersTable(true);
+}
+
 // ==================== ХЕЛПЕРЫ ====================
-/**
- * Запускает промисы батчами по N штук.
- * @param {Array} items
- * @param {Function} fn — (item) => Promise
- * @param {number} batchSize
- * @param {Function} onProgress — (done, total)
- */
 async function batchPromises(items, fn, batchSize = 5, onProgress = null) {
   const results = [];
   let done = 0;
