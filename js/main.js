@@ -189,6 +189,13 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
+  // Авто-бэкап для админов (раз в сутки)
+  if (isAdminRole) {
+    import("./core/backup-manager.js")
+      .then(m => m.checkAutoBackup())
+      .catch(() => {});
+  }
+
   const inited = {
     chat: false, admin: false, contracts: false,
     allies: false, rules: false,
