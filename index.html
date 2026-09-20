@@ -338,10 +338,10 @@
 
     <h2 class="sub">📢 Логи семьи</h2>
     <div class="grid">
-      <div class="card clickable" data-admin-action="openLogs">
-        <div class="name">📢 Перейти в логи (ВК)</div>
-        <div class="role gold">Внешняя ссылка</div>
-        <div class="stat">Открыть сообщество с логами действий семьи</div>
+      <div class="card clickable" data-admin-action="openLogsFull">
+        <div class="name">📢 Логи семьи</div>
+        <div class="role gold">Журнал</div>
+        <div class="stat">Полная история действий (админы)</div>
       </div>
     </div>
 
@@ -428,6 +428,12 @@
 
     <div class="log" id="adminLog">
       <div class="log-line"><span class="ts">[—]</span>Лог административных действий</div>
+    </div>
+
+    <h2 class="sub">📜 Полная история</h2>
+    <div id="adminLogsToolbar" class="users-toolbar"></div>
+    <div id="adminLogsFull" style="max-height:400px;overflow-y:auto;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
     </div>
   </section>
 
