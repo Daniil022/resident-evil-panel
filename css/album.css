@@ -3,6 +3,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
+  position: relative;
 }
 
 /* ============ КАРТОЧКА АЛЬБОМА ============ */
@@ -110,9 +111,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: all 0.2s;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 .photo-card:hover {
   border-color: var(--border-light);
@@ -297,18 +299,77 @@
   letter-spacing: 1px;
 }
 
-/* ============ АДАПТИВ ============ */
-@media (max-width: 640px) {
-  #albumGrid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-  }
-  .lb-prev, .lb-next {
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
-  }
-  .lb-prev { left: 8px; }
-  .lb-next { right: 8px; }
-  .lb-close { top: 10px; right: 10px; }
+/* ============ DRAG-N-DROP ЗАГРУЗКА ============ */
+.album-drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 200, 212, 0.15);
+  border: 3px dashed var(--cyan);
+  border-radius: var(--radius);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
 }
+
+.album-drop-overlay.active {
+  display: flex;
+  animation: fadeIn 0.15s;
+}
+
+.album-drop-inner {
+  text-align: center;
+  color: #fff;
+}
+.album-drop-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+.album-drop-text {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.album-drop-hint {
+  font-size: 12.5px;
+  opacity: 0.8;
+}
+
+/* ============ ПРОГРЕСС ЗАГРУЗКИ ============ */
+.album-upload-progress {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  background: var(--panel);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  min-width: 320px;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  z-index: 10005;
+  transition: transform 0.3s ease;
+  opacity: 0;
+}
+.album-upload-progress.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.aup-bar {
+  background: var(--bg-2);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.aup-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--blue));
+  box-shadow: 0 0 10px
