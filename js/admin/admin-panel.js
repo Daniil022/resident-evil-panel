@@ -8,6 +8,7 @@ import { listDivisions } from "../core/divisions.js";
 import { initUsersModule, bindSelectAll, renderUsersTable } from "./admin-users.js";
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
+import { initLogsView } from "./admin-logs-view.js";
 import { downloadBackup, openRestoreModal } from "../modules/backup.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
@@ -23,6 +24,7 @@ export async function initAdmin() {
   await initAdminDivisions();
   await initUsersModule();
   bindSelectAll();
+  await initLogsView();
 }
 
 function setupCards() {
@@ -38,7 +40,9 @@ function setupCards() {
       else if (action === "deleteUser") openDeleteUser();
       else if (action === "backupDownload") downloadBackup();
       else if (action === "backupRestore") openRestoreModal();
-      else if (action === "openLogs") window.open("https://vk.com/resident_panel", "_blank");
+      else if (action === "openLogsFull") {
+        document.getElementById("adminLogsFull")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   });
 }
@@ -64,9 +68,9 @@ async function openCreateUser() {
       const division = document.getElementById("newDivision").value || null;
       const err = document.getElementById("createUserError");
       try {
-        await createUser({ login, pin, role, division });
+        const created = await createUser({ login, pin, role, division });
         toast("Аккаунт " + login + " создан", "ok");
-        addLog("Создан " + login, "ok");
+        addLog("Создан " + login, "ok", { target: created.uid, targetLogin: login, type: "create" });
         await renderUsersTable(true);
         closeModal();
       } catch (e) {
@@ -198,7 +202,7 @@ async function openDeleteUser() {
   });
 }
 
-export function addLog(message, type = "info") {
+export function addLog(message, type = "info", opts = {}) {
   const log = document.getElementById("adminLog");
   if (!log) return;
   const now = new Date();
@@ -213,4 +217,12 @@ export function addLog(message, type = "info") {
   line.innerHTML = '<span class="ts">' + ts + '</span><span class="' + cls + '">' + message + '</span>';
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
+
+  // В Firestore
+  import("../core/activity-log.js").then(m => {
+    m.logAction(opts.type || type, message, {
+      target: opts.target || null,
+      targetLogin: opts.targetLogin || null
+    });
+  }).catch(() => {});
 }
