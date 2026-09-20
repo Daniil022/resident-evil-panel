@@ -9,7 +9,10 @@ import { initUsersModule, bindSelectAll, renderUsersTable } from "./admin-users.
 import { initAdminRoles } from "./admin-roles.js";
 import { initAdminDivisions } from "./admin-divisions.js";
 import { initLogsView } from "./admin-logs-view.js";
-import { downloadBackup, openRestoreModal } from "../modules/backup.js";
+import { initBackupsView } from "./admin-backups-view.js";
+import { initImportExport, exportAll, openImportModal, resetDemoData } from "./admin-import-export.js";
+import { checkAutoBackup } from "../core/backup-manager.js";
+import { downloadBackup as downloadBackupLegacy, openRestoreModal } from "../modules/backup.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 
 let initialized = false;
@@ -25,6 +28,9 @@ export async function initAdmin() {
   await initUsersModule();
   bindSelectAll();
   await initLogsView();
+  await initBackupsView();
+  initImportExport();
+  checkAutoBackup().catch(() => {});
 }
 
 function setupCards() {
@@ -38,11 +44,17 @@ function setupCards() {
       else if (action === "changeDivision") openChangeDivision();
       else if (action === "warn") openWarn();
       else if (action === "deleteUser") openDeleteUser();
-      else if (action === "backupDownload") downloadBackup();
+      else if (action === "backupCreateNow") {
+        document.getElementById("backupCreateNowBtn")?.click();
+      }
+      else if (action === "backupDownload") downloadBackupLegacy();
       else if (action === "backupRestore") openRestoreModal();
       else if (action === "openLogsFull") {
         document.getElementById("adminLogsFull")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
+      else if (action === "exportAll") exportAll();
+      else if (action === "importUsers") openImportModal();
+      else if (action === "resetDemo") resetDemoData();
     });
   });
 }
