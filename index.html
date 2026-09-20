@@ -335,134 +335,157 @@
   <section class="panel" id="admin">
     <h2>⚙ Панель администратора</h2>
 
-    <h2 class="sub">📢 Логи семьи</h2>
-    <div class="grid">
-      <div class="card clickable" data-admin-action="openLogsFull">
-        <div class="name">📢 Логи семьи</div>
-        <div class="role gold">Журнал</div>
-        <div class="stat">Полная история действий (админы)</div>
+    <!-- ГЛАВНЫЙ ЭКРАН ADMIN -->
+    <div id="adminHome">
+      <div class="grid admin-sections" id="adminSectionsGrid"></div>
+    </div>
+
+    <!-- РАЗДЕЛ: ЛОГИ СЕМЬИ -->
+    <div class="admin-section-view" data-section-view="logs" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">📢 Логи семьи</h3>
+      </div>
+      <div class="grid">
+        <div class="card clickable" onclick="window.open('https://vk.com/resident_panel', '_blank')">
+          <div class="name">📢 Перейти в логи (ВК)</div>
+          <div class="role gold">Внешняя ссылка</div>
+          <div class="stat">Открыть сообщество с логами семьи</div>
+        </div>
+      </div>
+      <h2 class="sub">Журнал текущей сессии</h2>
+      <div class="log" id="adminLog">
+        <div class="log-line"><span class="ts">[—]</span>Лог административных действий</div>
       </div>
     </div>
 
-    <h2 class="sub">💾 Резервная копия</h2>
-    <div class="grid">
-      <div class="card clickable" data-admin-action="backupCreateNow">
-        <div class="name">💾 Создать бэкап сейчас</div>
-        <div class="role gold">Резервная копия</div>
-        <div class="stat">Сохранить все данные в облако</div>
+    <!-- РАЗДЕЛ: РЕЗЕРВНАЯ КОПИЯ -->
+    <div class="admin-section-view" data-section-view="backup" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">💾 Резервная копия</h3>
       </div>
-      <div class="card clickable" data-admin-action="backupDownload">
-        <div class="name">📥 Скачать backup</div>
-        <div class="role">Локально</div>
-        <div class="stat">Сохранить в JSON-файл на ПК</div>
-      </div>
-      <div class="card clickable" data-admin-action="backupRestore">
-        <div class="name">↺ Загрузить backup</div>
-        <div class="role danger">Опасно</div>
-        <div class="stat">Восстановить данные из файла</div>
-      </div>
-      <div class="card clickable" data-admin-action="exportAll">
-        <div class="name">📤 Экспорт всех</div>
-        <div class="role">Участники</div>
-        <div class="stat">CSV/JSON всех участников</div>
-      </div>
-      <div class="card clickable" data-admin-action="importUsers">
-        <div class="name">📥 Импорт участников</div>
-        <div class="role gold">Массовый</div>
-        <div class="stat">Загрузить из CSV/JSON пачкой</div>
-      </div>
-      <div class="card clickable" data-admin-action="resetDemo">
-        <div class="name">🗑 Сбросить демо</div>
-        <div class="role danger">Опасно</div>
-        <div class="stat">Очистить все re_demo_* ключи</div>
-      </div>
-    </div>
-
-    <h2 class="sub">📦 Облачные бэкапы</h2>
-    <div class="users-toolbar-row" style="margin-bottom:12px;">
-      <button class="btn" id="backupCreateNowBtn">💾 Создать сейчас</button>
-      <button class="btn secondary" id="backupCleanupBtn">🧹 Удалить старые (&gt;7 дней)</button>
-    </div>
-    <div id="backupsList">
-      <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
-    </div>
-
-    <h2 class="sub">⚙️ Управление участниками</h2>
-    <div class="grid">
-      <div class="card clickable" data-admin-action="createUser">
-        <div class="name">Создать аккаунт</div>
-        <div class="role gold">Регистрация</div>
-        <div class="stat">Завести нового участника</div>
-      </div>
-      <div class="card clickable" data-admin-action="changePin">
-        <div class="name">Сменить PIN</div>
-        <div class="role">Безопасность</div>
-        <div class="stat">Изменить PIN участника</div>
-      </div>
-      <div class="card clickable" data-admin-action="changeRole">
-        <div class="name">Сменить роль</div>
-        <div class="role">Иерархия</div>
-        <div class="stat">Перевести на другую должность</div>
-      </div>
-      <div class="card clickable" data-admin-action="changeDivision">
-        <div class="name">Сменить подразделение</div>
-        <div class="role blue">Отряд</div>
-        <div class="stat">Назначить в отряд</div>
-      </div>
-      <div class="card clickable" data-admin-action="warn">
-        <div class="name">Выдать Warn</div>
-        <div class="role danger">Наказание</div>
-        <div class="stat">Предупреждение участнику</div>
-      </div>
-      <div class="card clickable" data-admin-action="deleteUser">
-        <div class="name">Удалить аккаунт</div>
-        <div class="role danger">Опасно</div>
-        <div class="stat">Полное удаление</div>
+      <div class="grid">
+        <div class="card clickable" data-admin-action="backupCreateNow">
+          <div class="name">💾 Создать бэкап сейчас</div>
+          <div class="role gold">Резервная копия</div>
+          <div class="stat">Сохранить все данные в облако</div>
+        </div>
+        <div class="card clickable" data-admin-action="backupDownload">
+          <div class="name">📥 Скачать backup</div>
+          <div class="role">Локально</div>
+          <div class="stat">Сохранить в JSON-файл на ПК</div>
+        </div>
+        <div class="card clickable" data-admin-action="backupRestore">
+          <div class="name">↺ Загрузить backup</div>
+          <div class="role danger">Опасно</div>
+          <div class="stat">Восстановить данные из файла</div>
+        </div>
+        <div class="card clickable" data-admin-action="exportAll">
+          <div class="name">📤 Экспорт всех</div>
+          <div class="role">Участники</div>
+          <div class="stat">CSV/JSON всех участников</div>
+        </div>
+        <div class="card clickable" data-admin-action="importUsers">
+          <div class="name">📥 Импорт участников</div>
+          <div class="role gold">Массовый</div>
+          <div class="stat">Загрузить из CSV/JSON пачкой</div>
+        </div>
+        <div class="card clickable" data-admin-action="resetDemo">
+          <div class="name">🗑 Сбросить демо</div>
+          <div class="role danger">Опасно</div>
+          <div class="stat">Очистить все re_demo_* ключи</div>
+        </div>
       </div>
     </div>
 
-    <h2 class="sub">🎖 Редактор ролей</h2>
-    <div class="roles-toolbar">
-      <div style="color:var(--muted);font-size:12.5px;">Изменяй название, цвет и порядок ролей</div>
-      <button class="btn" id="addRoleBtn">+ Создать роль</button>
-    </div>
-    <div class="roles-list" id="rolesList"></div>
-
-    <h2 class="sub">🎯 Редактор подразделений</h2>
-    <div class="roles-toolbar">
-      <div style="color:var(--muted);font-size:12.5px;">Управляй подразделениями семьи</div>
-      <button class="btn" id="addDivisionBtn">+ Создать подразделение</button>
-    </div>
-    <div class="roles-list" id="divisionsList"></div>
-
-    <h2 class="sub">📋 Реестр участников</h2>
-    <div id="usersToolbar" class="users-toolbar"></div>
-    <div style="overflow-x:auto;">
-      <table class="users-table" id="usersTable">
-        <thead>
-          <tr>
-            <th class="check-cell"><input type="checkbox" id="usersSelectAll" title="Выделить всех"></th>
-            <th class="sortable" data-sort="login" onclick="window.__usersSort('login')">Логин ↕</th>
-            <th class="sortable" data-sort="role" onclick="window.__usersSort('role')">Роль ↕</th>
-            <th class="sortable" data-sort="division" onclick="window.__usersSort('division')">Отряд ↕</th>
-            <th class="sortable" data-sort="warn" onclick="window.__usersSort('warn')">Warn ↕</th>
-            <th class="sortable" data-sort="lastSeen" onclick="window.__usersSort('lastSeen')">Последний вход ↕</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody id="usersTbody"></tbody>
-      </table>
+    <!-- РАЗДЕЛ: ОБЛАЧНЫЕ БЭКАПЫ -->
+    <div class="admin-section-view" data-section-view="cloud" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">📦 Облачные бэкапы</h3>
+      </div>
+      <div class="users-toolbar-row" style="margin-bottom:12px;">
+        <button class="btn" id="backupCreateNowBtn">💾 Создать сейчас</button>
+        <button class="btn secondary" id="backupCleanupBtn">🧹 Удалить старые (&gt;7 дней)</button>
+      </div>
+      <div id="backupsList">
+        <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
+      </div>
     </div>
 
-    <div class="log" id="adminLog">
-      <div class="log-line"><span class="ts">[—]</span>Лог административных действий</div>
+    <!-- РАЗДЕЛ: УПРАВЛЕНИЕ УЧАСТНИКАМИ -->
+    <div class="admin-section-view" data-section-view="users" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">⚙️ Управление участниками</h3>
+      </div>
+      <div class="grid" id="adminUsersGrid"></div>
     </div>
 
-    <h2 class="sub">📜 Полная история</h2>
-    <div id="adminLogsToolbar" class="users-toolbar"></div>
-    <div id="adminLogsFull" style="max-height:400px;overflow-y:auto;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
-      <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
+    <!-- РАЗДЕЛ: РЕДАКТОР РОЛЕЙ -->
+    <div class="admin-section-view" data-section-view="roles" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">🎖 Редактор ролей</h3>
+      </div>
+      <div class="roles-toolbar">
+        <div style="color:var(--muted);font-size:12.5px;">Изменяй название, цвет и порядок ролей</div>
+        <button class="btn" id="addRoleBtn">+ Создать роль</button>
+      </div>
+      <div class="roles-list" id="rolesList"></div>
     </div>
+
+    <!-- РАЗДЕЛ: РЕДАКТОР ПОДРАЗДЕЛЕНИЙ -->
+    <div class="admin-section-view" data-section-view="divisions" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">🎯 Редактор подразделений</h3>
+      </div>
+      <div class="roles-toolbar">
+        <div style="color:var(--muted);font-size:12.5px;">Управляй подразделениями семьи</div>
+        <button class="btn" id="addDivisionBtn">+ Создать подразделение</button>
+      </div>
+      <div class="roles-list" id="divisionsList"></div>
+    </div>
+
+    <!-- РАЗДЕЛ: РЕЕСТР УЧАСТНИКОВ -->
+    <div class="admin-section-view" data-section-view="registry" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">📋 Реестр участников</h3>
+      </div>
+      <div id="usersToolbar" class="users-toolbar"></div>
+      <div style="overflow-x:auto;">
+        <table class="users-table" id="usersTable">
+          <thead>
+            <tr>
+              <th class="check-cell"><input type="checkbox" id="usersSelectAll" title="Выделить всех"></th>
+              <th class="sortable" data-sort="login" onclick="window.__usersSort('login')">Логин ↕</th>
+              <th class="sortable" data-sort="role" onclick="window.__usersSort('role')">Роль ↕</th>
+              <th class="sortable" data-sort="division" onclick="window.__usersSort('division')">Отряд ↕</th>
+              <th class="sortable" data-sort="warn" onclick="window.__usersSort('warn')">Warn ↕</th>
+              <th class="sortable" data-sort="lastSeen" onclick="window.__usersSort('lastSeen')">Последний вход ↕</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="usersTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- РАЗДЕЛ: ПОЛНАЯ ИСТОРИЯ -->
+    <div class="admin-section-view" data-section-view="history" style="display:none;">
+      <div class="admin-section-head">
+        <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
+        <h3 class="admin-section-title">📜 Полная история</h3>
+      </div>
+      <div id="adminLogsToolbar" class="users-toolbar"></div>
+      <div id="adminLogsFull" style="max-height:600px;overflow-y:auto;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
+      </div>
+    </div>
+
   </section>
 
 </main>
