@@ -1,7 +1,7 @@
 // js/admin/admin-logs-view.js
 // Просмотр всех логов в ADMIN с фильтрами.
 
-import { loadLogs, LOG_TYPES, formatLogType } from "../core/activity-log.js";
+import { loadLogs, LOG_TYPES } from "../core/activity-log.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
 
 let currentFilters = { type: "", author: "", target: "" };
@@ -21,7 +21,7 @@ function renderToolbar() {
   toolbar.innerHTML =
     '<div class="users-toolbar-row">' +
       '<select id="logFilterType" class="users-filter">' +
-        LOG_TYPES.map(t => '<option value="' + t.id + '">' + t.label + '</option>').join("") +
+        LOG_TYPES.map(t => '<option value="' + t.id + '"' + (currentFilters.type === t.id ? " selected" : "") + '>' + t.label + '</option>').join("") +
       '</select>' +
       '<input type="text" id="logFilterAuthor" class="users-search" placeholder="🔍 Автор..." value="' + escapeAttr(currentFilters.author) + '">' +
       '<input type="text" id="logFilterTarget" class="users-search" placeholder="🔍 Цель (ник)..." value="' + escapeAttr(currentFilters.target) + '">' +
@@ -71,7 +71,7 @@ async function loadAndRender() {
   const logs = await loadLogs({
     type: currentFilters.type || null,
     author: currentFilters.author || null,
-    target: null, // target ищем по нику ниже
+    target: null,
     max: 200
   });
 
@@ -87,17 +87,13 @@ async function loadAndRender() {
 
   container.innerHTML = filtered.map(l =>
     '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(42,53,67,0.5);font-size:12.5px;">' +
-      '<span style="flex-shrink:0;min-width:120px;color:var(--muted);font-size:11px;">' + formatDate(l.at) + '</span>' +
-      '<span style="flex-shrink:0;min-width:100px;color:var(--cyan);">' + escapeHtml(l.by || '—') + '</span>' +
+      '<span style="flex-shrink:0;min-width:130px;color:var(--muted);font-size:11px;">' + formatDate(l.at) + '</span>' +
+      '<span style="flex-shrink:0;min-width:110px;color:var(--cyan);">' + escapeHtml(l.by || '—') + '</span>' +
       '<span style="flex:1;color:#ccc;">' + escapeHtml(l.message) + '</span>' +
     '</div>'
   ).join('');
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
 function escapeAttr(s) {
-  return String(s).replace(/"/g, "&quot;");
+  return String(s || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
