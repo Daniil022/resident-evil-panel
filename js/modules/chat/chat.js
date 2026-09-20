@@ -162,13 +162,22 @@ function initOneChat(chatId) {
         const grouped = lastAuthor === msg.authorId &&
           (msgDate - (lastDate || 0)) < 5 * 60 * 1000;
 
-        container.appendChild(renderMessage(msg, grouped, {
+        msg.chatId = chatId;
+
+        const msgEl = renderMessage(msg, grouped, {
           onReply: (m) => setReplyToChat(chatId, m),
           onReact: (id, emoji) => toggleReaction(id, emoji, chatId),
           onEdit: (m) => openEditModal(m, chatId),
           onDelete: (m) => openDeleteModal(m, chatId),
           onPin: (m) => pinMessage(chatId, m)
-        }, user.uid));
+        }, user.uid);
+
+        container.appendChild(msgEl);
+
+        // Упоминания
+        import("./chat-mentions.js")
+          .then(m => m.highlightIfMentioned(msg, msgEl))
+          .catch(() => {});
 
         lastAuthor = msg.authorId;
       });
@@ -300,8 +309,8 @@ async function pinMessage(chatId, msg) {
     await setDoc(pinRef, {
       msgId: msg.id,
       author: msg.authorLogin,
-      text: msg.text.substring(0, 100),
-      fullText: msg.text,
+      text: (msg.text || "").substring(0, 100),
+      fullText: msg.text || "",
       pinnedBy: user.login,
       pinnedAt: Date.now()
     });
@@ -376,29 +385,21 @@ function updatePinBar(chatId, pinData) {
 }
 
 // ==================== ПРОВЕРКА МУТА ====================
-/**
- * Проверяет мут с актуальными данными из Firestore.
- * Если в сессии muted: false, но в базе muted: true — обновляет сессию и возвращает true.
- * @returns {Promise<boolean>} true, если юзер в муте (и показан тост)
- */
 async function checkMutedFresh(user) {
   const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
 
-  // Если в кэше уже мут — сразу возвращаем
   if (isMuted(user)) {
     const left = getMuteRemaining(user);
     toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
     return true;
   }
 
-  // Если в кэше НЕ мут — перечитываем из Firestore (может быть рассинхрон)
   try {
     const snap = await getDoc(doc(db, "users", user.uid));
     if (!snap.exists()) return false;
 
     const fresh = snap.data();
 
-    // Обновляем сессию, если есть данные о муте
     if (fresh.muted || fresh.mutedUntil || fresh.mutedReason) {
       const { setCurrentUser } = await import("../../core/state.js");
       const updated = {
@@ -409,7 +410,6 @@ async function checkMutedFresh(user) {
       };
       setCurrentUser(updated);
 
-      // Проверяем — реально ли мут активен
       if (isMuted(updated)) {
         const left = getMuteRemaining(updated);
         toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (updated.mutedReason ? ". Причина: " + updated.mutedReason : ""), "warn", 4000);
@@ -417,7 +417,6 @@ async function checkMutedFresh(user) {
       }
     }
   } catch (e) {
-    // Если Firestore недоступен — пропускаем (демо-режим)
     console.warn("checkMutedFresh failed:", e);
   }
 
@@ -429,7 +428,6 @@ async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
 
-  // Проверка мута (читаем свежие данные из Firestore)
   const muted = await checkMutedFresh(user);
   if (muted) return;
 
@@ -449,7 +447,7 @@ async function sendMessageTo(chatId, text) {
     replyTo: reply ? {
       id: reply.id,
       author: reply.authorLogin,
-      text: reply.text.substring(0, 80)
+      text: (reply.text || "").substring(0, 80)
     } : null,
     reactions: {},
     createdAt: serverTimestamp()
@@ -470,7 +468,6 @@ async function sendVoiceTo(chatId, blob, durationMs) {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Проверка мута (читаем свежие данные из Firestore)
   const muted = await checkMutedFresh(user);
   if (muted) return;
 
@@ -581,10 +578,20 @@ function setupInputForChat(chatId) {
     });
   }
 
-  // Голосовые — подключаем UI-кнопку
+  // Голосовые
   import("./chat-voice-ui.js")
     .then(m => m.setupVoiceForChat(chatId, sendVoiceTo))
     .catch(err => console.warn("Voice UI init failed:", err));
+
+  // Файлы
+  import("./chat-files.js")
+    .then(m => m.setupFileButton(chatId, () => {}))
+    .catch(err => console.warn("File btn init failed:", err));
+
+  // Опросы
+  import("./chat-polls.js")
+    .then(m => m.setupPollButton(chatId, () => {}))
+    .catch(err => console.warn("Poll btn init failed:", err));
 }
 
 function setReplyToChat(chatId, msg) {
