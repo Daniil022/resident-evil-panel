@@ -5,7 +5,7 @@ import { listRoles } from "../core/roles.js";
 import { listDivisions } from "../core/divisions.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName }
   from "../core/colorize.js";
-import { toast } from "../core/utils.js";
+import { toast, openModal, closeModal } from "../core/utils.js";
 import { raf } from "../core/perf.js";
 import {
   setupUsersToolbar, applyFilters, getFilterState,
@@ -46,6 +46,19 @@ function bindGlobalButtons() {
   on("bulkDivisionBtn", () => bulkChangeDivision(Array.from(selectedUids)));
   on("bulkDeleteBtn", () => bulkDelete(Array.from(selectedUids)));
   on("bulkExportBtn", () => bulkExport(Array.from(selectedUids)));
+
+  on("bulkMuteBtn", async () => {
+    const { bulkMute } = await import("./admin-users-bulk.js");
+    bulkMute(Array.from(selectedUids));
+  });
+  on("bulkBanBtn", async () => {
+    const { bulkBan } = await import("./admin-users-bulk.js");
+    bulkBan(Array.from(selectedUids));
+  });
+  on("bulkUnbanBtn", async () => {
+    const { bulkUnban } = await import("./admin-users-bulk.js");
+    bulkUnban(Array.from(selectedUids));
+  });
 }
 
 // ==================== ОСНОВНОЙ РЕНДЕР ====================
@@ -60,23 +73,21 @@ export async function renderUsersTable(force = false) {
 
   raf(() => {
     if (cachedUsers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">' +
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">' +
         'Участников нет. Создайте первого через кнопку «Создать аккаунт».</td></tr>';
       updateBulkRow(0);
       renderScheduled = false;
       return;
     }
 
-    // Применяем фильтры/сортировку
     const filtered = applyFilters(cachedUsers);
     lastFilteredUsers = filtered;
 
-    // Чистим selectedUids от тех, кого больше нет
     const validUids = new Set(filtered.map(u => u.uid));
     selectedUids.forEach(uid => { if (!validUids.has(uid)) selectedUids.delete(uid); });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">' +
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">' +
         'Ничего не найдено по фильтрам.</td></tr>';
       updateBulkRow(0);
       updateHeaderCheckbox();
@@ -87,7 +98,6 @@ export async function renderUsersTable(force = false) {
     const html = filtered.map(u => renderRow(u)).join("");
     tbody.innerHTML = html;
 
-    // Обновляем состояние чекбоксов
     tbody.querySelectorAll(".user-checkbox").forEach(cb => {
       const uid = cb.dataset.uid;
       cb.checked = selectedUids.has(uid);
@@ -109,9 +119,10 @@ export async function renderUsersTable(force = false) {
 function renderRow(u) {
   const w = u.warn || 0;
   const banned = u.banned || w >= 3;
+  const muted = u.muted && (!u.mutedUntil || Date.now() < u.mutedUntil);
   const wCls = banned ? "danger" : w > 0 ? "warn" : "";
   const lockIcon = banned ? " 🔒" : "";
-  const muteIcon = u.muted ? " 🔇" : "";
+  const muteIcon = muted ? " 🔇" : "";
   const banLabel = banned ? '<span style="color:var(--red);font-size:10px;margin-left:6px;">ЗАБАНЕН</span>' : "";
 
   const roleColor = getRoleColor(u.role);
@@ -122,6 +133,14 @@ function renderRow(u) {
   const plusWBtn = banned
     ? '<button class="btn small secondary" disabled style="opacity:0.4;cursor:not-allowed;">+W</button>'
     : '<button class="btn small secondary" onclick="window.__adminWarn(\'' + u.uid + '\')">+W</button>';
+
+  const muteBtn = muted
+    ? '<button class="btn small" style="background:var(--gold);color:#001417;" onclick="window.__adminUnmute(\'' + u.uid + '\')" title="Снять мут">🔊</button>'
+    : '<button class="btn small secondary" onclick="window.__adminMute(\'' + u.uid + '\')" title="Замутить">🔇</button>';
+
+  const banBtn = banned
+    ? '<button class="btn small" style="background:var(--green);color:#001417;" onclick="window.__adminUnban(\'' + u.uid + '\')" title="Разбанить">🔓</button>'
+    : '<button class="btn small danger" onclick="window.__adminBan(\'' + u.uid + '\')" title="Забанить">🔒</button>';
 
   const lastSeen = formatLastSeen(u.lastSeen);
 
@@ -142,6 +161,8 @@ function renderRow(u) {
           <button class="btn small secondary" onclick="window.__adminChangeDivision('${u.uid}')">Отряд</button>
           ${plusWBtn}
           <button class="btn small secondary" onclick="window.__adminUnwarn('${u.uid}')">−W</button>
+          ${muteBtn}
+          ${banBtn}
           <button class="btn small danger" onclick="window.__adminDelete('${u.uid}')">✕</button>
         </div>
       </td>
@@ -182,21 +203,9 @@ export function bindSelectAll() {
     }
     renderUsersTable(true);
   });
-
-  // Кнопки «Выделить всех» / «Снять выделение» в toolbar
-  const selAll = document.getElementById("usersSelectAllBtn");
-  const deselAll = document.getElementById("usersDeselectAllBtn");
-  if (selAll) selAll.addEventListener("click", () => {
-    lastFilteredUsers.forEach(u => selectedUids.add(u.uid));
-    renderUsersTable(true);
-  });
-  if (deselAll) deselAll.addEventListener("click", () => {
-    selectedUids.clear();
-    renderUsersTable(true);
-  });
 }
 
-// ==================== ДЕЙСТВИЯ (старые) ====================
+// ==================== СТАРЫЕ ДЕЙСТВИЯ ====================
 window.__adminChangePin = async function(uid) {
   const users = await listUsers();
   const u = users.find(x => x.uid === uid);
@@ -291,6 +300,112 @@ window.__adminDelete = async function(uid) {
   } catch (e) { toast(e.message, "warn"); }
 };
 
+// ==================== MUTE ====================
+window.__adminMute = async function(uid) {
+  const users = await listUsers();
+  const u = users.find(x => x.uid === uid);
+  if (!u) return;
+
+  openModal({
+    title: "ЗАМУТИТЬ " + u.login,
+    html:
+      '<div class="form-grid">' +
+        '<div class="form-field"><label>Длительность</label>' +
+          '<select id="muteDuration" class="role-select">' +
+            '<option value="0">Навсегда</option>' +
+            '<option value="3600000">1 час</option>' +
+            '<option value="21600000">6 часов</option>' +
+            '<option value="86400000">1 день</option>' +
+            '<option value="604800000">7 дней</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-field"><label>Причина</label><input type="text" id="muteReason" placeholder="Например: спам в чате" autocomplete="off"></div>' +
+      '</div>',
+    confirmText: "ЗАМУТИТЬ",
+    danger: true,
+    onConfirm: async () => {
+      const duration = parseInt(document.getElementById("muteDuration").value) || 0;
+      const reason = document.getElementById("muteReason").value.trim();
+      try {
+        const { muteUser } = await import("../core/punishments.js");
+        await muteUser(uid, duration, reason);
+        toast(u.login + " замучен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
+        addAdminLog("Мут " + u.login + ": " + reason, "warn");
+        await renderUsersTable(true);
+        closeModal();
+      } catch (e) { toast(e.message, "warn"); }
+    }
+  });
+};
+
+window.__adminUnmute = async function(uid) {
+  const users = await listUsers();
+  const u = users.find(x => x.uid === uid);
+  if (!u) return;
+  if (!confirm("Снять мут с " + u.login + "?")) return;
+  try {
+    const { unmuteUser } = await import("../core/punishments.js");
+    await unmuteUser(uid, "Ручное снятие");
+    toast("Мут снят", "ok");
+    addAdminLog("Снятие мута " + u.login, "ok");
+    await renderUsersTable(true);
+  } catch (e) { toast(e.message, "warn"); }
+};
+
+// ==================== BAN ====================
+window.__adminBan = async function(uid) {
+  const users = await listUsers();
+  const u = users.find(x => x.uid === uid);
+  if (!u) return;
+
+  openModal({
+    title: "ЗАБАНИТЬ " + u.login,
+    html:
+      '<div class="form-grid">' +
+        '<div class="form-field"><label>Длительность</label>' +
+          '<select id="banDuration" class="role-select">' +
+            '<option value="0">Навсегда</option>' +
+            '<option value="3600000">1 час</option>' +
+            '<option value="21600000">6 часов</option>' +
+            '<option value="86400000">1 день</option>' +
+            '<option value="604800000">7 дней</option>' +
+            '<option value="2592000000">30 дней</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-field"><label>Причина</label><input type="text" id="banReason" placeholder="Например: нарушение правил" autocomplete="off"></div>' +
+      '</div>' +
+      '<p style="color:var(--red);font-size:12px;margin-top:12px;">⚠ Аккаунт будет заблокирован до истечения срока или до ручного разбана.</p>',
+    confirmText: "ЗАБАНИТЬ",
+    danger: true,
+    onConfirm: async () => {
+      const duration = parseInt(document.getElementById("banDuration").value) || 0;
+      const reason = document.getElementById("banReason").value.trim();
+      try {
+        const { banUser } = await import("../core/punishments.js");
+        await banUser(uid, duration, reason);
+        toast(u.login + " забанен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
+        addAdminLog("Бан " + u.login + ": " + reason, "crit");
+        await renderUsersTable(true);
+        closeModal();
+      } catch (e) { toast(e.message, "warn"); }
+    }
+  });
+};
+
+window.__adminUnban = async function(uid) {
+  const users = await listUsers();
+  const u = users.find(x => x.uid === uid);
+  if (!u) return;
+  if (!confirm("Разбанить " + u.login + "?\n\nWarn будет сброшен в 0.")) return;
+  try {
+    const { unbanUser } = await import("../core/punishments.js");
+    await unbanUser(uid, "Ручной разбан");
+    toast(u.login + " разбанен", "ok");
+    addAdminLog("Разбан " + u.login, "ok");
+    await renderUsersTable(true);
+  } catch (e) { toast(e.message, "warn"); }
+};
+
 // ==================== ХЕЛПЕРЫ ====================
 function formatLastSeen(ts) {
   if (!ts) return '<span style="color:#555;">—</span>';
@@ -301,6 +416,15 @@ function formatLastSeen(ts) {
   if (diff < 60 * 60 * 1000) return Math.floor(diff / 60000) + " мин назад";
   if (diff < 24 * 60 * 60 * 1000) return Math.floor(diff / 3600000) + " ч назад";
   return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
+
+function formatDuration(ms) {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  if (h > 0) return h + " ч " + (m > 0 ? m + " мин" : "");
+  if (m > 0) return m + " мин";
+  return (total % 60) + " сек";
 }
 
 function hexRgba(hex, alpha) {
@@ -315,3 +439,7 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+window.__usersSort = function(field) {
+  import("./admin-users-toolbar.js").then(m => m.toggleSort(field));
+};
