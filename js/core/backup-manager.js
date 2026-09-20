@@ -23,6 +23,7 @@ const BACKUP_COLLECTIONS = [
   "allies",
   "rules",
   "captas",
+  "premiums",
   "warehouse",
   "registration_requests",
   "admin_logs"
