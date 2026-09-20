@@ -217,7 +217,7 @@ function enterApp(user) {
     if (tab === "accolade" && !ally && !inited.accolades) { inited.accolades = true; try { initAccolades(); } catch (err) {} }
     if (tab === "music" && !ally && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
     if (tab === "album" && !ally && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
-    if (tab === "containers" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
+    if (tab === "news" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
     if (tab === "nicks" && !ally && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
     if (tab === "ranks" && !ally && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
     if (tab === "online" && !inited.online) { inited.online = true; try { initOnline(); } catch (err) {} }
@@ -233,7 +233,7 @@ function enterApp(user) {
   if (hash === "accolade" && !ally) { inited.accolades = true; try { initAccolades(); } catch (e) {} }
   if (hash === "music" && !ally) { inited.music = true; try { initMusic(); } catch (e) {} }
   if (hash === "album" && !ally) { inited.album = true; try { initAlbum(); } catch (e) {} }
-  if (hash === "containers" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "news" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
   if (hash === "nicks" && !ally) { inited.nicks = true; try { initNicks(); } catch (e) {} }
   if (hash === "ranks" && !ally) { inited.ranks = true; try { initRanks(); } catch (e) {} }
   if (hash === "online") { inited.online = true; try { initOnline(); } catch (e) {} }
@@ -245,7 +245,7 @@ function enterApp(user) {
 }
 
 function applyRoleVisibility(isAlly) {
-  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "containers", "allies", "music", "rules", "album", "applications", "online"];
+  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "accolade", "news", "allies", "music", "rules", "album", "applications", "online"];
 
   document.querySelectorAll("#mainNav button").forEach(btn => {
     const tab = btn.dataset.tab;
