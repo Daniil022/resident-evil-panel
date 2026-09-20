@@ -53,7 +53,9 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     reply.title = "Перейти к сообщению";
     reply.innerHTML =
       '<div class="reply-author">' + escapeHtml(msg.replyTo.author) + '</div>' +
-      '<div class="reply-text">' + escapeHtml(msg.replyTo.text || "🎤 Голосовое") + '</div>';
+      '<div class="reply-text">' +
+        escapeHtml(msg.replyTo.text || (msg.type === "voice" ? "🎤 Голосовое" : "📎 Файл")) +
+      '</div>';
     reply.addEventListener("click", () => {
       const targetId = msg.replyTo.id;
       const el = document.querySelector('[data-id="' + targetId + '"]');
@@ -68,6 +70,10 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
 
   if (msg.type === "voice" && msg.voiceUrl) {
     body.appendChild(renderVoice(msg));
+  } else if (msg.type === "attachments" && msg.attachments) {
+    body.appendChild(renderAttachments(msg));
+  } else if (msg.type === "poll" && msg.poll) {
+    body.appendChild(renderPoll(msg, handlers));
   } else {
     const text = document.createElement("div");
     text.className = "msg-text";
@@ -105,7 +111,7 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
 
   let actionsHTML = '<button title="Ответить">↩</button>';
   actionsHTML += '<button title="Реакция">☺</button>';
-  if (isOwn) actionsHTML += '<button title="Редактировать">✏️</button>';
+  if (isOwn && msg.type !== "poll") actionsHTML += '<button title="Редактировать">✏️</button>';
   if (isAdmin) actionsHTML += '<button title="Закрепить">📌</button>';
   actionsHTML += '<button title="Удалить">🗑</button>';
   actions.innerHTML = actionsHTML;
@@ -113,7 +119,7 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   let idx = 0;
   actions.children[idx++].onclick = () => handlers.onReply(msg);
   actions.children[idx++].onclick = () => quickReact(msg.id, handlers);
-  if (isOwn) {
+  if (isOwn && msg.type !== "poll") {
     actions.children[idx++].onclick = () => handlers.onEdit && handlers.onEdit(msg);
   }
   if (isAdmin) {
@@ -223,6 +229,130 @@ function formatVoiceDuration(ms) {
   return m + ":" + String(s).padStart(2, "0");
 }
 
+// ==================== ФАЙЛЫ ====================
+function renderAttachments(msg) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg-attachments";
+
+  const images = (msg.attachments || []).filter(a => a.type === "image");
+  const others = (msg.attachments || []).filter(a => a.type !== "image");
+
+  if (images.length > 0) {
+    const grid = document.createElement("div");
+    grid.className = "attachments-grid";
+    images.forEach(a => {
+      const img = document.createElement("img");
+      img.src = a.url;
+      img.alt = a.name;
+      img.loading = "lazy";
+      img.onclick = () => {
+        if (window.__openMedia) window.__openMedia(a.url, "image");
+      };
+      grid.appendChild(img);
+    });
+    wrap.appendChild(grid);
+  }
+
+  others.forEach(a => {
+    const card = document.createElement("a");
+    card.href = a.vk_link || a.url;
+    card.target = "_blank";
+    card.rel = "noopener noreferrer";
+    card.className = "attachment-card";
+
+    const icon = a.type === "video" ? "🎬"
+               : a.type === "audio" ? "🎵"
+               : "📄";
+
+    card.innerHTML =
+      '<span class="attachment-icon">' + icon + '</span>' +
+      '<div class="attachment-info">' +
+        '<div class="attachment-name">' + escapeHtml(a.name) + '</div>' +
+        '<div class="attachment-size">' + formatSize(a.size) + '</div>' +
+      '</div>';
+
+    wrap.appendChild(card);
+  });
+
+  return wrap;
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "";
+  if (bytes < 1024) return bytes + " Б";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " КБ";
+  return (bytes / (1024 * 1024)).toFixed(1) + " МБ";
+}
+
+// ==================== ОПРОСЫ ====================
+function renderPoll(msg, handlers) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg-poll";
+
+  const poll = msg.poll;
+  const total = poll.options.reduce((s, o) => s + o.votes.length, 0);
+  const me = getCurrentUser();
+
+  const header = document.createElement("div");
+  header.className = "poll-header";
+  header.innerHTML =
+    '<div class="poll-question">📊 ' + escapeHtml(poll.question) + '</div>' +
+    (poll.closed ? '<div class="poll-closed">ЗАКРЫТ</div>' : '');
+  wrap.appendChild(header);
+
+  poll.options.forEach(opt => {
+    const voted = me && opt.votes.includes(me.uid);
+    const percent = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
+
+    const row = document.createElement("div");
+    row.className = "poll-option" + (voted ? " voted" : "");
+    if (poll.closed) row.classList.add("closed");
+
+    row.innerHTML =
+      '<div class="poll-option-bar" style="width:' + percent + '%"></div>' +
+      '<div class="poll-option-content">' +
+        '<span class="poll-option-label">' + escapeHtml(opt.label) + '</span>' +
+        '<span class="poll-option-count">' + opt.votes.length + ' (' + percent + '%)</span>' +
+      '</div>' +
+      (voted ? '<span class="poll-check">✓</span>' : '');
+
+    if (!poll.closed) {
+      row.onclick = () => {
+        import("./chat-polls.js").then(m => m.votePoll(
+          msg.chatId || "residents",
+          msg.id,
+          opt.id
+        ));
+      };
+    }
+
+    wrap.appendChild(row);
+  });
+
+  const footer = document.createElement("div");
+  footer.className = "poll-footer";
+  footer.innerHTML =
+    '<span>Всего голосов: ' + total + '</span>' +
+    (poll.multi ? '<span> · можно несколько</span>' : '');
+
+  // Кнопка закрытия для автора/админа
+  const isAuthor = me && msg.authorId === me.uid;
+  const isAdmin = me && ["emperor", "lord"].includes(me.role);
+  if (!poll.closed && (isAuthor || isAdmin)) {
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "poll-close-btn";
+    closeBtn.textContent = "Закрыть опрос";
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      import("./chat-polls.js").then(m => m.closePoll(msg.chatId || "residents", msg.id));
+    };
+    footer.appendChild(closeBtn);
+  }
+
+  wrap.appendChild(footer);
+  return wrap;
+}
+
 // ==================== ТЕКСТ ====================
 function renderText(text) {
   if (!text) return { html: "", isBigEmoji: false };
@@ -247,7 +377,7 @@ function renderText(text) {
 
   html = html.replace(
     /@([A-Za-z0-9_]{3,32})/g,
-    '<span class="chat-mention" data-mention="$1">@$1</span>'
+    '<span class="chat-mention" data-mention="$1" onclick="window.__openProfileByName && window.__openProfileByName(\'$1\')">@$1</span>'
   );
 
   return { html, isBigEmoji };
