@@ -14,51 +14,139 @@ import { initImportExport, exportAll, openImportModal, resetDemoData } from "./a
 import { checkAutoBackup } from "../core/backup-manager.js";
 import { downloadBackup as downloadBackupLegacy, openRestoreModal } from "../modules/backup.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
+import { ADMIN_SECTIONS } from "./admin-sections.js";
 
 let initialized = false;
+let currentSection = null;
 
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 export async function initAdmin() {
   if (!initialized) {
     initialized = true;
-    setupCards();
     addLog("Панель администратора открыта", "ok");
   }
-  await initAdminRoles();
-  await initAdminDivisions();
-  await initUsersModule();
-  bindSelectAll();
-  await initLogsView();
-  await initBackupsView();
-  initImportExport();
-  checkAutoBackup().catch(() => {});
+
+  renderAdminHome();
+  goToSection(null, false);
 }
 
-function setupCards() {
-  const cards = document.querySelectorAll("#admin .card.clickable");
-  cards.forEach(card => {
+// ==================== ГЛАВНЫЙ ЭКРАН ====================
+function renderAdminHome() {
+  const grid = document.getElementById("adminSectionsGrid");
+  if (!grid) return;
+
+  grid.innerHTML = ADMIN_SECTIONS.map(s =>
+    '<div class="card clickable admin-section-card" data-section="' + s.id + '">' +
+      '<div class="admin-section-icon">' + s.icon + '</div>' +
+      '<div class="name">' + s.title + '</div>' +
+      '<div class="role ' + (s.role || "") + '">Раздел</div>' +
+      '<div class="stat">' + s.desc + '</div>' +
+    '</div>'
+  ).join("");
+
+  grid.querySelectorAll(".admin-section-card").forEach(card => {
+    card.addEventListener("click", () => goToSection(card.dataset.section));
+  });
+}
+
+// ==================== НАВИГАЦИЯ ====================
+async function goToSection(sectionId, scroll = true) {
+  currentSection = sectionId;
+
+  const home = document.getElementById("adminHome");
+  const sections = document.querySelectorAll(".admin-section-view");
+
+  if (!sectionId) {
+    // Показать главный экран
+    if (home) home.style.display = "block";
+    sections.forEach(el => { el.style.display = "none"; });
+    return;
+  }
+
+  // Скрыть главный, показать нужный
+  if (home) home.style.display = "none";
+  sections.forEach(el => {
+    el.style.display = (el.dataset.sectionView === sectionId) ? "block" : "none";
+  });
+
+  // Скролл к началу
+  if (scroll) {
+    document.getElementById("admin")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Ленивая инициализация раздела
+  try {
+    if (sectionId === "users") {
+      await initUsersSection();
+    } else if (sectionId === "roles") {
+      await initAdminRoles();
+    } else if (sectionId === "divisions") {
+      await initAdminDivisions();
+    } else if (sectionId === "registry") {
+      await initRegistrySection();
+    } else if (sectionId === "history") {
+      await initLogsView();
+    } else if (sectionId === "cloud") {
+      await initBackupsView();
+    } else if (sectionId === "backup") {
+      initImportExport();
+    }
+  } catch (e) {
+    console.warn("Section init failed:", sectionId, e);
+  }
+}
+
+window.__adminBack = function() {
+  goToSection(null);
+};
+
+window.__adminSection = function(id) {
+  goToSection(id);
+};
+
+// ==================== РАЗДЕЛ: УПРАВЛЕНИЕ ====================
+function initUsersSection() {
+  const grid = document.getElementById("adminUsersGrid");
+  if (!grid || grid.__bound) return;
+  grid.__bound = true;
+
+  const cards = [
+    { action: "createUser",   name: "Создать аккаунт",        role: "gold",   desc: "Завести нового участника" },
+    { action: "changePin",    name: "Сменить PIN",            role: "",       desc: "Изменить PIN участника" },
+    { action: "changeRole",   name: "Сменить роль",           role: "",       desc: "Перевести на другую должность" },
+    { action: "changeDivision", name: "Сменить подразделение", role: "blue",  desc: "Назначить в отряд" },
+    { action: "warn",         name: "Выдать Warn",            role: "danger", desc: "Предупреждение участнику" },
+    { action: "deleteUser",   name: "Удалить аккаунт",        role: "danger", desc: "Полное удаление" }
+  ];
+
+  grid.innerHTML = cards.map(c =>
+    '<div class="card clickable" data-action="' + c.action + '">' +
+      '<div class="name">' + c.name + '</div>' +
+      '<div class="role ' + c.role + '">Действие</div>' +
+      '<div class="stat">' + c.desc + '</div>' +
+    '</div>'
+  ).join("");
+
+  grid.querySelectorAll(".card.clickable").forEach(card => {
     card.addEventListener("click", () => {
-      const action = card.dataset.adminAction;
-      if (action === "createUser") openCreateUser();
-      else if (action === "changePin") openChangePin();
-      else if (action === "changeRole") openChangeRole();
-      else if (action === "changeDivision") openChangeDivision();
-      else if (action === "warn") openWarn();
-      else if (action === "deleteUser") openDeleteUser();
-      else if (action === "backupCreateNow") {
-        document.getElementById("backupCreateNowBtn")?.click();
-      }
-      else if (action === "backupDownload") downloadBackupLegacy();
-      else if (action === "backupRestore") openRestoreModal();
-      else if (action === "openLogsFull") {
-        document.getElementById("adminLogsFull")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-      else if (action === "exportAll") exportAll();
-      else if (action === "importUsers") openImportModal();
-      else if (action === "resetDemo") resetDemoData();
+      const a = card.dataset.action;
+      if (a === "createUser") openCreateUser();
+      else if (a === "changePin") openChangePin();
+      else if (a === "changeRole") openChangeRole();
+      else if (a === "changeDivision") openChangeDivision();
+      else if (a === "warn") openWarn();
+      else if (a === "deleteUser") openDeleteUser();
     });
   });
 }
 
+// ==================== РАЗДЕЛ: РЕЕСТР ====================
+async function initRegistrySection() {
+  await initUsersModule();
+  bindSelectAll();
+}
+
+// ==================== СТАРЫЕ ФУНКЦИИ (создание и т.д.) ====================
 async function openCreateUser() {
   const roles = await listRoles();
   const divisions = await listDivisions();
@@ -214,6 +302,7 @@ async function openDeleteUser() {
   });
 }
 
+// ==================== ЛОГ ====================
 export function addLog(message, type = "info", opts = {}) {
   const log = document.getElementById("adminLog");
   if (!log) return;
@@ -230,7 +319,6 @@ export function addLog(message, type = "info", opts = {}) {
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 
-  // В Firestore
   import("../core/activity-log.js").then(m => {
     m.logAction(opts.type || type, message, {
       target: opts.target || null,
@@ -238,3 +326,6 @@ export function addLog(message, type = "info", opts = {}) {
     });
   }).catch(() => {});
 }
+
+// ==================== ЭКСПОРТЫ ДЛЯ ИМПОРТА В ДРУГИХ МОДУЛЯХ ====================
+export { exportAll, openImportModal, resetDemoData };
