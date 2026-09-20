@@ -379,6 +379,14 @@ async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
 
+  // Проверка мута
+  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
+  if (isMuted(user)) {
+    const left = getMuteRemaining(user);
+    toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
+    return;
+  }
+
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
     return;
@@ -414,6 +422,14 @@ async function sendMessageTo(chatId, text) {
 async function sendVoiceTo(chatId, blob, durationMs) {
   const user = getCurrentUser();
   if (!user) return;
+
+  // Проверка мута
+  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
+  if (isMuted(user)) {
+    const left = getMuteRemaining(user);
+    toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
+    return;
+  }
 
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
@@ -615,6 +631,14 @@ function initThemeForChat(chatId) {
       toast("Тема чата изменена", "ok");
     });
   });
+}
+
+function formatDuration(ms) {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  if (m > 0) return m + " мин";
+  return s + " сек";
 }
 
 function escapeHtml(s) {
