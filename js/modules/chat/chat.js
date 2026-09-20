@@ -375,17 +375,63 @@ function updatePinBar(chatId, pinData) {
   };
 }
 
+// ==================== ПРОВЕРКА МУТА ====================
+/**
+ * Проверяет мут с актуальными данными из Firestore.
+ * Если в сессии muted: false, но в базе muted: true — обновляет сессию и возвращает true.
+ * @returns {Promise<boolean>} true, если юзер в муте (и показан тост)
+ */
+async function checkMutedFresh(user) {
+  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
+
+  // Если в кэше уже мут — сразу возвращаем
+  if (isMuted(user)) {
+    const left = getMuteRemaining(user);
+    toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
+    return true;
+  }
+
+  // Если в кэше НЕ мут — перечитываем из Firestore (может быть рассинхрон)
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) return false;
+
+    const fresh = snap.data();
+
+    // Обновляем сессию, если есть данные о муте
+    if (fresh.muted || fresh.mutedUntil || fresh.mutedReason) {
+      const { setCurrentUser } = await import("../../core/state.js");
+      const updated = {
+        ...user,
+        muted: fresh.muted || false,
+        mutedUntil: fresh.mutedUntil || null,
+        mutedReason: fresh.mutedReason || ""
+      };
+      setCurrentUser(updated);
+
+      // Проверяем — реально ли мут активен
+      if (isMuted(updated)) {
+        const left = getMuteRemaining(updated);
+        toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (updated.mutedReason ? ". Причина: " + updated.mutedReason : ""), "warn", 4000);
+        return true;
+      }
+    }
+  } catch (e) {
+    // Если Firestore недоступен — пропускаем (демо-режим)
+    console.warn("checkMutedFresh failed:", e);
+  }
+
+  return false;
+}
+
+// ==================== ОТПРАВКА ТЕКСТА ====================
 async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
 
-  // Проверка мута
-  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
-  if (isMuted(user)) {
-    const left = getMuteRemaining(user);
-    toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
-    return;
-  }
+  // Проверка мута (читаем свежие данные из Firestore)
+  const muted = await checkMutedFresh(user);
+  if (muted) return;
 
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
@@ -419,17 +465,14 @@ async function sendMessageTo(chatId, text) {
   }
 }
 
+// ==================== ОТПРАВКА ГОЛОСОВОГО ====================
 async function sendVoiceTo(chatId, blob, durationMs) {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Проверка мута
-  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
-  if (isMuted(user)) {
-    const left = getMuteRemaining(user);
-    toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
-    return;
-  }
+  // Проверка мута (читаем свежие данные из Firestore)
+  const muted = await checkMutedFresh(user);
+  if (muted) return;
 
   if (user.role === "ally" && chatId === "residents") {
     toast("Союзники не могут писать в беседу резидентов", "warn");
@@ -478,6 +521,7 @@ async function sendVoiceTo(chatId, blob, durationMs) {
   }
 }
 
+// ==================== ВВОД ====================
 function setupInputForChat(chatId) {
   const cfg = CHATS[chatId];
   if (!cfg) return;
@@ -633,6 +677,7 @@ function initThemeForChat(chatId) {
   });
 }
 
+// ==================== ХЕЛПЕРЫ ====================
 function formatDuration(ms) {
   const total = Math.floor(ms / 1000);
   const m = Math.floor(total / 60);
