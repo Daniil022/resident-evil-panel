@@ -8,7 +8,6 @@ export async function initApplicationsPage() {
     initialized = true;
   }
 
-  // Показываем контейнер регистрации
   const panel = document.querySelector('#applicationsPageContent > div[data-app-panel="registration"]');
   if (panel) panel.style.display = "grid";
 
