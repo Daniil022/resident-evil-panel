@@ -27,7 +27,6 @@ const BACKUP_COLLECTIONS = [
   "warehouse",
   "registration_requests",
   "applications",
-  "applications_nicks",
   "admin_logs"
 ];
 
@@ -38,7 +37,7 @@ export async function createBackup(reason = "manual") {
   const me = getCurrentUser();
   if (!me) throw new Error("Не залогинен");
 
-  const date = new Date().toISOString().slice(0, 10); // 2026-09-20
+  const date = new Date().toISOString().slice(0, 10);
   const timestamp = Date.now();
   const id = date + "_" + timestamp;
 
@@ -79,7 +78,7 @@ export async function checkAutoBackup() {
   const last = parseInt(localStorage.getItem(LAST_BACKUP_KEY) || "0");
   const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-  if (last > dayAgo) return; // уже делали сегодня
+  if (last > dayAgo) return;
 
   try {
     await createBackup("auto");
