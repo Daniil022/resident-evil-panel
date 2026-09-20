@@ -666,7 +666,73 @@ footer {
   animation: fadeIn 0.25s ease;
 }
 
-/* ============ МОБИЛКА ============ */
+/* ============ ПРЕМИИ ============ */
+.premium-card {
+  border-left: 3px solid var(--gold) !important;
+  position: relative;
+}
+
+.premium-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-top: 14px solid var(--gold);
+  border-left: 14px solid transparent;
+  opacity: 0.7;
+}
+
+.premium-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.premium-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.4));
+}
+
+.premium-card .name {
+  margin-bottom: 4px;
+}
+
+.premium-amount {
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.premium-target {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.premium-target-label {
+  color: var(--muted);
+  margin-right: 6px;
+}
+.premium-target-name {
+  color: #fff;
+  font-weight: 700;
+}
+
+.premium-card .contract-meta {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+/* ============ МОБИЛКА ADMIN ============ */
 @media (max-width: 640px) {
   .admin-sections {
     grid-template-columns: 1fr;
