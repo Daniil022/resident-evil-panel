@@ -1,16 +1,13 @@
 // js/modules/applications-page.js
-import { initAdminApplications } from "../admin/admin-applications.js";
 import { initAdminRegistration } from "../admin/admin-registration.js";
 
-let currentTab = "registration";
 let initialized = false;
 
 export async function initApplicationsPage() {
   if (!initialized) {
     initialized = true;
-    setupTabs();
   }
-  await switchTab(currentTab);
+  await initAdminRegistration();
 }
 
 function setupTabs() {
