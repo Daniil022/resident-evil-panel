@@ -258,4 +258,4 @@ window.addEventListener("beforeunload", () => {
   try { destroyChat(); } catch (e) {}
   try { destroyReadSubs(); } catch (e) {}
   try { destroyContracts(); } catch (e) {}
-});м
+});
