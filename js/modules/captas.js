@@ -25,7 +25,7 @@ export async function initCaptas() {
   if (toolbar && !toolbar.__bound) {
     toolbar.__bound = true;
     if (canEdit()) {
-      toolbar.innerHTML = `<button class="btn" id="addCaptaBtn">+ Добавить запись</button>`;
+      toolbar.innerHTML = `<button class="btn" id="addCaptaBtn">+ Добавить новость</button>`;
       document.getElementById("addCaptaBtn").onclick = () => openCaptaModal();
     } else {
       toolbar.innerHTML = "";
@@ -58,9 +58,9 @@ function renderGrid() {
 
   if (captas.length === 0) {
     grid.innerHTML = `<div class="contracts-empty" style="grid-column:1/-1;">
-      <div class="contracts-empty-icon">🎯</div>
-      <div class="contracts-empty-text">Доска пуста</div>
-      <div class="contracts-empty-sub">Лидер или зам может добавить первую запись</div>
+      <div class="contracts-empty-icon">📢</div>
+      <div class="contracts-empty-text">Новостей пока нет</div>
+      <div class="contracts-empty-sub">Лидер или зам может добавить первую новость</div>
     </div>`;
     return;
   }
@@ -98,12 +98,12 @@ function openCaptaModal(capta = null) {
   if (!requireEdit()) return;
 
   openModal({
-    title: capta ? "РЕДАКТИРОВАТЬ ЗАПИСЬ" : "НОВАЯ ЗАПИСЬ",
+    title: capta ? "РЕДАКТИРОВАТЬ НОВОСТЬ" : "НОВАЯ НОВОСТЬ",
     html: `
       <div class="form-grid">
         <div class="form-field" style="grid-column:1/-1;">
           <label>Заголовок</label>
-          <input type="text" id="cpTitle" value="${capta ? escapeHtml(capta.title) : ""}" placeholder="Срочный сбор на нефтезавод" autocomplete="off">
+          <input type="text" id="cpTitle" value="${capta ? escapeHtml(capta.title) : ""}" placeholder="Например: Сбор на ивент в 20:00" autocomplete="off">
         </div>
         <div class="form-field">
           <label>Цель / кому (опционально)</label>
@@ -116,8 +116,8 @@ function openCaptaModal(capta = null) {
           </select>
         </div>
         <div class="form-field" style="grid-column:1/-1;">
-          <label>Текст объявления</label>
-          <textarea id="cpText" placeholder="Что нужно сделать...">${capta ? escapeHtml(capta.text) : ""}</textarea>
+          <label>Текст новости</label>
+          <textarea id="cpText" placeholder="Что произошло / что планируется...">${capta ? escapeHtml(capta.text) : ""}</textarea>
         </div>
       </div>
       <div id="cpError" style="color:var(--red);font-size:12px;display:none;"></div>
@@ -139,7 +139,7 @@ async function saveCapta(existing) {
 
   err.style.display = "none";
   if (!title) { err.textContent = "Введите заголовок"; err.style.display = "block"; return; }
-  if (!text) { err.textContent = "Введите текст объявления"; err.style.display = "block"; return; }
+  if (!text) { err.textContent = "Введите текст новости"; err.style.display = "block"; return; }
 
   const me = getCurrentUser();
   const data = {
@@ -157,7 +157,7 @@ async function saveCapta(existing) {
       const ref = await addDoc(collection(db, "captas"), data);
       captas.unshift({ id: ref.id, ...data, source: "firebase" });
     }
-    toast(existing ? "Запись обновлена" : "Запись создана", "ok");
+    toast(existing ? "Новость обновлена" : "Новость создана", "ok");
   } catch (e) {
     if (existing) Object.assign(existing, data);
     else captas.unshift({ id: "demo-cp-" + Date.now(), ...data, source: "demo" });
@@ -175,7 +175,7 @@ window.__captaEdit = function(id) {
 
 window.__captaDelete = async function(id) {
   if (!requireEdit()) return;
-  if (!confirm("Удалить запись?")) return;
+  if (!confirm("Удалить новость?")) return;
 
   const c = captas.find(x => x.id === id);
   if (!c) return;
@@ -187,5 +187,5 @@ window.__captaDelete = async function(id) {
   captas = captas.filter(x => x.id !== id);
   saveDemoCaptas();
   renderGrid();
-  toast("Запись удалена", "ok");
+  toast("Новость удалена", "ok");
 };
