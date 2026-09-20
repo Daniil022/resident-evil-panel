@@ -17,6 +17,7 @@ import { initRules } from "./modules/rules.js";
 import { initMusic } from "./modules/music.js";
 import { initAlbum } from "./modules/album.js";
 import { initCaptas } from "./modules/captas.js";
+import { initPremiums } from "./modules/premiums.js";
 import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
 import { setupProfileClicks } from "./modules/profile-view.js";
 import { initOnline, renderOnline } from "./modules/online.js";
@@ -199,6 +200,7 @@ function enterApp(user) {
     allies: false, rules: false,
     music: false, album: false,
     captas: false, nicks: false, ranks: false,
+    premiums: false,
     applications: false, online: false
   };
 
@@ -215,6 +217,7 @@ function enterApp(user) {
     if (tab === "music" && !ally && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
     if (tab === "album" && !ally && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
     if (tab === "news" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
+    if (tab === "premiums" && !ally && !inited.premiums) { inited.premiums = true; try { initPremiums(); } catch (err) {} }
     if (tab === "nicks" && !ally && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
     if (tab === "ranks" && !ally && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
     if (tab === "online" && !inited.online) { inited.online = true; try { initOnline(); } catch (err) {} }
@@ -230,6 +233,7 @@ function enterApp(user) {
   if (hash === "music" && !ally) { inited.music = true; try { initMusic(); } catch (e) {} }
   if (hash === "album" && !ally) { inited.album = true; try { initAlbum(); } catch (e) {} }
   if (hash === "news" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "premiums" && !ally) { inited.premiums = true; try { initPremiums(); } catch (e) {} }
   if (hash === "nicks" && !ally) { inited.nicks = true; try { initNicks(); } catch (e) {} }
   if (hash === "ranks" && !ally) { inited.ranks = true; try { initRanks(); } catch (e) {} }
   if (hash === "online") { inited.online = true; try { initOnline(); } catch (e) {} }
@@ -241,7 +245,7 @@ function enterApp(user) {
 }
 
 function applyRoleVisibility(isAlly) {
-  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "news", "allies", "music", "rules", "album", "applications", "online"];
+  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "news", "premiums", "allies", "music", "rules", "album", "applications", "online"];
 
   document.querySelectorAll("#mainNav button").forEach(btn => {
     const tab = btn.dataset.tab;
