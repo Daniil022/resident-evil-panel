@@ -347,16 +347,45 @@
 
     <h2 class="sub">💾 Резервная копия</h2>
     <div class="grid">
-      <div class="card clickable" data-admin-action="backupDownload">
-        <div class="name">💾 Скачать backup</div>
+      <div class="card clickable" data-admin-action="backupCreateNow">
+        <div class="name">💾 Создать бэкап сейчас</div>
         <div class="role gold">Резервная копия</div>
-        <div class="stat">Сохранить все данные в JSON-файл</div>
+        <div class="stat">Сохранить все данные в облако</div>
+      </div>
+      <div class="card clickable" data-admin-action="backupDownload">
+        <div class="name">📥 Скачать backup</div>
+        <div class="role">Локально</div>
+        <div class="stat">Сохранить в JSON-файл на ПК</div>
       </div>
       <div class="card clickable" data-admin-action="backupRestore">
-        <div class="name">📥 Загрузить backup</div>
+        <div class="name">↺ Загрузить backup</div>
         <div class="role danger">Опасно</div>
-        <div class="stat">Восстановить данные из JSON-файла</div>
+        <div class="stat">Восстановить данные из файла</div>
       </div>
+      <div class="card clickable" data-admin-action="exportAll">
+        <div class="name">📤 Экспорт всех</div>
+        <div class="role">Участники</div>
+        <div class="stat">CSV/JSON всех участников</div>
+      </div>
+      <div class="card clickable" data-admin-action="importUsers">
+        <div class="name">📥 Импорт участников</div>
+        <div class="role gold">Массовый</div>
+        <div class="stat">Загрузить из CSV/JSON пачкой</div>
+      </div>
+      <div class="card clickable" data-admin-action="resetDemo">
+        <div class="name">🗑 Сбросить демо</div>
+        <div class="role danger">Опасно</div>
+        <div class="stat">Очистить все re_demo_* ключи</div>
+      </div>
+    </div>
+
+    <h2 class="sub">📦 Облачные бэкапы</h2>
+    <div class="users-toolbar-row" style="margin-bottom:12px;">
+      <button class="btn" id="backupCreateNowBtn">💾 Создать сейчас</button>
+      <button class="btn secondary" id="backupCleanupBtn">🧹 Удалить старые (&gt;7 дней)</button>
+    </div>
+    <div id="backupsList">
+      <div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>
     </div>
 
     <h2 class="sub">⚙️ Управление участниками</h2>
