@@ -44,13 +44,11 @@ export async function initDashboard() {
 }
 
 async function loadRealStats() {
-  // Кэш 60 секунд
   const lastLoad = window.__lastStatsLoad || 0;
   if (Date.now() - lastLoad < 60000) return;
   window.__lastStatsLoad = Date.now();
 
   try {
-    // ПАРАЛЛЕЛЬНЫЕ запросы — все 4 сразу
     const [usersRes, presenceRes, contractsRes, alliesRes] = await Promise.all([
       getDocs(collection(db, "users")).catch(() => null),
       getDocs(collection(db, "presence")).catch(() => null),
@@ -58,17 +56,14 @@ async function loadRealStats() {
       getDocs(collection(db, "allies")).catch(() => null)
     ]);
 
-    // Участники
     setCounter("dashMembers", usersRes ? usersRes.size : 0);
 
-    // Онлайн
     let onlineCount = 0;
     if (presenceRes) {
       presenceRes.forEach(d => { if (d.data().online) onlineCount++; });
     }
     setCounter("dashOnline", onlineCount);
 
-    // Казна + контракты
     let treasury = 0;
     let contractsCount = 0;
     if (contractsRes) {
@@ -81,15 +76,14 @@ async function loadRealStats() {
     setCounter("dashTreasury", treasury.toLocaleString("ru-RU"));
     setCounter("dashContracts", contractsCount);
 
-    // Войны
     let wars = 0;
     if (alliesRes) {
       alliesRes.forEach(d => { if (d.data().status === "war") wars++; });
     }
     setCounter("dashWars", wars);
 
-    // Сообщения — отдельно (не критично)
-    getDocs(collection(db, "chats", "main", "messages"))
+    // Новости считаем из captas
+    getDocs(collection(db, "captas"))
       .then(snap => setCounter("dashMessages", snap.size))
       .catch(() => setCounter("dashMessages", 0));
 
@@ -113,6 +107,9 @@ function loadDemoStats() {
 
     const demoAllies = JSON.parse(localStorage.getItem("re_demo_allies") || "[]");
     setCounter("dashWars", demoAllies.filter(a => a.status === "war").length);
+
+    const demoNews = JSON.parse(localStorage.getItem("re_demo_captas") || "[]");
+    setCounter("dashMessages", demoNews.length);
   } catch (e) {}
 }
 
