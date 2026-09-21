@@ -22,11 +22,15 @@ import { setupAvatarClick, updateDashAvatar } from "./modules/profile.js";
 import { setupProfileClicks } from "./modules/profile-view.js";
 import { initOnline, renderOnline } from "./modules/online.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
+import { can } from "./core/permissions.js";
+import { loadPermissionsCache } from "./core/permissions-cache.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   initSounds();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
+  loadPermissionsCache().catch(e => console.warn("Perms load failed:", e));
+
   const session = tryRestoreSession();
   if (session) enterApp(session);
   else showAuthScreen();
@@ -88,6 +92,7 @@ function setupAuthScreen() {
       }
 
       try { await preloadColorData(); } catch (e) {}
+      try { await loadPermissionsCache(); } catch (e) {}
       enterApp(res.user);
     } catch (e) {
       btn.disabled = false;
@@ -172,13 +177,7 @@ function enterApp(user) {
     if (ally) avatarEl.classList.add("avatar-rainbow");
   }
 
-  applyRoleVisibility(ally);
-
-  const navAdmin = document.getElementById("navAdmin");
-  const navApplications = document.getElementById("navApplications");
-  const isAdminRole = ["emperor", "lord"].includes(user.role);
-  if (navAdmin) navAdmin.classList.toggle("hidden", !isAdminRole);
-  if (navApplications) navApplications.classList.toggle("hidden", !isAdminRole);
+  applyRoleVisibility();
 
   initRouter();
   initDashboard();
@@ -189,7 +188,8 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
-  if (isAdminRole) {
+  // Авто-бэкап для админов (раз в сутки)
+  if (can("admin.backups")) {
     import("./core/backup-manager.js")
       .then(m => m.checkAutoBackup())
       .catch(() => {});
@@ -209,33 +209,33 @@ function enterApp(user) {
   window.addEventListener("tabChange", (e) => {
     const tab = e.detail.tab;
 
-    if (tab === "admin" && isAdminRole && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
-    if (tab === "applications" && isAdminRole && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
-    if (tab === "contracts" && !ally && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
-    if (tab === "allies" && !ally && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
-    if (tab === "rules" && !ally && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
-    if (tab === "music" && !ally && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
-    if (tab === "album" && !ally && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
-    if (tab === "news" && !ally && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
-    if (tab === "premiums" && !ally && !inited.premiums) { inited.premiums = true; try { initPremiums(); } catch (err) {} }
-    if (tab === "nicks" && !ally && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
-    if (tab === "ranks" && !ally && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
+    if (tab === "admin" && !inited.admin) { inited.admin = true; try { initAdmin(); } catch (err) {} }
+    if (tab === "applications" && !inited.applications) { inited.applications = true; try { initApplicationsPage(); } catch (err) {} }
+    if (tab === "contracts" && !inited.contracts) { inited.contracts = true; try { initContracts(); } catch (err) {} }
+    if (tab === "allies" && !inited.allies) { inited.allies = true; try { initAllies(); } catch (err) {} }
+    if (tab === "rules" && !inited.rules) { inited.rules = true; try { initRules(); } catch (err) {} }
+    if (tab === "music" && !inited.music) { inited.music = true; try { initMusic(); } catch (err) {} }
+    if (tab === "album" && !inited.album) { inited.album = true; try { initAlbum(); } catch (err) {} }
+    if (tab === "news" && !inited.captas) { inited.captas = true; try { initCaptas(); } catch (err) {} }
+    if (tab === "premiums" && !inited.premiums) { inited.premiums = true; try { initPremiums(); } catch (err) {} }
+    if (tab === "nicks" && !inited.nicks) { inited.nicks = true; try { initNicks(); } catch (err) {} }
+    if (tab === "ranks" && !inited.ranks) { inited.ranks = true; try { initRanks(); } catch (err) {} }
     if (tab === "online" && !inited.online) { inited.online = true; try { initOnline(); } catch (err) {} }
     if (tab === "online") { try { renderOnline(); } catch (err) {} }
   });
 
   const hash = location.hash.replace("#", "");
-  if (hash === "admin" && isAdminRole) { inited.admin = true; try { initAdmin(); } catch (e) {} }
-  if (hash === "applications" && isAdminRole) { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
-  if (hash === "contracts" && !ally) { inited.contracts = true; try { initContracts(); } catch (e) {} }
-  if (hash === "allies" && !ally) { inited.allies = true; try { initAllies(); } catch (e) {} }
-  if (hash === "rules" && !ally) { inited.rules = true; try { initRules(); } catch (e) {} }
-  if (hash === "music" && !ally) { inited.music = true; try { initMusic(); } catch (e) {} }
-  if (hash === "album" && !ally) { inited.album = true; try { initAlbum(); } catch (e) {} }
-  if (hash === "news" && !ally) { inited.captas = true; try { initCaptas(); } catch (e) {} }
-  if (hash === "premiums" && !ally) { inited.premiums = true; try { initPremiums(); } catch (e) {} }
-  if (hash === "nicks" && !ally) { inited.nicks = true; try { initNicks(); } catch (e) {} }
-  if (hash === "ranks" && !ally) { inited.ranks = true; try { initRanks(); } catch (e) {} }
+  if (hash === "admin") { inited.admin = true; try { initAdmin(); } catch (e) {} }
+  if (hash === "applications") { inited.applications = true; try { initApplicationsPage(); } catch (e) {} }
+  if (hash === "contracts") { inited.contracts = true; try { initContracts(); } catch (e) {} }
+  if (hash === "allies") { inited.allies = true; try { initAllies(); } catch (e) {} }
+  if (hash === "rules") { inited.rules = true; try { initRules(); } catch (e) {} }
+  if (hash === "music") { inited.music = true; try { initMusic(); } catch (e) {} }
+  if (hash === "album") { inited.album = true; try { initAlbum(); } catch (e) {} }
+  if (hash === "news") { inited.captas = true; try { initCaptas(); } catch (e) {} }
+  if (hash === "premiums") { inited.premiums = true; try { initPremiums(); } catch (e) {} }
+  if (hash === "nicks") { inited.nicks = true; try { initNicks(); } catch (e) {} }
+  if (hash === "ranks") { inited.ranks = true; try { initRanks(); } catch (e) {} }
   if (hash === "online") { inited.online = true; try { initOnline(); } catch (e) {} }
 
   const createBtn = document.getElementById("createContractBtn");
@@ -244,20 +244,30 @@ function enterApp(user) {
   toast('Добро пожаловать, ' + user.login, "ok");
 }
 
-function applyRoleVisibility(isAlly) {
-  const hideForAlly = ["dashboard", "nicks", "ranks", "contracts", "news", "premiums", "allies", "music", "rules", "album", "applications", "online"];
+function applyRoleVisibility() {
+  const tabPerms = {
+    dashboard:     "tab.dashboard",
+    nicks:         "tab.nicks",
+    ranks:         "tab.ranks",
+    contracts:     "tab.contracts",
+    news:          "tab.news",
+    premiums:      "tab.premiums",
+    allies:        "tab.allies",
+    music:         "tab.music",
+    rules:         "tab.rules",
+    album:         "tab.album",
+    chat:          "tab.chat",
+    "chat-allies": "tab.chat_allies",
+    online:        "tab.online",
+    applications:  "tab.applications",
+    admin:         "tab.admin"
+  };
 
   document.querySelectorAll("#mainNav button").forEach(btn => {
     const tab = btn.dataset.tab;
-    if (isAlly) {
-      if (hideForAlly.includes(tab)) {
-        btn.classList.add("hidden");
-      } else {
-        btn.classList.remove("hidden");
-      }
-    } else {
-      btn.classList.remove("hidden");
-    }
+    const perm = tabPerms[tab];
+    if (!perm) return;
+    btn.classList.toggle("hidden", !can(perm));
   });
 }
 
