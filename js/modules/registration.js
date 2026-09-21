@@ -1,7 +1,7 @@
 // js/modules/registration.js
 import { db } from "../firebase-init.js";
 import {
-  collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc
+  collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { createUser } from "../core/auth.js";
 
@@ -57,7 +57,7 @@ export async function submitRegistrationRequest(nick, pin, type = "resident") {
   }
 }
 
-// ==================== СПИСОК ЗАЯВОК ====================
+// ==================== СПИСОК ЗАЯВОК (одноразово) ====================
 export async function listRegistrationRequests() {
   try {
     const snap = await withTimeout(getDocs(collection(db, "registration_requests")));
@@ -76,6 +76,42 @@ function getDemoRequests() {
 }
 function saveDemoRequests(list) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(list));
+}
+
+// ==================== LIVE-ПОДПИСКА НА ЗАЯВКИ ====================
+let unsubRequests = null;
+
+export function subscribeToRequests(callback) {
+  if (unsubRequests) {
+    unsubRequests();
+    unsubRequests = null;
+  }
+
+  try {
+    const q = collection(db, "registration_requests");
+
+    unsubRequests = onSnapshot(q, (snap) => {
+      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), source: "firebase" }));
+      requests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      saveDemoRequests(requests);
+      if (typeof callback === "function") callback(requests);
+    }, (err) => {
+      console.warn("[Registration] Live subscribe failed:", err.message);
+      const demo = getDemoRequests();
+      if (typeof callback === "function") callback(demo);
+    });
+  } catch (e) {
+    console.warn("[Registration] Subscribe error:", e.message);
+    const demo = getDemoRequests();
+    if (typeof callback === "function") callback(demo);
+  }
+
+  return () => {
+    if (unsubRequests) {
+      unsubRequests();
+      unsubRequests = null;
+    }
+  };
 }
 
 // ==================== ОДОБРЕНИЕ ====================
