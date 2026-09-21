@@ -6,6 +6,7 @@ import { toast } from "./core/utils.js";
 import { initDashboard } from "./core/dashboard.js";
 import { initSounds } from "./core/sounds.js";
 import { setupSoundButton } from "./core/sounds-panel.js";
+import { initPWA } from "./core/pwa.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
@@ -26,6 +27,7 @@ import { can } from "./core/permissions.js";
 import { loadPermissionsCache } from "./core/permissions-cache.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  initPWA();
   initSounds();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
@@ -188,7 +190,6 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
-  // Авто-бэкап для админов (раз в сутки)
   if (can("admin.backups")) {
     import("./core/backup-manager.js")
       .then(m => m.checkAutoBackup())
