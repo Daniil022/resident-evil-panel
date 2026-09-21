@@ -28,7 +28,13 @@ async function renderRolesList() {
     return;
   }
 
-  container.innerHTML = roles.map((r, idx) => `
+  container.innerHTML = roles.map((r, idx) => {
+    // Считаем права
+    let permsLabel = "—";
+    if (r.permissions === "*") permsLabel = "ВСЕ";
+    else if (Array.isArray(r.permissions) && r.permissions.length > 0) permsLabel = r.permissions.length + " шт.";
+
+    return `
     <div class="role-row" data-role-id="${r.id}">
       <div class="role-color-dot" style="background:${r.color};"></div>
       <div class="role-info">
@@ -37,16 +43,29 @@ async function renderRolesList() {
           ${r.system ? `<span class="badge-system">Системная</span>` : ""}
         </div>
         <div class="desc">${escapeHtml(r.desc || "Без описания")}</div>
+        <div class="desc" style="font-size:10.5px;color:var(--cyan);">🔐 Права: ${permsLabel}</div>
       </div>
       <div class="role-actions">
         <button onclick="window.__roleMove('${r.id}','up')" ${idx === 0 ? "disabled" : ""} title="Вверх">⬆</button>
         <button onclick="window.__roleMove('${r.id}','down')" ${idx === roles.length - 1 ? "disabled" : ""} title="Вниз">⬇</button>
+        <button onclick="window.__rolePermissions('${r.id}')" title="Права">🔐</button>
         <button onclick="window.__roleEdit('${r.id}')" title="Редактировать">✏️</button>
         <button class="danger" onclick="window.__roleDelete('${r.id}')" ${r.system ? "disabled" : ""} title="${r.system ? "Системную роль нельзя удалить" : "Удалить"}">🗑</button>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
+
+// ==================== ПРАВА ====================
+window.__rolePermissions = async function(roleId) {
+  const roles = await listRoles(true);
+  const role = roles.find(r => r.id === roleId);
+  if (!role) return;
+
+  const { openPermissionsEditor } = await import("./admin-permissions.js");
+  openPermissionsEditor("role", roleId, role.name, role.permissions || null);
+};
 
 // ==================== СОЗДАНИЕ ====================
 function openCreateRoleModal() {
@@ -114,7 +133,6 @@ function openRoleModal({ title, name, color, desc, system }) {
     onConfirm: saveRole
   });
 
-  // Реактивная связка color ↔ hex ↔ preview
   setTimeout(() => {
     const colorInput = document.getElementById("roleColor");
     const hexInput = document.getElementById("roleColorHex");
