@@ -1,5 +1,5 @@
 // js/modules/applications-page.js
-import { initAdminRegistration } from "../admin/admin-registration.js";
+import { initAdminRegistration, destroyRegistrationSub } from "../admin/admin-registration.js";
 
 let initialized = false;
 
@@ -13,3 +13,8 @@ export async function initApplicationsPage() {
 
   await initAdminRegistration();
 }
+
+// Отписка при уходе со страницы
+window.addEventListener("beforeunload", () => {
+  try { destroyRegistrationSub(); } catch (e) {}
+});
