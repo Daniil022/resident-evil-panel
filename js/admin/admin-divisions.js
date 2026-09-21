@@ -28,23 +28,43 @@ async function renderDivisionsList() {
     return;
   }
 
-  container.innerHTML = divisions.map((d, idx) => `
+  container.innerHTML = divisions.map((d, idx) => {
+    // Считаем права
+    let permsLabel = "—";
+    if (d.permissions === "*") permsLabel = "ВСЕ";
+    else if (Array.isArray(d.permissions) && d.permissions.length > 0) permsLabel = d.permissions.length + " шт.";
+
+    return `
     <div class="role-row" data-division-id="${d.id}">
       <div class="role-color-dot" style="background:${d.color};"></div>
       <div class="role-info">
         <div class="name">${escapeHtml(d.name)}</div>
         <div class="desc">${escapeHtml(d.desc || "Без описания")}</div>
+        <div class="desc" style="font-size:10.5px;color:var(--cyan);">🔐 Права: ${permsLabel}</div>
       </div>
       <div class="role-actions">
         <button onclick="window.__divMove('${d.id}','up')" ${idx === 0 ? "disabled" : ""} title="Вверх">⬆</button>
         <button onclick="window.__divMove('${d.id}','down')" ${idx === divisions.length - 1 ? "disabled" : ""} title="Вниз">⬇</button>
+        <button onclick="window.__divPermissions('${d.id}')" title="Права">🔐</button>
         <button onclick="window.__divEdit('${d.id}')" title="Редактировать">✏️</button>
         <button class="danger" onclick="window.__divDelete('${d.id}')" title="Удалить">🗑</button>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
+// ==================== ПРАВА ====================
+window.__divPermissions = async function(divId) {
+  const divisions = await listDivisions(true);
+  const div = divisions.find(d => d.id === divId);
+  if (!div) return;
+
+  const { openPermissionsEditor } = await import("./admin-permissions.js");
+  openPermissionsEditor("division", divId, div.name, div.permissions || null);
+};
+
+// ==================== СОЗДАНИЕ ====================
 function openCreateDivisionModal() {
   editingDivId = null;
   openDivisionModal({
@@ -55,6 +75,7 @@ function openCreateDivisionModal() {
   });
 }
 
+// ==================== РЕДАКТИРОВАНИЕ ====================
 window.__divEdit = async function(divId) {
   const divisions = await listDivisions();
   const div = divisions.find(d => d.id === divId);
