@@ -1,10 +1,13 @@
 // js/admin/admin-registration.js
 import {
-  listRegistrationRequests, approveRegistration, rejectRegistration, deleteRegistration
+  subscribeToRequests, approveRegistration, rejectRegistration, deleteRegistration
 } from "../modules/registration.js";
 import { toast } from "../core/utils.js";
 import { playSound } from "../core/sounds.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
+
+let currentRequests = [];
+let unsub = null;
 
 export async function initAdminRegistration() {
   console.log("[Registration] init started");
@@ -15,17 +18,18 @@ export async function initAdminRegistration() {
     return;
   }
 
-  let requests = [];
-  try {
-    requests = await listRegistrationRequests();
-  } catch (e) {
-    console.error("[Registration] ошибка загрузки:", e);
-    container.innerHTML = '<div style="color:var(--red);padding:20px;">Ошибка загрузки заявок: ' + escapeHtml(e.message) + '</div>';
-    return;
-  }
+  // Если уже подписаны — не дублируем
+  if (unsub) return;
 
-  console.log("[Registration] заявок:", requests.length);
+  unsub = subscribeToRequests((requests) => {
+    console.log("[Registration] обновление, заявок:", requests.length);
+    currentRequests = requests;
+    renderRequests(container, requests);
+    updateApplicationsBadge(requests);
+  });
+}
 
+function renderRequests(container, requests) {
   if (requests.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;grid-column:1/-1;">Заявок на регистрацию пока нет</div>';
     return;
@@ -69,10 +73,28 @@ export async function initAdminRegistration() {
       footer +
     '</div>';
   }).join('');
-
-  console.log("[Registration] отрисовано:", container.children.length);
 }
 
+// ==================== BADGE ====================
+function updateApplicationsBadge(requests) {
+  const nav = document.getElementById("navApplications");
+  if (!nav) return;
+
+  const pending = requests.filter(r => r.status === "pending").length;
+
+  // Убираем старый бейдж, если есть
+  const oldBadge = nav.querySelector(".badge");
+  if (oldBadge) oldBadge.remove();
+
+  if (pending > 0) {
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = pending > 99 ? "99+" : pending;
+    nav.appendChild(badge);
+  }
+}
+
+// ==================== ОДОБРЕНИЕ ====================
 window.__regApprove = async function(id) {
   console.log("[Registration] approve:", id);
   if (!confirm("Одобрить регистрацию? Аккаунт будет создан автоматически.")) return;
@@ -80,7 +102,6 @@ window.__regApprove = async function(id) {
     const req = await approveRegistration(id);
     playSound("application");
     toast("Аккаунт «" + req.nick + "» создан как " + (req.type === "ally" ? "Союзник" : "Резидент"), "ok");
-    await initAdminRegistration();
   } catch (e) {
     console.error("[Registration] approve error:", e);
     toast("Ошибка: " + e.message, "warn");
@@ -95,7 +116,6 @@ window.__regReject = async function(id) {
     await rejectRegistration(id, reason.trim());
     playSound("application");
     toast("Заявка отклонена", "warn");
-    await initAdminRegistration();
   } catch (e) {
     console.error("[Registration] reject error:", e);
     toast("Ошибка: " + e.message, "warn");
@@ -107,6 +127,13 @@ window.__regDelete = async function(id) {
   try {
     await deleteRegistration(id);
     toast("Удалено", "ok");
-    await initAdminRegistration();
   } catch (e) { toast(e.message, "warn"); }
 };
+
+// ==================== ОТПИСКА ====================
+export function destroyRegistrationSub() {
+  if (unsub) {
+    unsub();
+    unsub = null;
+  }
+}
