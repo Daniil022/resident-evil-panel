@@ -1,94 +1,112 @@
-/* ============ МОБИЛЬНАЯ АДАПТАЦИЯ ============ */
-/* Подключается после всех остальных CSS. */
+/* ============ МОБИЛЬНАЯ АДАПТАЦИЯ v2 ============ */
+/* Строго последним. Перебивает всё. */
 
-@media (max-width: 768px) {
+/* ============ АВТО-РЕЖИМ (по ширине) ============ */
+@media (max-width: 900px) {
+
   /* ============ БАЗА ============ */
-  body {
-    font-size: 13px;
+  html, body {
+    font-size: 13px !important;
+    overflow-x: hidden !important;
   }
 
   /* ============ ШАПКА ============ */
   header {
-    padding: 10px 12px !important;
+    padding: 8px 10px !important;
     flex-wrap: wrap !important;
-    gap: 8px !important;
+    gap: 6px !important;
+    align-items: center !important;
+  }
+
+  header::before {
+    height: 2px !important;
   }
 
   .logo {
-    font-size: 14px !important;
-    gap: 8px !important;
+    font-size: 12px !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
   }
 
   .logo .umbrella,
   .logo .umbrella::before {
-    width: 28px !important;
-    height: 28px !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-left-width: 11px !important;
+    border-right-width: 11px !important;
+    border-bottom-width: 18px !important;
+  }
+
+  .logo .umbrella::after {
+    border-left-width: 6px !important;
+    border-right-width: 6px !important;
+    border-bottom-width: 10px !important;
   }
 
   .logo-text .l1,
   .logo-text .l2 {
-    font-size: 14px !important;
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
   }
 
   .logo-sub {
-    font-size: 7px !important;
-    letter-spacing: 1.5px !important;
+    font-size: 6px !important;
+    letter-spacing: 1px !important;
   }
 
   .header-status {
+    display: flex !important;
     flex-direction: row !important;
     flex-wrap: wrap !important;
     gap: 6px !important;
-    width: 100% !important;
-    justify-content: space-between !important;
+    width: auto !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
   }
 
   .header-info {
-    text-align: left !important;
-    font-size: 10px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
-
-  .status-line {
-    font-size: 9px !important;
-    justify-content: flex-start !important;
-  }
-
-  .fam-name {
-    font-size: 10px !important;
-    margin-top: 1px !important;
+    display: none !important;
   }
 
   .user-info {
-    padding: 4px 10px 4px 4px !important;
-    gap: 6px !important;
+    padding: 3px 8px 3px 3px !important;
+    gap: 5px !important;
+    border-radius: 20px !important;
   }
 
   .user-avatar {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 12px !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 11px !important;
   }
 
   .user-meta .nick {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   .user-meta .role-tag {
-    font-size: 9px !important;
+    font-size: 8.5px !important;
+    display: none !important;
   }
 
   .logout-btn {
-    padding: 5px 10px !important;
-    font-size: 10px !important;
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+    letter-spacing: 0.5px !important;
   }
 
   #soundBtn,
   #pwaInstallBtn {
-    padding: 5px 8px !important;
-    font-size: 11px !important;
-    margin-right: 4px !important;
+    padding: 4px 7px !important;
+    font-size: 10px !important;
+    margin-right: 3px !important;
+    min-width: auto !important;
   }
 
   /* ============ НАВИГАЦИЯ ============ */
@@ -96,8 +114,10 @@
     padding: 0 !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
+    overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
+    scroll-behavior: smooth !important;
   }
 
   nav::-webkit-scrollbar {
@@ -105,443 +125,684 @@
   }
 
   nav button {
-    padding: 10px 12px !important;
-    font-size: 11px !important;
+    padding: 8px 10px !important;
+    font-size: 10.5px !important;
     flex-shrink: 0 !important;
     white-space: nowrap !important;
+    letter-spacing: 0.3px !important;
+    border-bottom-width: 2px !important;
   }
 
   nav button .badge {
-    font-size: 9px !important;
-    padding: 1px 5px !important;
-    margin-left: 4px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
+    margin-left: 3px !important;
+    min-width: 14px !important;
+    line-height: 1.3 !important;
   }
 
-  /* ADMIN кнопка — компактнее */
   nav button[data-tab="admin"] {
-    padding: 8px 12px !important;
-    font-size: 10px !important;
+    padding: 6px 10px !important;
+    font-size: 9px !important;
     letter-spacing: 1px !important;
-    margin: 3px 4px !important;
+    margin: 3px 4px 3px auto !important;
+    border-width: 1.5px !important;
+    border-radius: 6px !important;
     text-shadow:
-      0 0 4px #fff,
-      0 0 8px #fff,
-      0 0 16px #ff0000 !important;
+      0 0 3px #fff,
+      0 0 6px #ff0000 !important;
     box-shadow:
-      0 0 8px rgba(255, 0, 0, 0.5),
-      inset 0 0 8px rgba(255, 0, 0, 0.2) !important;
+      0 0 6px rgba(255, 0, 0, 0.5),
+      inset 0 0 6px rgba(255, 0, 0, 0.2) !important;
   }
 
   /* ============ КОНТЕНТ ============ */
   main {
-    padding: 14px 12px 40px !important;
+    padding: 12px 10px 40px !important;
   }
 
   .panel h2 {
-    font-size: 14px !important;
-    margin-bottom: 12px !important;
-    padding-bottom: 10px !important;
-    letter-spacing: 2px !important;
+    font-size: 13px !important;
+    margin-bottom: 10px !important;
+    padding-bottom: 8px !important;
+    padding-left: 10px !important;
+    letter-spacing: 1.5px !important;
+    border-left-width: 3px !important;
+  }
+
+  .panel h2::before {
+    width: 3px !important;
+    height: 16px !important;
   }
 
   .panel h2.sub {
-    margin-top: 18px !important;
-    font-size: 13px !important;
+    margin-top: 16px !important;
+    font-size: 12px !important;
   }
 
   /* ============ ДАШБОРД ============ */
   .dash-welcome {
-    padding: 16px !important;
+    padding: 14px !important;
     flex-direction: column !important;
     text-align: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    border-radius: 10px !important;
   }
 
   .dash-avatar {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 20px !important;
   }
 
   .dash-greet {
-    font-size: 14px !important;
+    font-size: 13px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .dash-greet span {
+    word-break: break-all !important;
   }
 
   .dash-role {
-    font-size: 10px !important;
-    padding: 2px 8px !important;
+    font-size: 9.5px !important;
+    padding: 2px 6px !important;
+    letter-spacing: 0.5px !important;
   }
 
   .dash-sub {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
+    letter-spacing: 0.5px !important;
   }
 
   .dash-clock {
-    font-size: 20px !important;
+    font-size: 18px !important;
+    letter-spacing: 1px !important;
   }
 
   .dash-stats {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-    margin-bottom: 20px !important;
+    gap: 6px !important;
+    margin-bottom: 16px !important;
   }
 
   .dash-stat {
-    padding: 12px 8px !important;
+    padding: 10px 6px !important;
+    border-radius: 8px !important;
   }
 
   .dash-stat-icon {
-    font-size: 20px !important;
-    margin-bottom: 4px !important;
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
   }
 
   .dash-stat-value {
-    font-size: 20px !important;
+    font-size: 18px !important;
+    margin-bottom: 2px !important;
   }
 
   .dash-stat-label {
-    font-size: 9px !important;
-    letter-spacing: 0.8px !important;
+    font-size: 8.5px !important;
+    letter-spacing: 0.5px !important;
   }
 
   .dash-event {
-    padding: 10px 12px !important;
-    font-size: 11.5px !important;
-    gap: 8px !important;
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    gap: 6px !important;
+  }
+
+  .dash-event-icon {
+    font-size: 14px !important;
+    width: 22px !important;
   }
 
   .dash-event-time {
-    min-width: 60px !important;
-    font-size: 10px !important;
+    min-width: 50px !important;
+    font-size: 9.5px !important;
   }
 
   /* ============ КАРТОЧКИ / СЕТКА ============ */
   .grid {
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
 
   .card {
-    padding: 14px !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
   }
 
   .card .name {
-    font-size: 13.5px !important;
+    font-size: 13px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .card .role {
+    font-size: 9.5px !important;
+    padding: 1px 6px !important;
   }
 
   .card .stat {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
   }
 
   /* ============ КНОПКИ ============ */
   .btn {
-    padding: 9px 14px !important;
-    font-size: 12px !important;
+    padding: 8px 12px !important;
+    font-size: 11.5px !important;
+    letter-spacing: 0.3px !important;
+    gap: 5px !important;
   }
 
   .btn.small {
-    padding: 6px 10px !important;
-    font-size: 10.5px !important;
+    padding: 5px 9px !important;
+    font-size: 10px !important;
   }
 
   /* ============ ЧАТ ============ */
   .chat-wrap {
-    height: calc(100vh - 200px) !important;
-    min-height: 400px !important;
-    border-radius: 0 !important;
-    margin: 0 -12px !important;
-    border-left: none !important;
-    border-right: none !important;
+    height: calc(100vh - 180px) !important;
+    min-height: 380px !important;
+    max-height: none !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
   }
 
   .chat-theme-picker {
-    top: 8px !important;
-    right: 8px !important;
-    padding: 3px !important;
+    top: 6px !important;
+    right: 6px !important;
+    padding: 2px !important;
+    gap: 3px !important;
   }
 
   .chat-theme-btn {
-    width: 20px !important;
-    height: 20px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
 
   .chat-pinned {
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
+    font-size: 10px !important;
+    gap: 6px !important;
+  }
+
+  .chat-pinned .pin-icon {
     font-size: 11px !important;
   }
 
   .chat-messages {
-    padding: 10px 12px !important;
-    gap: 4px !important;
+    padding: 8px 8px !important;
+    gap: 3px !important;
   }
 
+  .chat-date-sep {
+    margin: 12px 0 8px !important;
+  }
+
+  .chat-date-sep span {
+    font-size: 9.5px !important;
+    padding: 0 10px !important;
+    letter-spacing: 1px !important;
+  }
+
+  /* Сообщения */
   .msg {
-    max-width: 88% !important;
-    gap: 6px !important;
+    max-width: 92% !important;
+    gap: 5px !important;
+    animation: none !important;
   }
 
   .msg-avatar {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    font-size: 12px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 11px !important;
+    border-width: 1.5px !important;
   }
 
   .msg-body {
-    padding: 8px 11px !important;
-    border-radius: 12px !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+    max-width: 100% !important;
+  }
+
+  .msg-head {
+    gap: 5px !important;
+    margin-bottom: 3px !important;
   }
 
   .msg-author {
-    font-size: 12px !important;
+    font-size: 11.5px !important;
   }
 
   .msg-role-badge {
-    font-size: 8.5px !important;
-    padding: 1px 5px !important;
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+    letter-spacing: 0.3px !important;
   }
 
   .msg-text {
-    font-size: 13px !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
   }
 
   .msg-text-big-emoji {
-    font-size: 32px !important;
+    font-size: 28px !important;
   }
 
   .msg-time {
-    font-size: 9.5px !important;
+    font-size: 9px !important;
+    margin-top: 2px !important;
   }
 
   .msg-reply {
-    padding: 5px 8px !important;
+    padding: 4px 7px !important;
+    margin-bottom: 5px !important;
+    border-left-width: 2px !important;
   }
 
   .msg-reply .reply-author,
   .msg-reply .reply-text {
-    font-size: 10.5px !important;
+    font-size: 10px !important;
+  }
+
+  /* ============ ACTION-КНОПКИ В ЧАТЕ — ТОЛЬКО ПО ТАПУ ============ */
+  .msg-actions {
+    position: static !important;
+    display: none !important;
+    margin-top: 4px !important;
+    padding: 2px !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 6px !important;
+    width: fit-content !important;
+    gap: 0 !important;
+  }
+
+  .msg:focus-within .msg-actions,
+  .msg.actions-open .msg-actions {
+    display: flex !important;
+  }
+
+  .msg-actions button {
+    padding: 4px 7px !important;
+    font-size: 12px !important;
+  }
+
+  /* ============ ПОЛЕ ВВОДА ============ */
+  .chat-input-wrap {
+    border-top-width: 1px !important;
   }
 
   .chat-input {
-    padding: 8px 10px !important;
-    gap: 6px !important;
-    height: 56px !important;
-    min-height: 56px !important;
-    max-height: 56px !important;
+    padding: 6px 8px !important;
+    gap: 5px !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
   }
 
   .chat-input .emoji-btn {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 16px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+    min-width: 32px !important;
   }
 
   .chat-input input {
-    padding: 0 14px !important;
-    font-size: 13px !important;
-    height: 40px !important;
-    border-radius: 20px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
+    height: 36px !important;
+    border-radius: 18px !important;
+    min-width: 0 !important;
   }
 
   .chat-input .send-btn {
-    width: 40px !important;
-    height: 40px !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+    min-width: 36px !important;
+  }
+
+  /* Голосовые / файлы / опросы — кнопки */
+  .chat-input .file-btn,
+  .chat-input .poll-btn,
+  .chat-input .voice-btn {
+    width: 32px !important;
+    height: 32px !important;
     font-size: 14px !important;
+    min-width: 32px !important;
   }
 
   .chat-typing {
-    padding: 6px 12px !important;
-    font-size: 11px !important;
-    min-height: 22px !important;
+    padding: 5px 10px !important;
+    font-size: 10.5px !important;
+    min-height: 20px !important;
   }
 
   .chat-reply-bar {
-    padding: 8px 12px !important;
-    font-size: 11px !important;
+    padding: 6px 10px !important;
+    font-size: 10.5px !important;
   }
 
   .emoji-picker {
-    max-height: 140px !important;
-    padding: 8px !important;
-    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)) !important;
+    max-height: 130px !important;
+    padding: 6px !important;
+    grid-template-columns: repeat(auto-fill, minmax(28px, 1fr)) !important;
     gap: 2px !important;
   }
 
   .emoji-picker button {
-    font-size: 18px !important;
-    height: 32px !important;
+    font-size: 16px !important;
+    height: 28px !important;
   }
 
-  /* Голосовые */
+  /* Голосовые сообщения */
   .voice-msg {
-    min-width: 150px !important;
-    gap: 8px !important;
+    min-width: 140px !important;
+    gap: 6px !important;
   }
 
   .voice-play {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-  }
-
-  .voice-bars {
-    height: 24px !important;
-    min-width: 80px !important;
-  }
-
-  .voice-time {
-    font-size: 10px !important;
+    width: 28px !important;
+    height: 28px !important;
     min-width: 28px !important;
-  }
-
-  .voice-preview {
-    padding: 8px 12px !important;
     font-size: 11px !important;
   }
 
+  .voice-bars {
+    height: 22px !important;
+    min-width: 70px !important;
+    gap: 1px !important;
+  }
+
+  .voice-time {
+    font-size: 9.5px !important;
+    min-width: 26px !important;
+  }
+
+  .voice-preview {
+    padding: 6px 10px !important;
+    font-size: 10.5px !important;
+    gap: 6px !important;
+  }
+
   .voice-preview .vp-time {
-    min-width: 36px !important;
+    min-width: 32px !important;
+    font-size: 11px !important;
+  }
+
+  .voice-preview .vp-hint {
+    font-size: 10px !important;
   }
 
   /* Фото в чате */
+  .msg-attachments {
+    gap: 5px !important;
+  }
+
   .attachments-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-    max-width: 240px !important;
-    gap: 4px !important;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+    max-width: 220px !important;
+    gap: 3px !important;
   }
 
   .attachment-card {
-    padding: 8px 10px !important;
-    max-width: 240px !important;
+    padding: 7px 9px !important;
+    max-width: 220px !important;
+    gap: 7px !important;
   }
 
   .attachment-icon {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
 
   .attachment-name {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
+  }
+
+  .attachment-size {
+    font-size: 9.5px !important;
   }
 
   /* Опросы */
   .msg-poll {
-    min-width: 200px !important;
-    max-width: 280px !important;
-    padding: 10px !important;
+    min-width: 180px !important;
+    max-width: 100% !important;
+    padding: 8px !important;
   }
 
   .poll-question {
-    font-size: 12.5px !important;
+    font-size: 12px !important;
+  }
+
+  .poll-closed {
+    font-size: 8.5px !important;
+    padding: 1px 4px !important;
   }
 
   .poll-option {
     padding: 6px 8px !important;
+    margin-bottom: 4px !important;
   }
 
   .poll-option-label {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
   }
 
   .poll-option-count {
+    font-size: 9.5px !important;
+  }
+
+  .poll-footer {
+    font-size: 9.5px !important;
+    margin-top: 5px !important;
+    padding-top: 5px !important;
+  }
+
+  .poll-close-btn {
+    font-size: 9px !important;
+    padding: 3px 7px !important;
+  }
+
+  /* Реакции */
+  .msg-reactions {
+    gap: 3px !important;
+    margin-top: 4px !important;
+  }
+
+  .reaction {
+    padding: 2px 7px !important;
+    font-size: 11px !important;
+    border-radius: 10px !important;
+  }
+
+  .reaction .count {
     font-size: 10px !important;
   }
 
   /* ============ МОДАЛКИ ============ */
+  .modal-overlay {
+    padding: 10px !important;
+    align-items: flex-end !important;
+  }
+
   .modal {
-    padding: 18px !important;
+    padding: 16px !important;
     max-width: 100% !important;
-    margin: 0 8px !important;
-    border-radius: 10px !important;
+    margin: 0 !important;
+    border-radius: 12px 12px 0 0 !important;
+    max-height: 92vh !important;
   }
 
   .modal h3 {
-    font-size: 14px !important;
-    margin-bottom: 12px !important;
-    padding-bottom: 10px !important;
+    font-size: 13px !important;
+    margin-bottom: 10px !important;
+    padding-bottom: 8px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .modal p {
+    font-size: 12px !important;
+    margin-bottom: 14px !important;
   }
 
   .modal-actions {
     flex-direction: column-reverse !important;
-    gap: 8px !important;
+    gap: 6px !important;
+    margin-top: 14px !important;
   }
 
   .modal-actions .btn {
     width: 100% !important;
     justify-content: center !important;
+    padding: 10px !important;
+    font-size: 12px !important;
   }
 
   /* ============ ФОРМЫ ============ */
   .form-grid {
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .form-field label {
+    font-size: 10.5px !important;
+    margin-bottom: 4px !important;
   }
 
   .form-field input,
   .form-field select,
   .form-field textarea {
-    padding: 9px 12px !important;
-    font-size: 13px !important;
+    padding: 8px 11px !important;
+    font-size: 12.5px !important;
+    border-radius: 6px !important;
+  }
+
+  .form-field textarea {
+    min-height: 70px !important;
+  }
+
+  .form-hint {
+    font-size: 10px !important;
   }
 
   /* ============ АВТОРИЗАЦИЯ ============ */
+  #authScreen {
+    padding: 10px !important;
+    align-items: center !important;
+  }
+
   .auth-box {
-    padding: 22px 18px !important;
+    padding: 20px 16px !important;
     max-width: 100% !important;
     border-radius: 10px !important;
+    max-height: 95vh !important;
+  }
+
+  .auth-logo {
+    margin-bottom: 16px !important;
+  }
+
+  .auth-box .umbrella,
+  .auth-box .umbrella::before {
+    width: 40px !important;
+    height: 40px !important;
   }
 
   .auth-title {
-    font-size: 18px !important;
+    font-size: 16px !important;
+    letter-spacing: 1px !important;
   }
 
   .auth-sub {
-    font-size: 10px !important;
-    margin-bottom: 20px !important;
+    font-size: 9.5px !important;
+    margin-bottom: 16px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .auth-box label {
+    font-size: 11px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .auth-box input[type="text"],
+  .auth-box input[type="password"] {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    margin-bottom: 6px !important;
   }
 
   .auth-btn {
-    padding: 12px !important;
-    font-size: 13px !important;
+    padding: 11px !important;
+    font-size: 12.5px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .auth-hint {
+    font-size: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .auth-default {
+    font-size: 10.5px !important;
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+  }
+
+  .auth-footer {
+    font-size: 9.5px !important;
+    margin-top: 16px !important;
   }
 
   /* ============ ADMIN ============ */
   .admin-sections {
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
 
   .admin-section-card {
-    padding: 14px !important;
+    padding: 12px !important;
   }
 
   .admin-section-icon {
-    font-size: 24px !important;
-    margin-bottom: 6px !important;
+    font-size: 22px !important;
+    margin-bottom: 5px !important;
   }
 
   .admin-section-card .name {
-    font-size: 13.5px !important;
+    font-size: 13px !important;
+    margin-bottom: 4px !important;
   }
 
   .admin-section-head {
     flex-direction: column !important;
-    gap: 8px !important;
-    margin-bottom: 14px !important;
-    padding-bottom: 10px !important;
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
   }
 
   .admin-section-head .btn {
     width: 100% !important;
+    padding: 8px !important;
   }
 
   .admin-section-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
+    letter-spacing: 0.5px !important;
   }
 
   /* Toolbar участников */
+  .users-toolbar {
+    gap: 6px !important;
+  }
+
   .users-toolbar-row {
     padding: 8px !important;
-    gap: 6px !important;
+    gap: 5px !important;
+    border-radius: 8px !important;
   }
 
   .users-search {
@@ -551,166 +812,429 @@
   }
 
   .users-filter {
-    flex: 1 !important;
-    min-width: 100px !important;
-    font-size: 11.5px !important;
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
     padding: 7px 8px !important;
   }
 
   .users-check {
-    flex: 1 !important;
+    flex: 1 1 calc(50% - 4px) !important;
     justify-content: center !important;
-    font-size: 11px !important;
-    padding: 5px 8px !important;
+    font-size: 10.5px !important;
+    padding: 5px 7px !important;
   }
 
-  /* Таблица участников — горизонтальный скролл */
+  .users-bulk-row {
+    gap: 4px !important;
+  }
+
+  .users-bulk-row .btn.small {
+    padding: 5px 8px !important;
+    font-size: 9.5px !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* Таблица участников */
   .users-table {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
     min-width: 600px !important;
+    margin-top: 10px !important;
   }
 
   .users-table th,
   .users-table td {
-    padding: 8px 10px !important;
-    font-size: 11px !important;
-  }
-
-  .users-table .actions {
-    gap: 4px !important;
-  }
-
-  .users-table .btn.small {
-    padding: 4px 7px !important;
-    font-size: 9.5px !important;
-  }
-
-  /* Редактор ролей */
-  .role-row {
-    padding: 10px 12px !important;
-    gap: 10px !important;
-  }
-
-  .role-color-dot {
-    width: 32px !important;
-    height: 32px !important;
-  }
-
-  .role-info .name {
-    font-size: 13px !important;
-  }
-
-  .role-info .desc {
+    padding: 7px 8px !important;
     font-size: 10.5px !important;
   }
 
-  .role-actions button {
+  .users-table .check-cell {
+    width: 28px !important;
+    padding: 6px 3px !important;
+  }
+
+  .users-table .actions {
+    gap: 3px !important;
+  }
+
+  .users-table .btn.small {
+    padding: 3px 6px !important;
+    font-size: 9px !important;
+  }
+
+  /* Редактор ролей */
+  .roles-toolbar {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .roles-toolbar .btn {
+    width: 100% !important;
+  }
+
+  .role-row {
+    padding: 10px !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .role-color-dot {
     width: 30px !important;
     height: 30px !important;
-    font-size: 13px !important;
+    border-width: 2px !important;
+  }
+
+  .role-info .name {
+    font-size: 12.5px !important;
+  }
+
+  .role-info .desc {
+    font-size: 10px !important;
+  }
+
+  .role-info .badge-system {
+    font-size: 8.5px !important;
+    padding: 1px 5px !important;
+  }
+
+  .role-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+  }
+
+  .role-actions button {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 12px !important;
   }
 
   /* Логи */
   .log {
-    padding: 10px !important;
-    font-size: 11px !important;
-    max-height: 200px !important;
+    padding: 8px !important;
+    font-size: 10px !important;
+    max-height: 180px !important;
+    line-height: 1.4 !important;
   }
 
   /* Заявки */
   .contract-head {
     flex-direction: column !important;
-    gap: 6px !important;
+    gap: 5px !important;
+    align-items: flex-start !important;
+  }
+
+  .contract-head .contract-status {
+    align-self: flex-start !important;
+  }
+
+  .contract-status {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
   }
 
   .contract-meta {
     gap: 8px !important;
-    font-size: 10.5px !important;
+    font-size: 10px !important;
+    padding-top: 6px !important;
+    margin-top: 6px !important;
   }
 
   .contract-review-actions {
     flex-direction: column !important;
-    gap: 6px !important;
+    gap: 5px !important;
   }
 
   .contract-review-actions .btn {
     width: 100% !important;
     justify-content: center !important;
+    padding: 8px !important;
   }
 
-  /* Toast */
+  /* ============ TOAST ============ */
   .toast {
-    bottom: 12px !important;
+    bottom: 10px !important;
     right: 8px !important;
     left: 8px !important;
-    max-width: 100% !important;
-    font-size: 12px !important;
+    max-width: none !important;
+    font-size: 11.5px !important;
     padding: 10px 14px !important;
+    border-radius: 8px !important;
+  }
+
+  /* ============ ALBUM ============ */
+  #albumGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .album-meta {
+    padding: 10px 12px !important;
+  }
+
+  .album-name {
+    font-size: 13px !important;
+  }
+
+  .album-sub {
+    font-size: 10px !important;
+  }
+
+  .album-count {
+    font-size: 9.5px !important;
+    padding: 2px 7px !important;
+  }
+
+  /* ============ MUSIC ============ */
+  .music-tabs {
+    padding: 6px !important;
+    gap: 5px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .music-tab {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .track-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
   }
 }
 
 /* ============ ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ ============ */
-@media (max-width: 480px) {
+@media (max-width: 400px) {
   .dash-stats {
-    grid-template-columns: 1fr !important;
-  }
-
-  .dash-stat {
-    padding: 10px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   .msg {
-    max-width: 92% !important;
+    max-width: 95% !important;
   }
 
-  .chat-input input {
-    font-size: 12.5px !important;
+  .user-meta .nick {
+    max-width: 60px !important;
   }
 
-  .logo-sub {
+  .logo-text .l2 {
     display: none !important;
-  }
-
-  .fam-name {
-    display: none !important;
-  }
-
-  nav button {
-    padding: 9px 10px !important;
-    font-size: 10.5px !important;
   }
 }
 
-/* ============ ТАЧ-УСТРОЙСТВА (везде) ============ */
-@media (hover: none) and (pointer: coarse) {
-  /* Увеличить зоны нажатия */
-  .btn,
-  nav button,
-  .chat-input .emoji-btn,
-  .chat-input .send-btn {
-    min-height: 40px;
-    touch-action: manipulation;
-  }
+/* ============ РУЧНОЙ РЕЖИМ: body.mobile-view ============ */
+/* Применяем те же правила, даже если ширина > 900px */
 
-  /* Показать action-кнопки в чате всегда (не только по hover) */
-  .msg-actions {
-    display: flex !important;
-    position: static !important;
-    margin-top: 6px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 6px;
-    padding: 2px;
-    width: fit-content;
-  }
+body.mobile-view header {
+  padding: 8px 10px !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
 
-  /* Отключить hover-эффекты */
-  .card:hover,
-  .msg:hover .msg-actions {
-    transform: none;
-  }
+body.mobile-view .header-info {
+  display: none !important;
+}
 
-  /* Убрать hover-подсветку ссылок */
-  .msg-author:hover {
-    text-decoration: none;
-  }
+body.mobile-view .logo-sub {
+  display: none !important;
+}
+
+body.mobile-view nav {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+}
+
+body.mobile-view nav::-webkit-scrollbar {
+  display: none !important;
+}
+
+body.mobile-view nav button {
+  padding: 8px 10px !important;
+  font-size: 10.5px !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+body.mobile-view main {
+  padding: 12px 10px 40px !important;
+}
+
+body.mobile-view .grid {
+  grid-template-columns: 1fr !important;
+}
+
+body.mobile-view .dash-stats {
+  grid-template-columns: repeat(2, 1fr) !important;
+}
+
+body.mobile-view .dash-welcome {
+  flex-direction: column !important;
+  text-align: center !important;
+  padding: 14px !important;
+}
+
+body.mobile-view .chat-wrap {
+  height: calc(100vh - 180px) !important;
+}
+
+body.mobile-view .msg {
+  max-width: 92% !important;
+  gap: 5px !important;
+}
+
+body.mobile-view .msg-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  font-size: 11px !important;
+}
+
+body.mobile-view .msg-body {
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
+}
+
+body.mobile-view .msg-text {
+  font-size: 12.5px !important;
+}
+
+body.mobile-view .msg-actions {
+  position: static !important;
+  display: none !important;
+  margin-top: 4px !important;
+}
+
+body.mobile-view .msg:focus-within .msg-actions,
+body.mobile-view .msg.actions-open .msg-actions {
+  display: flex !important;
+}
+
+body.mobile-view .chat-input {
+  padding: 6px 8px !important;
+  gap: 5px !important;
+  height: 50px !important;
+  min-height: 50px !important;
+}
+
+body.mobile-view .chat-input .emoji-btn,
+body.mobile-view .chat-input .send-btn {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 14px !important;
+  min-width: 32px !important;
+}
+
+body.mobile-view .chat-input input {
+  font-size: 12.5px !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+}
+
+body.mobile-view .form-grid {
+  grid-template-columns: 1fr !important;
+}
+
+body.mobile-view .admin-sections {
+  grid-template-columns: 1fr !important;
+}
+
+body.mobile-view .modal {
+  border-radius: 12px !important;
+}
+
+body.mobile-view .toast {
+  bottom: 10px !important;
+  right: 8px !important;
+  left: 8px !important;
+  max-width: none !important;
+}
+
+/* ============ РУЧНОЙ РЕЖИМ: body.desktop-view ============ */
+/* Принудительно ПК-вид, даже на телефоне */
+
+body.desktop-view {
+  min-width: 1000px !important;
+}
+
+body.desktop-view .header-info {
+  display: flex !important;
+}
+
+body.desktop-view nav {
+  flex-wrap: wrap !important;
+  overflow-x: visible !important;
+}
+
+body.desktop-view nav button {
+  flex: initial !important;
+  padding: 14px 14px !important;
+  font-size: 12.5px !important;
+}
+
+body.desktop-view .grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+}
+
+body.desktop-view .dash-stats {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+}
+
+body.desktop-view .dash-welcome {
+  flex-direction: row !important;
+  text-align: left !important;
+  padding: 28px !important;
+}
+
+body.desktop-view .chat-wrap {
+  height: calc(100vh - 260px) !important;
+  min-height: 520px !important;
+}
+
+body.desktop-view .msg {
+  max-width: 75% !important;
+}
+
+body.desktop-view .msg-actions {
+  position: absolute !important;
+  top: -34px !important;
+  display: none !important;
+}
+
+body.desktop-view .msg:hover .msg-actions {
+  display: flex !important;
+}
+
+body.desktop-view .msg-avatar {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  font-size: 15px !important;
+}
+
+body.desktop-view .msg-body {
+  padding: 10px 14px !important;
+  border-radius: 14px !important;
+}
+
+body.desktop-view .msg-text {
+  font-size: 13.5px !important;
+}
+
+body.desktop-view .form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+body.desktop-view .admin-sections {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+}
+
+body.desktop-view .toast {
+  bottom: 24px !important;
+  right: 24px !important;
+  left: auto !important;
+  max-width: 340px !important;
 }
