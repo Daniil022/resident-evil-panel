@@ -4,7 +4,6 @@ import {
   formatDuration, VOICE_MAX_MS
 } from "./chat-voice.js";
 
-// chatId -> { sendVoice } — колбэк
 const senders = {};
 
 export function setupVoiceForChat(chatId, sendVoice) {
@@ -32,7 +31,6 @@ export function setupVoiceForChat(chatId, sendVoice) {
   const sendBtn = inputWrap.querySelector(".send-btn");
   inputWrap.insertBefore(btn, sendBtn);
 
-  // Превью
   const preview = document.createElement("div");
   preview.id = "voicePreview-" + chatId;
   preview.className = "voice-preview";
@@ -59,7 +57,7 @@ export function setupVoiceForChat(chatId, sendVoice) {
         const t = preview.querySelector(".vp-time");
         if (t) t.textContent = formatDuration(ms);
       },
-      onStop: async ({ blob, durationMs }) => {
+      onStop: async ({ blob, durationMs, mime }) => {
         preview.style.display = "none";
         preview.classList.remove("cancel");
         recording = false;
@@ -68,7 +66,7 @@ export function setupVoiceForChat(chatId, sendVoice) {
         if (cancelled || durationMs < 800) return;
         const sender = senders[chatId];
         if (sender) {
-          try { await sender(chatId, blob, durationMs); }
+          try { await sender(chatId, blob, durationMs, mime); }
           catch (err) { console.warn("Voice send failed:", err); }
         }
       },
