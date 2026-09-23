@@ -12,6 +12,7 @@ const PEER_MAP = {
   music:    "VK_PEER_MUSIC",
   contract: "VK_PEER_ID",
   voice:    "VK_PEER_ID",
+  chat:     "VK_PEER_ID",
   default:  "VK_PEER_ID"
 };
 
@@ -90,8 +91,6 @@ export default async function handler(req, res) {
     const peerKey = PEER_MAP[mediaType] || PEER_MAP.default;
     const peerId = process.env[peerKey] || process.env.VK_PEER_ID;
 
-    console.log("Upload:", { mediaType, peerKey, peerId, filename, fileType, size: fileData.length });
-
     const isPhoto = fileType.startsWith("image/");
     const isVideo = fileType.startsWith("video/");
     const isAudio = fileType.startsWith("audio/");
@@ -120,8 +119,11 @@ export default async function handler(req, res) {
       const photo = saveData.response[0];
       attachmentId = "photo" + photo.owner_id + "_" + photo.id;
 
+      // ⚠️ Берём фото с максимальной площадью, а не последнее
       if (photo.sizes && photo.sizes.length) {
-        const biggest = photo.sizes[photo.sizes.length - 1];
+        const biggest = photo.sizes.reduce((a, b) =>
+          (a.width * a.height > b.width * b.height) ? a : b
+        );
         directUrl = biggest.url;
       }
     } else if (isVideo || isAudio) {
