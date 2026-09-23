@@ -17,7 +17,7 @@ const PEER_MAP = {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Original-Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed" });
@@ -30,23 +30,69 @@ export default async function handler(req, res) {
     if (!VK_TOKEN) return res.status(500).json({ ok: false, error: "VK_TOKEN not configured" });
     if (!VK_PEER_ID) return res.status(500).json({ ok: false, error: "VK_PEER_ID not configured" });
 
-    // === ЧИТАЕМ RAW BODY ===
+    // === ЧИТАЕМ BODY ===
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
     }
     const buffer = Buffer.concat(chunks);
 
+    console.log("[upload] buffer size:", buffer.length);
+
     if (!buffer || buffer.length === 0) {
       return res.status(400).json({ ok: false, error: "No body" });
     }
 
-    const contentType = req.headers["content-type"] || "";
-    const boundaryMatch = contentType.match(/boundary=(.+)/);
-    if (!boundaryMatch) return res.status(400).json({ ok: false, error: "No boundary" });
+    // === ЧИТАЕМ CONTENT-TYPE ИЗ РАЗНЫХ МЕСТ ===
+    let contentType = "";
+    if (req.headers) {
+      contentType =
+        req.headers["content-type"] ||
+        req.headers["Content-Type"] ||
+        req.headers["x-original-content-type"] ||
+        req.headers["X-Original-Content-Type"] ||
+        "";
+      if (!contentType && typeof req.headers.get === "function") {
+        contentType =
+          req.headers.get("content-type") ||
+          req.headers.get("x-original-content-type") ||
+          "";
+      }
+    }
 
-    const boundary = "--" + boundaryMatch[1];
-    const boundaryBuf = Buffer.from(boundary);
+    console.log("[upload] content-type:", contentType);
+
+    // === ИЗВЛЕКАЕМ BOUNDARY ===
+    let boundary = null;
+
+    // 1) Из Content-Type header
+    const m = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
+    if (m) {
+      boundary = m[1] || m[2];
+      boundary = boundary.trim();
+    }
+
+    // 2) Fallback: извлекаем из тела (первая строка)
+    if (!boundary) {
+      const head = buffer.slice(0, 500).toString("binary");
+      const lineEnd = head.indexOf("\r\n");
+      const firstLine = lineEnd >= 0 ? head.slice(0, lineEnd) : head;
+
+      // Формат: ----------------------------1234567890
+      const bm = firstLine.match(/^-{2,}(.+)$/);
+      if (bm) {
+        boundary = bm[1].trim();
+        console.log("[upload] boundary from body:", boundary);
+      }
+    }
+
+    if (!boundary) {
+      return res.status(400).json({ ok: false, error: "No boundary (не найден ни в header, ни в body)" });
+    }
+
+    // === ПАРСИМ MULTIPART ===
+    const boundaryLine = "--" + boundary;
+    const boundaryBuf = Buffer.from(boundaryLine);
     const crlf = Buffer.from("\r\n\r\n");
 
     let fileData = null;
@@ -57,10 +103,16 @@ export default async function handler(req, res) {
 
     const parts = [];
     let start = 0;
+
     while (true) {
       const idx = buffer.indexOf(boundaryBuf, start);
       if (idx === -1) break;
-      if (start > 0) parts.push(buffer.slice(start, idx - 2));
+      if (start > 0) {
+        // отрезаем \r\n перед boundary
+        let end = idx;
+        if (end >= 2 && buffer[end - 2] === 0x0D && buffer[end - 1] === 0x0A) end -= 2;
+        parts.push(buffer.slice(start, end));
+      }
       start = idx + boundaryBuf.length;
     }
 
@@ -70,6 +122,8 @@ export default async function handler(req, res) {
 
       const headers = part.slice(0, headerEnd).toString("utf-8");
       let bodyBuf = part.slice(headerEnd + crlf.length);
+
+      // Убираем завершающий \r\n
       if (bodyBuf.length >= 2 && bodyBuf[bodyBuf.length - 2] === 0x0D && bodyBuf[bodyBuf.length - 1] === 0x0A) {
         bodyBuf = bodyBuf.slice(0, bodyBuf.length - 2);
       }
@@ -90,6 +144,11 @@ export default async function handler(req, res) {
         mediaType = bodyBuf.toString("utf-8").trim();
       }
     }
+
+    console.log("[upload] filename:", filename);
+    console.log("[upload] fileType:", fileType);
+    console.log("[upload] mediaType:", mediaType);
+    console.log("[upload] fileData size:", fileData ? fileData.length : "NULL");
 
     if (!fileData) return res.status(400).json({ ok: false, error: "No file" });
 
@@ -174,6 +233,7 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
+    console.error("[upload] error:", e.message);
     return res.status(500).json({ ok: false, error: e.message });
   }
 }
