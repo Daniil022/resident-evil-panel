@@ -1,5 +1,6 @@
 // api/upload.js
 export const config = {
+  runtime: "nodejs",
   api: { bodyParser: false }
 };
 
@@ -29,29 +30,15 @@ export default async function handler(req, res) {
     if (!VK_TOKEN) return res.status(500).json({ ok: false, error: "VK_TOKEN not configured" });
     if (!VK_PEER_ID) return res.status(500).json({ ok: false, error: "VK_PEER_ID not configured" });
 
-    // === ГЛАВНОЕ ОТЛИЧИЕ: читаем тело через Buffer ===
-    // Vercel в Node.js runtime уже прочитал body в req.body, если bodyParser не отключён.
-    // Поэтому используем req.body, если это объект, или читаем поток, если raw.
-    let buffer;
-
-    if (Buffer.isBuffer(req.body)) {
-      // body — уже Buffer
-      buffer = req.body;
-    } else if (typeof req.body === "string") {
-      // body — строка
-      buffer = Buffer.from(req.body, "binary");
-    } else if (req.body && typeof req.body === "object") {
-      // body — распарсенный JSON (значит multipart не прошёл)
-      return res.status(400).json({ ok: false, error: "Vercel не передал multipart. Проверь bodyParser." });
-    } else {
-      // body — поток, читаем вручную
-      const chunks = [];
-      for await (const chunk of req) chunks.push(chunk);
-      buffer = Buffer.concat(chunks);
+    // === ЧИТАЕМ RAW BODY ===
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
     }
+    const buffer = Buffer.concat(chunks);
 
     if (!buffer || buffer.length === 0) {
-      return res.status(400).json({ ok: false, error: "No file (empty body)" });
+      return res.status(400).json({ ok: false, error: "No body" });
     }
 
     const contentType = req.headers["content-type"] || "";
@@ -104,7 +91,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (!fileData) return res.status(400).json({ ok: false, error: "No file (fileData null)" });
+    if (!fileData) return res.status(400).json({ ok: false, error: "No file" });
 
     const peerKey = PEER_MAP[mediaType] || PEER_MAP.default;
     const peerId = process.env[peerKey] || process.env.VK_PEER_ID;
