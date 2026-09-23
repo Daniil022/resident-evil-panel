@@ -13,12 +13,26 @@ export async function uploadMedia(file, contextId, userLogin, message = "", medi
   fd.append("message", message);
   fd.append("mediaType", mediaType);
 
-  const res = await fetch(API_URL, { method: "POST", body: fd });
-  const data = await res.json();
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: fd,
+    headers: {
+      "X-Original-Content-Type": "multipart/form-data"
+    }
+  });
+
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error("Сервер вернул не JSON: " + text.slice(0, 200));
+  }
+
   if (!data.ok) throw new Error(data.error || "Ошибка загрузки");
 
   return {
-    // ⚠️ Прямая ссылка на изображение
     url: data.url || data.vk_link,
     vk_link: data.vk_link,
     attachment: data.attachment,
