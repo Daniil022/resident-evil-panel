@@ -7,6 +7,7 @@ import { initDashboard } from "./core/dashboard.js";
 import { initSounds } from "./core/sounds.js";
 import { setupSoundButton } from "./core/sounds-panel.js";
 import { initPWA } from "./core/pwa.js";
+import { initViewMode } from "./core/view-mode.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
@@ -27,6 +28,7 @@ import { can } from "./core/permissions.js";
 import { loadPermissionsCache } from "./core/permissions-cache.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  initViewMode();
   initPWA();
   initSounds();
   setupAuthScreen();
