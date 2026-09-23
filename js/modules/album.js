@@ -10,13 +10,14 @@ import { getCurrentUser } from "../core/state.js";
 import { openLightbox } from "./album-lightbox.js";
 import { setupAlbumUpload, setupBulkUploadButton } from "./album-upload.js";
 import { setupAlbumSort } from "./album-sort.js";
+import { compressImage } from "../core/image-compress.js";
 
 const DEMO_ALBUMS_KEY = "re_demo_albums_v2";
 const DEMO_PHOTOS_KEY = "re_demo_album_photos_v2";
 
 let albums = [];
 let photos = [];
-let currentAlbumId = null; // null = экран альбомов
+let currentAlbumId = null;
 
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 export async function initAlbum() {
@@ -27,7 +28,6 @@ export async function initAlbum() {
   renderAlbumsScreen();
   bindToolbar();
 
-  // Drag-n-drop на сетке
   setupAlbumUpload(async () => {
     await loadAll();
     if (currentAlbumId) renderAlbumScreen();
@@ -82,7 +82,6 @@ function renderToolbar() {
   const editable = canEdit();
 
   if (currentAlbumId) {
-    // Внутри альбома
     let html = '<button class="btn secondary" id="albumBackBtn">← К альбомам</button>';
     html += '<button class="btn" id="addPhotoBtn" style="margin-left:8px;">+ Добавить фото</button>';
     if (editable) {
@@ -99,7 +98,6 @@ function renderToolbar() {
     const editBtn = document.getElementById("editAlbumBtn");
     if (editBtn) editBtn.onclick = () => openAlbumModal(currentAlbumId);
 
-    // Кнопка массовой загрузки
     if (editable) {
       setupBulkUploadButton(currentAlbumId, async () => {
         await loadAll();
@@ -107,7 +105,6 @@ function renderToolbar() {
       });
     }
   } else {
-    // Экран альбомов
     let html = "";
     if (editable) {
       html += '<button class="btn" id="addAlbumBtn">+ Создать альбом</button>';
@@ -126,13 +123,11 @@ function renderAlbumsScreen() {
   const grid = document.getElementById("albumGrid");
   if (!grid) return;
 
-  // Считаем фото в каждом альбоме
   const counts = {};
   photos.forEach(p => {
     if (p.albumId) counts[p.albumId] = (counts[p.albumId] || 0) + 1;
   });
 
-  // Фото без альбома — показываем как отдельный «альбом» в конце
   const withoutAlbum = photos.filter(p => !p.albumId);
 
   if (albums.length === 0 && withoutAlbum.length === 0) {
@@ -146,10 +141,8 @@ function renderAlbumsScreen() {
 
   let html = "";
 
-  // Альбомы
   html += albums.map(a => renderAlbumCard(a, counts[a.id] || 0)).join("");
 
-  // Без альбома
   if (withoutAlbum.length > 0) {
     html += renderAlbumCard({
       id: "__no_album__",
@@ -162,7 +155,6 @@ function renderAlbumsScreen() {
 
   grid.innerHTML = html;
 
-  // Клики
   grid.querySelectorAll(".album-card").forEach(card => {
     card.addEventListener("click", () => {
       const id = card.dataset.albumId;
@@ -206,9 +198,7 @@ function renderAlbumScreen() {
   const albumPhotos = photos
     .filter(p => p.albumId === currentAlbumId)
     .sort((a, b) => {
-      // Если у обоих есть order — сортируем по нему
       if (a.order != null && b.order != null) return a.order - b.order;
-      // Иначе — по дате (новые сверху)
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
 
@@ -247,7 +237,6 @@ function renderAlbumScreen() {
     '</div>';
   }).join("");
 
-  // Клики по фото — лайтбокс
   grid.querySelectorAll(".photo-card").forEach(card => {
     card.addEventListener("click", (e) => {
       if (e.target.closest("button")) return;
@@ -257,9 +246,7 @@ function renderAlbumScreen() {
     });
   });
 
-  // Сортировка вручную (только для админов)
   setupAlbumSort(albumPhotos, () => {
-    // Перечитываем порядок после сортировки
     albumPhotos.sort((a, b) => (a.order || 0) - (b.order || 0));
   });
 }
@@ -354,7 +341,6 @@ window.__albumDelete = async function(albumId) {
   saveDemoAlbums();
   saveDemoPhotos();
 
-  // Обновляем альбомы в Firestore (снимаем albumId)
   for (const p of photos.filter(x => x.albumId === null && x.source === "firebase")) {
     try { await updateDoc(doc(db, "album_photos", p.id), { albumId: null }); } catch (e) {}
   }
@@ -385,9 +371,9 @@ function openPhotoModal() {
           '</select>' +
         '</div>' +
         '<div class="form-field" style="grid-column:1/-1;">' +
-          '<label>Файл</label>' +
+          '<label>Файл с устройства</label>' +
           '<input type="file" id="phFile" accept="image/*">' +
-          '<div class="form-hint">Фото уйдёт в ВК-беседу ALBUM</div>' +
+          '<div class="form-hint">Можно с камеры, из галереи или с ПК. Фото сожмётся автоматически.</div>' +
         '</div>' +
         '<div class="form-field" style="grid-column:1/-1;">' +
           '<label>Или ссылка на изображение</label>' +
@@ -420,15 +406,36 @@ async function savePhoto() {
   let url = urlInput;
 
   if (file) {
-    err.textContent = "Загрузка в ВК...";
+    err.textContent = "Обработка фото...";
     err.style.color = "var(--cyan)";
     err.style.display = "block";
+
+    // Сжимаем
+    let processedFile = file;
+    if (file.type.startsWith("image/")) {
+      try {
+        processedFile = await compressImage(file);
+      } catch (e) {
+        console.warn("Compress failed:", e);
+        processedFile = file;
+      }
+    }
+
+    err.textContent = "Загрузка в ВК...";
+
     try {
       const me = getCurrentUser();
-      const media = await uploadMedia(file, albumId || "album", me?.login || "album", "Альбом: " + (title || file.name), "album");
+      const media = await uploadMedia(
+        processedFile,
+        albumId || "album",
+        me?.login || "album",
+        "Альбом: " + (title || file.name),
+        "album"
+      );
       url = media.url;
+      if (!url) throw new Error("Пустая ссылка от VK");
     } catch (e) {
-      err.textContent = e.message;
+      err.textContent = "Ошибка загрузки: " + e.message;
       err.style.color = "var(--red)";
       return;
     }
@@ -455,7 +462,6 @@ async function savePhoto() {
     const ref = await addDoc(collection(db, "album_photos"), data);
     photos.unshift({ id: ref.id, ...data, source: "firebase" });
 
-    // Если у альбома нет обложки — ставим это фото
     if (albumId) {
       const album = albums.find(a => a.id === albumId);
       if (album && !album.cover) {
@@ -494,7 +500,6 @@ window.__albumPhotoDelete = async function(photoId) {
   photos = photos.filter(x => x.id !== photoId);
   saveDemoPhotos();
 
-  // Если удалили обложку альбома — сбрасываем
   if (p.albumId) {
     const album = albums.find(a => a.id === p.albumId);
     if (album && album.cover === p.url) {
