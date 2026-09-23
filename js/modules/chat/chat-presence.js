@@ -6,7 +6,6 @@ import { getCurrentUser } from "../../core/state.js";
 
 let presenceUnsub = null;
 let heartbeatTimer = null;
-let typingTimeout = null;
 
 export function setupPresence() {
   const user = getCurrentUser();
@@ -14,7 +13,6 @@ export function setupPresence() {
 
   const presenceRef = doc(db, "presence", user.uid);
 
-  // Отмечаем онлайн
   setDoc(presenceRef, {
     login: user.login,
     role: user.role,
@@ -23,17 +21,15 @@ export function setupPresence() {
     lastSeen: Date.now()
   }, { merge: true }).catch(() => {});
 
-  // Heartbeat каждые 30 секунд
+  // Heartbeat раз в 60 секунд (было 30)
   heartbeatTimer = setInterval(() => {
     setDoc(presenceRef, { lastSeen: Date.now(), online: true }, { merge: true }).catch(() => {});
-  }, 30000);
+  }, 60000);
 
-  // Отмечаем офлайн при выходе
   window.addEventListener("beforeunload", () => {
     setDoc(presenceRef, { online: false, typing: false }, { merge: true }).catch(() => {});
   });
 
-  // Подписка на «печатает» и онлайн
   try {
     presenceUnsub = onSnapshot(collection(db, "presence"), (snap) => {
       const typers = [];
