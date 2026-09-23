@@ -8,6 +8,7 @@ import { getCurrentUser } from "../../core/state.js";
 import { toast } from "../../core/utils.js";
 import { uploadMedia } from "../contracts/contracts-upload.js";
 import { addDashEvent } from "../../core/dashboard.js";
+import { compressImage } from "../../core/image-compress.js";
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 МБ
 const MAX_FILES = 5;
@@ -36,6 +37,7 @@ export function setupFileButton(chatId, onSent) {
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.multiple = true;
+  // ВАЖНО: без capture — на телефоне откроется выбор источник (камера/галерея)
   fileInput.accept = "image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.rar,.txt";
   fileInput.style.display = "none";
   fileInput.id = "fileInput-" + chatId;
@@ -86,17 +88,37 @@ async function sendFiles(chatId, files, onSent) {
 
   for (const file of files) {
     try {
-      const media = await uploadMedia(file, chatId, user.login, "📎 " + file.name, "chat");
+      // Сжимаем фото (только изображения)
+      let processedFile = file;
+      if (file.type.startsWith("image/")) {
+        try {
+          processedFile = await compressImage(file);
+        } catch (e) {
+          console.warn("Compress failed, upload original:", e);
+          processedFile = file;
+        }
+      }
+
+      const media = await uploadMedia(
+        processedFile,
+        chatId,
+        user.login,
+        "📎 " + file.name,
+        "chat"
+      );
+
+      const type = processedFile.type.startsWith("image") ? "image"
+                 : processedFile.type.startsWith("video") ? "video"
+                 : processedFile.type.startsWith("audio") ? "audio"
+                 : "file";
+
       attachments.push({
         url: media.url || media.vk_link,
         vk_link: media.vk_link,
         name: file.name,
-        size: file.size,
-        mime: file.type,
-        type: file.type.startsWith("image") ? "image"
-            : file.type.startsWith("video") ? "video"
-            : file.type.startsWith("audio") ? "audio"
-            : "file"
+        size: processedFile.size,
+        mime: processedFile.type,
+        type
       });
     } catch (e) {
       toast("Ошибка загрузки «" + file.name + "»: " + e.message, "warn");
