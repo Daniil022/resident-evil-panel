@@ -3,9 +3,9 @@
 
 const MAX_DURATION_MS = 2 * 60 * 1000; // 2 минуты
 const MIME_CANDIDATES = [
+  "audio/ogg;codecs=opus",
   "audio/webm;codecs=opus",
   "audio/webm",
-  "audio/ogg;codecs=opus",
   "audio/mp4"
 ];
 
@@ -17,6 +17,7 @@ let timerInterval = null;
 let autoStopTimer = null;
 let onFinish = null;
 let onCancel = null;
+let selectedMime = "";
 
 function pickMime() {
   if (!window.MediaRecorder) return null;
@@ -28,6 +29,10 @@ function pickMime() {
 
 export function isVoiceSupported() {
   return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+}
+
+export function getVoiceMime() {
+  return selectedMime;
 }
 
 export async function startRecording({ onTick, onStop, onError } = {}) {
@@ -44,6 +49,7 @@ export async function startRecording({ onTick, onStop, onError } = {}) {
   }
 
   const mime = pickMime();
+  selectedMime = mime || "audio/webm";
   try {
     mediaRecorder = mime
       ? new MediaRecorder(mediaStream, { mimeType: mime })
@@ -64,10 +70,10 @@ export async function startRecording({ onTick, onStop, onError } = {}) {
 
   mediaRecorder.addEventListener("stop", () => {
     const durationMs = Date.now() - startTime;
-    const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+    const blob = new Blob(chunks, { type: selectedMime || "audio/webm" });
     cleanupStream();
     clearTimers();
-    if (onFinish) onFinish({ blob, durationMs });
+    if (onFinish) onFinish({ blob, durationMs, mime: selectedMime });
   });
 
   mediaRecorder.start();
