@@ -10,19 +10,12 @@ let currentRequests = [];
 let unsub = null;
 
 export async function initAdminRegistration() {
-  console.log("[Registration] init started");
-
   const container = document.getElementById("registrationList");
-  if (!container) {
-    console.warn("[Registration] container не найден");
-    return;
-  }
+  if (!container) return;
 
-  // Если уже подписаны — не дублируем
   if (unsub) return;
 
   unsub = subscribeToRequests((requests) => {
-    console.log("[Registration] обновление, заявок:", requests.length);
     currentRequests = requests;
     renderRequests(container, requests);
     updateApplicationsBadge(requests);
@@ -75,41 +68,37 @@ function renderRequests(container, requests) {
   }).join('');
 }
 
-// ==================== BADGE ====================
 function updateApplicationsBadge(requests) {
   const nav = document.getElementById("navApplications");
   if (!nav) return;
 
   const pending = requests.filter(r => r.status === "pending").length;
 
-  // Убираем старый бейдж, если есть
-  const oldBadge = nav.querySelector(".badge");
-  if (oldBadge) oldBadge.remove();
-
+  let badge = nav.querySelector(".badge");
   if (pending > 0) {
-    const badge = document.createElement("span");
-    badge.className = "badge";
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "badge";
+      nav.appendChild(badge);
+    }
     badge.textContent = pending > 99 ? "99+" : pending;
-    nav.appendChild(badge);
+  } else if (badge) {
+    badge.remove();
   }
 }
 
-// ==================== ОДОБРЕНИЕ ====================
 window.__regApprove = async function(id) {
-  console.log("[Registration] approve:", id);
   if (!confirm("Одобрить регистрацию? Аккаунт будет создан автоматически.")) return;
   try {
     const req = await approveRegistration(id);
     playSound("application");
     toast("Аккаунт «" + req.nick + "» создан как " + (req.type === "ally" ? "Союзник" : "Резидент"), "ok");
   } catch (e) {
-    console.error("[Registration] approve error:", e);
     toast("Ошибка: " + e.message, "warn");
   }
 };
 
 window.__regReject = async function(id) {
-  console.log("[Registration] reject:", id);
   const reason = prompt("Причина отказа (опционально):", "");
   if (reason === null) return;
   try {
@@ -117,7 +106,6 @@ window.__regReject = async function(id) {
     playSound("application");
     toast("Заявка отклонена", "warn");
   } catch (e) {
-    console.error("[Registration] reject error:", e);
     toast("Ошибка: " + e.message, "warn");
   }
 };
@@ -130,7 +118,6 @@ window.__regDelete = async function(id) {
   } catch (e) { toast(e.message, "warn"); }
 };
 
-// ==================== ОТПИСКА ====================
 export function destroyRegistrationSub() {
   if (unsub) {
     unsub();
