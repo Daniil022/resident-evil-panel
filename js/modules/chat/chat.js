@@ -62,7 +62,6 @@ const autoScroll = { residents: true, allies: true };
 const hiddenMessages = { residents: new Set(), allies: new Set() };
 const currentMessages = { residents: [], allies: [] };
 
-let demoMode = false;
 let notificationsInited = false;
 
 const EMOJIS = [
@@ -130,10 +129,18 @@ function initOneChat(chatId) {
   loadPinned(chatId);
 
   const msgsRef = collection(db, "chats", chatId, "messages");
-  const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
+  const q = query(msgsRef, orderBy("createdAt", "asc"), limit(50));
 
   try {
     unsubscribers[chatId] = onSnapshot(q, (snapshot) => {
+      // Оптимизация: не перерисовываем, если ничего не изменилось
+      const snapshotIds = snapshot.docs.map(d => d.id).join(",");
+      if (snapshotIds === container.dataset.lastIds && currentMessages[chatId].length > 0) {
+        updateUnreadBadge(chatId, currentMessages[chatId]);
+        return;
+      }
+      container.dataset.lastIds = snapshotIds;
+
       container.innerHTML = "";
       let lastDate = null;
       let lastAuthor = null;
@@ -174,7 +181,6 @@ function initOneChat(chatId) {
 
         container.appendChild(msgEl);
 
-        // Упоминания
         import("./chat-mentions.js")
           .then(m => m.highlightIfMentioned(msg, msgEl))
           .catch(() => {});
@@ -384,7 +390,6 @@ function updatePinBar(chatId, pinData) {
   };
 }
 
-// ==================== ПРОВЕРКА МУТА ====================
 async function checkMutedFresh(user) {
   const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
 
@@ -423,7 +428,6 @@ async function checkMutedFresh(user) {
   return false;
 }
 
-// ==================== ОТПРАВКА ТЕКСТА ====================
 async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
@@ -463,8 +467,7 @@ async function sendMessageTo(chatId, text) {
   }
 }
 
-// ==================== ОТПРАВКА ГОЛОСОВОГО ====================
-async function sendVoiceTo(chatId, blob, durationMs) {
+async function sendVoiceTo(chatId, blob, durationMs, mime) {
   const user = getCurrentUser();
   if (!user) return;
 
@@ -476,10 +479,16 @@ async function sendVoiceTo(chatId, blob, durationMs) {
     return;
   }
 
+  // Определяем расширение по mime
+  const ext = (mime && mime.includes("ogg")) ? "ogg"
+            : (mime && mime.includes("webm")) ? "webm"
+            : (mime && mime.includes("mp4")) ? "m4a"
+            : "webm";
+
   let url;
   try {
     const { uploadMedia } = await import("../contracts/contracts-upload.js");
-    const file = new File([blob], "voice-" + Date.now() + ".webm", { type: blob.type || "audio/webm" });
+    const file = new File([blob], "voice-" + Date.now() + "." + ext, { type: mime || "audio/webm" });
     const media = await uploadMedia(file, chatId, user.login, "🎤 Голосовое", "voice");
     url = media.url || media.vk_link;
     if (!url) throw new Error("Пустая ссылка на голосовое");
@@ -518,7 +527,6 @@ async function sendVoiceTo(chatId, blob, durationMs) {
   }
 }
 
-// ==================== ВВОД ====================
 function setupInputForChat(chatId) {
   const cfg = CHATS[chatId];
   if (!cfg) return;
@@ -550,7 +558,7 @@ function setupInputForChat(chatId) {
     try {
       setTyping(true);
       clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => setTyping(false), 2000);
+      typingTimeout = setTimeout(() => setTyping(false), 3000);
     } catch (e) {}
   });
 
@@ -578,17 +586,14 @@ function setupInputForChat(chatId) {
     });
   }
 
-  // Голосовые
   import("./chat-voice-ui.js")
     .then(m => m.setupVoiceForChat(chatId, sendVoiceTo))
     .catch(err => console.warn("Voice UI init failed:", err));
 
-  // Файлы
   import("./chat-files.js")
     .then(m => m.setupFileButton(chatId, () => {}))
     .catch(err => console.warn("File btn init failed:", err));
 
-  // Опросы
   import("./chat-polls.js")
     .then(m => m.setupPollButton(chatId, () => {}))
     .catch(err => console.warn("Poll btn init failed:", err));
@@ -684,7 +689,6 @@ function initThemeForChat(chatId) {
   });
 }
 
-// ==================== ХЕЛПЕРЫ ====================
 function formatDuration(ms) {
   const total = Math.floor(ms / 1000);
   const m = Math.floor(total / 60);
