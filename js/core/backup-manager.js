@@ -11,7 +11,8 @@ import { toast } from "./utils.js";
 const BACKUP_COLLECTION = "backups";
 const KEEP_DAYS = 7;
 
-const BACKUP_COLLECTIONS = [
+// ✅ FIX: экспортируем — используется в backup.js
+export const BACKUP_COLLECTIONS = [
   "users",
   "roles",
   "divisions",
@@ -23,9 +24,12 @@ const BACKUP_COLLECTIONS = [
   "allies",
   "rules",
   "captas",
+  "accolades",
   "premiums",
   "warehouse",
   "registration_requests",
+  "applications",
+  "applications_nicks",
   "admin_logs"
 ];
 
