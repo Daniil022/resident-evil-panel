@@ -1,37 +1,38 @@
 // js/modules/gestion.js
+// Обратная совместимость: реэкспорт из utils.js + права.
+
 import { getCurrentUser } from "../core/state.js";
 import { toast } from "../core/utils.js";
+import { can, canAny, canAll } from "../core/permissions.js";
+
+// ✅ Реэкспорт хелперов — старые импорты продолжат работать
+export { escapeHtml, escapeAttr, hexRgba, formatDate, formatTime, formatRelative, sameDay } from "../core/utils.js";
 
 const ADMIN_ROLES = ["emperor", "lord"];
 
+/**
+ * Проверка: может ли текущий юзер редактировать (по правам).
+ */
 export function canEdit() {
   const me = getCurrentUser();
-  return me && ADMIN_ROLES.includes(me.role);
+  if (!me) return false;
+
+  // Если у роли есть явные права — используем can()
+  if (typeof can === "function") {
+    // Проверяем несколько ключевых прав редактирования
+    if (can("admin.users") || can("admin.roles") || can("admin.divisions")) return true;
+  }
+
+  // Fallback — старые роли
+  return ADMIN_ROLES.includes(me.role);
 }
 
 export function requireEdit() {
   if (!canEdit()) {
-    toast("Только Император и Лорд Тьмы могут редактировать", "warn");
+    toast("Недостаточно прав для редактирования", "warn");
     return false;
   }
   return true;
 }
 
-export function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-}
-
-export function hexRgba(hex, alpha) {
-  const c = hex.replace("#", "");
-  const r = parseInt(c.substring(0,2), 16);
-  const g = parseInt(c.substring(2,4), 16);
-  const b = parseInt(c.substring(4,6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-export function formatDate(ts) {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
-}
+export { can, canAny, canAll };
