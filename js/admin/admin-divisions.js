@@ -5,6 +5,8 @@ import {
 import { clearDivisionFromUsers } from "../core/auth.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 import { preloadColorData, applyColorsToDOM } from "../core/colorize.js";
+import { getCurrentUser } from "../core/state.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 
 let editingDivId = null;
 
@@ -30,9 +32,15 @@ async function renderDivisionsList() {
 
   container.innerHTML = divisions.map((d, idx) => {
     // Считаем права
-    let permsLabel = "—";
-    if (d.permissions === "*") permsLabel = "ВСЕ";
-    else if (Array.isArray(d.permissions) && d.permissions.length > 0) permsLabel = d.permissions.length + " шт.";
+    let permsLabel = "по умолчанию";
+    let permsColor = "var(--muted)";
+    if (d.permissions === "*") {
+      permsLabel = "ВСЕ";
+      permsColor = "var(--gold)";
+    } else if (Array.isArray(d.permissions)) {
+      permsLabel = d.permissions.length + " шт.";
+      permsColor = "var(--cyan)";
+    }
 
     return `
     <div class="role-row" data-division-id="${d.id}">
@@ -40,7 +48,7 @@ async function renderDivisionsList() {
       <div class="role-info">
         <div class="name">${escapeHtml(d.name)}</div>
         <div class="desc">${escapeHtml(d.desc || "Без описания")}</div>
-        <div class="desc" style="font-size:10.5px;color:var(--cyan);">🔐 Права: ${permsLabel}</div>
+        <div class="desc" style="font-size:10.5px;color:${permsColor};">🔐 Права: ${permsLabel}</div>
       </div>
       <div class="role-actions">
         <button onclick="window.__divMove('${d.id}','up')" ${idx === 0 ? "disabled" : ""} title="Вверх">⬆</button>
@@ -61,7 +69,8 @@ window.__divPermissions = async function(divId) {
   if (!div) return;
 
   const { openPermissionsEditor } = await import("./admin-permissions.js");
-  openPermissionsEditor("division", divId, div.name, div.permissions || null);
+  const perms = ("permissions" in div) ? div.permissions : null;
+  openPermissionsEditor("division", divId, div.name, perms);
 };
 
 // ==================== СОЗДАНИЕ ====================
@@ -158,13 +167,17 @@ async function saveDivision() {
   const err = document.getElementById("divError");
   err.style.display = "none";
 
+  const me = getCurrentUser();
+
   try {
     if (editingDivId) {
       await updateDivision(editingDivId, { name, color, desc });
       toast("Подразделение обновлено", "ok");
+      addDashEvent("🎯", `${me?.login || "—"} обновил отряд «${name}»`, { type: "user" }).catch(() => {});
     } else {
       await createDivision({ name, color, desc });
       toast("Подразделение создано", "ok");
+      addDashEvent("🎯", `${me?.login || "—"} создал отряд «${name}»`, { type: "user" }).catch(() => {});
     }
     await preloadColorData();
     applyColorsToDOM();
@@ -190,6 +203,9 @@ window.__divDelete = async function(divId) {
     await preloadColorData();
     applyColorsToDOM();
     await renderDivisionsList();
+
+    const me = getCurrentUser();
+    addDashEvent("🗑", `${me?.login || "—"} удалил отряд «${div.name}»`, { type: "user" }).catch(() => {});
   } catch (e) {
     toast(e.message, "warn");
   }
