@@ -9,7 +9,7 @@ import { renderMessage, renderDateSeparator, isSameDay } from "./chat-render.js"
 import { setTyping, destroyPresence, setupPresence } from "./chat-presence.js";
 import { toggleReaction } from "./chat-reactions.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
-import { addDashEvent } from "../../core/dashboard.js";
+import { addDashEvent } from "../../core/dashboard-events.js";
 import { isMuted, getMuteRemaining } from "../../core/punishments.js";
 import {
   notifyNewMessage,
@@ -165,6 +165,7 @@ function initOneChat(chatId) {
         msg.chatId = chatId;
 
         const msgEl = renderMessage(msg, grouped, {
+          chatId,
           onReply: (m) => setReplyToChat(chatId, m),
           onReact: (id, emoji) => toggleReaction(id, emoji, chatId),
           onEdit: (m) => openEditModal(m, chatId),
@@ -454,7 +455,11 @@ async function sendMessageTo(chatId, text) {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
     markChatAsRead(chatId);
-    addDashEvent("💬", user.login + ": " + text.substring(0, 40));
+
+    // ✅ Записываем в ленту событий
+    const chatLabel = chatId === "allies" ? "Союз-чат" : "Чат";
+    addDashEvent("💬", user.login + " (" + chatLabel + "): " + text.substring(0, 60), { type: "chat" })
+      .catch(() => {});
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
   }
@@ -514,7 +519,8 @@ async function sendVoiceTo(chatId, blob, durationMs, mime) {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
     markChatAsRead(chatId);
-    addDashEvent("🎤", user.login + ": голосовое " + Math.round(durationMs / 1000) + "с");
+    addDashEvent("🎤", user.login + ": голосовое " + Math.round(durationMs / 1000) + "с", { type: "chat" })
+      .catch(() => {});
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
   }
