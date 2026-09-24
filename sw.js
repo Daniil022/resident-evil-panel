@@ -1,7 +1,9 @@
 // sw.js — Service Worker для PWA
 // Кэширует статику, работает офлайн, обновляется автоматически.
 
-const CACHE_NAME = "re-panel-v1";
+// ✅ Меняй версию при каждом деплое, чтобы сбросить старый кэш
+const CACHE_NAME = "re-panel-v2";
+
 const OFFLINE_URLS = [
   "/",
   "/index.html",
