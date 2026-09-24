@@ -17,7 +17,7 @@
 .contract-progress {
   background: linear-gradient(135deg, var(--panel), var(--panel-2));
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--accent, #00c8d4);
   border-radius: var(--radius);
   padding: 20px 24px;
   margin-bottom: 24px;
@@ -39,7 +39,7 @@
 }
 
 .contract-progress-sub {
-  color: var(--accent);
+  color: var(--accent, #00c8d4);
   font-size: 12px;
   margin-top: 2px;
 }
