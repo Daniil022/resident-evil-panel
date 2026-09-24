@@ -79,7 +79,7 @@ function renderTabs() {
     const count = tracks.filter(t => t.albumId === a.id).length;
     html += '<button class="music-tab ' + (currentAlbumId === a.id ? "active" : "") + '" onclick="window.__musicTab(\'' + a.id + '\')">' +
       a.name + ' (' + count + ')' +
-      (editable ? '<span class="tab-del" onclick="event.stopPropagation();window.__albumDelete(\'' + a.id + '\')">X</span>' : '') +
+      (editable ? '<span class="tab-del" onclick="event.stopPropagation();window.__musicAlbumDelete(\'' + a.id + '\')">X</span>' : '') +
       '</button>';
   });
 
@@ -100,7 +100,7 @@ function renderTracks() {
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="contracts-empty" style="grid-column:1/-1;">' +
-      '<div class="contracts-empty-icon">Ноты</div>' +
+      '<div class="contracts-empty-icon">♪</div>' +
       '<div class="contracts-empty-text">Треков пока нет</div>' +
       '<div class="contracts-empty-sub">Лидер или зам может добавить первый трек</div>' +
       '</div>';
@@ -333,7 +333,8 @@ async function saveAlbum() {
   closeModal();
 }
 
-window.__albumDelete = async function(id) {
+// ✅ FIX: переименовано с __albumDelete, чтобы не конфликтовать с album.js
+window.__musicAlbumDelete = async function(id) {
   if (!requireEdit()) return;
   if (!confirm("Удалить альбом? Треки останутся без альбома.")) return;
 
