@@ -7,9 +7,10 @@ import { getRoleColor, getRoleName, getDivisionColor, getDivisionName }
   from "../core/colorize.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 import { raf } from "../core/perf.js";
+import { getCurrentUser } from "../core/state.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 import {
-  setupUsersToolbar, applyFilters, getFilterState,
-  updateBulkRow, toggleSort
+  setupUsersToolbar, applyFilters, updateBulkRow
 } from "./admin-users-toolbar.js";
 import {
   bulkWarn, bulkUnwarn, bulkChangeDivision, bulkDelete, bulkExport
@@ -216,6 +217,10 @@ window.__adminChangePin = async function(uid) {
     await changePin(uid, newPin);
     toast("PIN обновлён", "ok");
     addAdminLog("Смена PIN у " + u.login, "ok", { target: u.uid, targetLogin: u.login });
+
+    const me = getCurrentUser();
+    addDashEvent("🔑", `${me?.login || "—"} сменил PIN у ${u.login}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -234,6 +239,10 @@ window.__adminChangeRole = async function(uid) {
     await changeRole(uid, roles[idx].id);
     toast("Роль изменена", "ok");
     addAdminLog("Смена роли " + u.login + " → " + roles[idx].name, "ok", { target: u.uid, targetLogin: u.login, type: "role" });
+
+    const me = getCurrentUser();
+    addDashEvent("🎖", `${me?.login || "—"} сменил роль ${u.login} → ${roles[idx].name}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -254,6 +263,11 @@ window.__adminChangeDivision = async function(uid) {
     await changeDivision(uid, division);
     toast("Подразделение обновлено", "ok");
     addAdminLog("Смена отряда " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "division" });
+
+    const me = getCurrentUser();
+    const divName = division ? divisions[idx - 1].name : "без отряда";
+    addDashEvent("🎯", `${me?.login || "—"} сменил отряд ${u.login} → ${divName}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -270,6 +284,13 @@ window.__adminWarn = async function(uid) {
     const res = await warnUser(uid, reason.trim());
     toast(res.banned ? `${u.login} ЗАБАНЕН` : `Warn (${res.warn}/3)`, "warn");
     addAdminLog("Warn " + u.login + ": " + reason, "warn", { target: u.uid, targetLogin: u.login, type: "warn" });
+
+    const me = getCurrentUser();
+    addDashEvent("⚠", `${me?.login || "—"} выдал warn ${u.login}${reason ? ": " + reason : ""}`, { type: "user" }).catch(() => {});
+    if (res.banned) {
+      addDashEvent("🔒", `${u.login} автоматически забанен (3/3)`, { type: "user" }).catch(() => {});
+    }
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -283,6 +304,10 @@ window.__adminUnwarn = async function(uid) {
     const res = await unwarnUser(uid);
     toast(`Warn снят (${res.warn}/3)`, "ok");
     addAdminLog("Снятие warn у " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unwarn" });
+
+    const me = getCurrentUser();
+    addDashEvent("↻", `${me?.login || "—"} снял warn с ${u.login}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -296,6 +321,10 @@ window.__adminDelete = async function(uid) {
     addAdminLog("Удаление " + u.login, "crit", { target: u.uid, targetLogin: u.login, type: "delete" });
     await deleteUser(uid);
     toast(`${u.login} удалён`, "ok");
+
+    const me = getCurrentUser();
+    addDashEvent("🗑", `${me?.login || "—"} удалил аккаунт ${u.login}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -331,6 +360,10 @@ window.__adminMute = async function(uid) {
         await muteUser(uid, duration, reason);
         toast(u.login + " замучен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
         addAdminLog("Мут " + u.login + ": " + reason, "warn", { target: u.uid, targetLogin: u.login, type: "mute" });
+
+        const me = getCurrentUser();
+        addDashEvent("🔇", `${me?.login || "—"} замутил ${u.login}${reason ? ": " + reason : ""}`, { type: "user" }).catch(() => {});
+
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -348,6 +381,10 @@ window.__adminUnmute = async function(uid) {
     await unmuteUser(uid, "Ручное снятие");
     toast("Мут снят", "ok");
     addAdminLog("Снятие мута " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unmute" });
+
+    const me = getCurrentUser();
+    addDashEvent("🔊", `${me?.login || "—"} снял мут с ${u.login}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
@@ -385,6 +422,10 @@ window.__adminBan = async function(uid) {
         await banUser(uid, duration, reason);
         toast(u.login + " забанен" + (duration ? " на " + formatDuration(duration) : " навсегда"), "warn");
         addAdminLog("Бан " + u.login + ": " + reason, "crit", { target: u.uid, targetLogin: u.login, type: "ban" });
+
+        const me = getCurrentUser();
+        addDashEvent("🔒", `${me?.login || "—"} забанил ${u.login}${reason ? ": " + reason : ""}`, { type: "user" }).catch(() => {});
+
         await renderUsersTable(true);
         closeModal();
       } catch (e) { toast(e.message, "warn"); }
@@ -402,6 +443,10 @@ window.__adminUnban = async function(uid) {
     await unbanUser(uid, "Ручной разбан");
     toast(u.login + " разбанен", "ok");
     addAdminLog("Разбан " + u.login, "ok", { target: u.uid, targetLogin: u.login, type: "unban" });
+
+    const me = getCurrentUser();
+    addDashEvent("🔓", `${me?.login || "—"} разбанил ${u.login}`, { type: "user" }).catch(() => {});
+
     await renderUsersTable(true);
   } catch (e) { toast(e.message, "warn"); }
 };
