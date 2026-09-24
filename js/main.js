@@ -195,8 +195,9 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
+  // ✅ Автобэкап только для админов
   if (isAdminRole) {
-    startAutoBackupTimer(6 * 60 * 60 * 1000);
+    startAutoBackupTimer(6 * 60 * 60 * 1000); // каждые 6 часов
   }
 
   const inited = {
@@ -265,8 +266,19 @@ function applyRoleVisibility(isAlly) {
   });
 }
 
+// ✅ Унифицированная очистка при выгрузке страницы
 window.addEventListener("beforeunload", () => {
-  try { destroyChat(); } catch (e) {}
-  try { destroyReadSubs(); } catch (e) {}
-  try { destroyContracts(); } catch (e) {}
+  const cleanups = [
+    ["Chat", () => destroyChat()],
+    ["ReadSubs", () => destroyReadSubs()],
+    ["Contracts", () => destroyContracts()],
+    ["Presence", async () => {
+      const { destroyPresence } = await import("./modules/chat/chat-presence.js");
+      destroyPresence();
+    }]
+  ];
+
+  cleanups.forEach(([name, fn]) => {
+    try { fn(); } catch (e) { console.warn(`[Cleanup ${name}]`, e); }
+  });
 });
