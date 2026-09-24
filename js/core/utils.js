@@ -1,6 +1,8 @@
 // js/core/utils.js
-// Хелперы: toast, лог, форматирование, модалка, safeFirestore
+// Унифицированные хелперы: toast, лог, форматирование, модалка, safeFirestore,
+// escapeHtml, escapeAttr, hexRgba, formatDate, formatTime.
 
+// ==================== TOAST ====================
 export function toast(message, type = "info", duration = 3000) {
   const el = document.createElement("div");
   el.className = "toast" + (type === "ok" ? " ok" : type === "warn" ? " warn" : "");
@@ -14,6 +16,7 @@ export function toast(message, type = "info", duration = 3000) {
   }, duration);
 }
 
+// ==================== ЛОГ (в контейнер) ====================
 export function addLog(containerId, message, type = "info") {
   const log = document.getElementById(containerId);
   if (!log) return;
@@ -31,11 +34,31 @@ export function addLog(containerId, message, type = "info") {
   log.scrollTop = log.scrollHeight;
 }
 
+// ==================== ESCAPE ====================
 export function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+export function escapeAttr(s) {
+  return String(s == null ? "" : s)
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// ==================== ЦВЕТ ====================
+export function hexRgba(hex, alpha = 1) {
+  if (!hex || hex === "rainbow") return "rgba(255,255,255," + alpha + ")";
+  const c = String(hex).replace("#", "");
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ==================== ДАТА / ВРЕМЯ ====================
 export function formatTime(ts) {
   if (!ts) return "--:--";
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -43,13 +66,30 @@ export function formatTime(ts) {
          String(d.getMinutes()).padStart(2, "0");
 }
 
-export function formatDate(d) {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (sameDay(d, today)) return "Сегодня";
-  if (sameDay(d, yesterday)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+/**
+ * formatDate — две сигнатуры:
+ *   formatDate(ts)         → "15 мар 2025"
+ *   formatDate(ts, "short") → "15 мар"
+ *   formatDate(ts, "feed")  → "Сегодня" / "Вчера" / "15 мар"
+ */
+export function formatDate(ts, mode = "default") {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+
+  if (mode === "feed") {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (sameDay(d, today)) return "Сегодня";
+    if (sameDay(d, yesterday)) return "Вчера";
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  }
+
+  if (mode === "short") {
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  }
+
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function sameDay(a, b) {
@@ -58,15 +98,24 @@ export function sameDay(a, b) {
          a.getDate() === b.getDate();
 }
 
+/**
+ * Относительное время — «только что», «5 мин назад», «2 ч назад», «15 мар».
+ */
+export function formatRelative(ts) {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = Date.now();
+  const diff = now - d.getTime();
+
+  if (diff < 60 * 1000) return "только что";
+  if (diff < 60 * 60 * 1000) return Math.floor(diff / 60000) + " мин назад";
+  if (diff < 24 * 60 * 60 * 1000) return Math.floor(diff / 3600000) + " ч назад";
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
+
 // ==================== SAFE FIRESTORE ====================
 /**
  * Обёртка над Firestore-запросом с таймаутом.
- * Если Firestore не отвечает за N мс — возвращает fallback.
- *
- * @param {Promise} promise — промис Firestore (getDocs, addDoc и т.п.)
- * @param {any} fallback — что вернуть при ошибке/таймауте
- * @param {number} timeoutMs — таймаут в мс (по умолчанию 5000)
- * @param {string} label — метка для логов
  */
 export async function safeFirestore(promise, fallback = null, timeoutMs = 5000, label = "") {
   try {
@@ -105,7 +154,6 @@ export function initGlobalErrorHandler() {
     }
   });
 
-  // Проверка онлайна
   window.addEventListener("offline", () => {
     toast("Нет интернета. Панель работает в демо-режиме.", "warn", 5000);
   });
@@ -146,7 +194,6 @@ export function openModal(config) {
   confirmBtn.textContent = config.confirmText || "ПОДТВЕРДИТЬ";
   confirmBtn.className = "btn" + (config.danger ? " danger" : "");
 
-  // ✅ Скрыть кнопку подтверждения, если hideConfirm
   if (config.hideConfirm) {
     confirmBtn.style.display = "none";
   } else {
