@@ -3,14 +3,16 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
+import { openModal, closeModal, toast, escapeHtml, formatDate } from "../core/utils.js";
 import { uploadMedia } from "./contracts/contracts-upload.js";
-import { canEdit, requireEdit, escapeHtml, formatDate } from "./gestion.js";
+import { canEdit, requireEdit } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { openLightbox } from "./album-lightbox.js";
 import { setupAlbumUpload, setupBulkUploadButton } from "./album-upload.js";
 import { setupAlbumSort } from "./album-sort.js";
 import { compressImage } from "../core/image-compress.js";
+
+// ... остальной код без изменений
 
 const DEMO_ALBUMS_KEY = "re_demo_albums_v2";
 const DEMO_PHOTOS_KEY = "re_demo_album_photos_v2";
