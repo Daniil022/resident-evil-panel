@@ -3,6 +3,7 @@ import { getCurrentUser } from "./state.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName } from "./colorize.js";
 import { db } from "../firebase-init.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { addDashEvent, loadDashEvents } from "./dashboard-events.js";
 
 let clockInterval = null;
 
@@ -40,20 +41,25 @@ export async function initDashboard() {
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
 
-  loadRealStats();
+  await loadRealStats();
+  await loadFeed();
 }
 
+// ==================== СТАТИСТИКА ====================
 async function loadRealStats() {
+  // ✅ Кэш на 5 минут (было 1 минута)
   const lastLoad = window.__lastStatsLoad || 0;
-  if (Date.now() - lastLoad < 60000) return;
+  if (Date.now() - lastLoad < 300000) return;
   window.__lastStatsLoad = Date.now();
 
   try {
-    const [usersRes, presenceRes, contractsRes, alliesRes] = await Promise.all([
+    const [usersRes, presenceRes, contractsRes, alliesRes, resMsgs, alliesMsgs] = await Promise.all([
       getDocs(collection(db, "users")).catch(() => null),
       getDocs(collection(db, "presence")).catch(() => null),
       getDocs(collection(db, "contracts")).catch(() => null),
-      getDocs(collection(db, "allies")).catch(() => null)
+      getDocs(collection(db, "allies")).catch(() => null),
+      getDocs(collection(db, "chats", "residents", "messages")).catch(() => null),
+      getDocs(collection(db, "chats", "allies", "messages")).catch(() => null)
     ]);
 
     setCounter("dashMembers", usersRes ? usersRes.size : 0);
@@ -82,10 +88,9 @@ async function loadRealStats() {
     }
     setCounter("dashWars", wars);
 
-    // Новости считаем из captas
-    getDocs(collection(db, "captas"))
-      .then(snap => setCounter("dashMessages", snap.size))
-      .catch(() => setCounter("dashMessages", 0));
+    // ✅ FIX: реальные сообщения из обоих чатов
+    const totalMessages = (resMsgs?.size || 0) + (alliesMsgs?.size || 0);
+    setCounter("dashMessages", totalMessages);
 
   } catch (e) {
     console.warn("Stats load failed, demo mode");
@@ -98,7 +103,7 @@ function loadDemoStats() {
     const demoUsers = JSON.parse(localStorage.getItem("re_panel_demo_users") || "[]");
     setCounter("dashMembers", demoUsers.length);
 
-    const demoContracts = JSON.parse(localStorage.getItem("re_demo_contracts") || "[]");
+    const demoContracts = JSON.parse(localStorage.getItem("re_demo_contracts_v2") || "[]");
     setCounter("dashContracts", demoContracts.length);
     const treasury = demoContracts
       .filter(c => c.status === "approved")
@@ -108,8 +113,7 @@ function loadDemoStats() {
     const demoAllies = JSON.parse(localStorage.getItem("re_demo_allies") || "[]");
     setCounter("dashWars", demoAllies.filter(a => a.status === "war").length);
 
-    const demoNews = JSON.parse(localStorage.getItem("re_demo_captas") || "[]");
-    setCounter("dashMessages", demoNews.length);
+    setCounter("dashMessages", 0);
   } catch (e) {}
 }
 
@@ -118,6 +122,7 @@ function setCounter(id, value) {
   if (el) el.textContent = value;
 }
 
+// ==================== ЧАСЫ ====================
 function updateClock() {
   const el = document.getElementById("dashClock");
   if (!el) return;
@@ -128,19 +133,73 @@ function updateClock() {
     String(d.getSeconds()).padStart(2, "0");
 }
 
-export function addDashEvent(icon, text) {
+// ==================== ЛЕНТА СОБЫТИЙ ====================
+async function loadFeed() {
   const feed = document.getElementById("dashFeed");
   if (!feed) return;
-  const placeholder = feed.querySelector(".dash-event[style*='opacity']");
-  if (placeholder) feed.innerHTML = "";
-  const now = new Date();
-  const time = String(now.getHours()).padStart(2, "0") + ":" +
-               String(now.getMinutes()).padStart(2, "0");
-  const event = document.createElement("div");
-  event.className = "dash-event";
-  event.innerHTML = '<span class="dash-event-icon">' + icon + '</span>' +
-    '<span class="dash-event-time">' + time + '</span>' +
-    '<span class="dash-event-text">' + text + '</span>';
-  feed.insertBefore(event, feed.firstChild);
-  while (feed.children.length > 30) feed.removeChild(feed.lastChild);
+
+  feed.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';
+
+  let events = [];
+  try {
+    events = await loadDashEvents(30);
+  } catch (e) {
+    events = [];
+  }
+
+  if (events.length === 0) {
+    feed.innerHTML = '<div class="dash-event" style="opacity: 0.5;">' +
+      '<span class="dash-event-icon">⏳</span>' +
+      '<span class="dash-event-time">—</span>' +
+      '<span class="dash-event-text">Событий пока нет</span>' +
+      '</div>';
+    return;
+  }
+
+  feed.innerHTML = events.map(ev => {
+    const time = formatEventTime(ev.at);
+    return '<div class="dash-event">' +
+      '<span class="dash-event-icon">' + (ev.icon || "•") + '</span>' +
+      '<span class="dash-event-time">' + time + '</span>' +
+      '<span class="dash-event-text">' + escapeHtml(ev.text || "") + '</span>' +
+      '</div>';
+  }).join("");
 }
+
+function formatEventTime(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+
+  if (diff < 60 * 1000) return "только что";
+  if (diff < 60 * 60 * 1000) return Math.floor(diff / 60000) + " мин назад";
+
+  const sameDay = d.getFullYear() === now.getFullYear() &&
+                  d.getMonth() === now.getMonth() &&
+                  d.getDate() === now.getDate();
+
+  if (sameDay) {
+    return String(d.getHours()).padStart(2, "0") + ":" +
+           String(d.getMinutes()).padStart(2, "0");
+  }
+
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + " " +
+         String(d.getHours()).padStart(2, "0") + ":" +
+         String(d.getMinutes()).padStart(2, "0");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ==================== ЭКСПОРТ ДЛЯ ДРУГИХ МОДУЛЕЙ ====================
+export { addDashEvent };
+
+// Обновить ленту при переключении на дашборд
+window.addEventListener("tabChange", (e) => {
+  if (e.detail.tab === "dashboard") {
+    loadFeed().catch(() => {});
+  }
+});
