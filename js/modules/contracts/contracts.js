@@ -5,7 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getCurrentUser } from "../../core/state.js";
 import { listUsers, incrementContracts } from "../../core/auth.js";
-import { toast, openModal, closeModal } from "../../core/utils.js";
+import { toast, openModal, closeModal, escapeHtml, formatDate } from "../../core/utils.js";
 import { playSound } from "../../core/sounds.js";
 import { addDashEvent } from "../../core/dashboard-events.js";
 import { uploadMedia } from "./contracts-upload.js";
@@ -251,7 +251,7 @@ function renderCard(c, users, me) {
     '<div class="stat">' + escapeHtml(c.description || "Без описания") + '</div>' +
     '<div class="contract-meta">' +
       '<span>👤 Автор: <b>' + escapeHtml(author ? author.login : "—") + '</b></span>' +
-      '<span>📅 ' + formatDate(c.createdAt) + '</span>' +
+      '<span>📅 ' + formatDate(c.createdAt, "short") + '</span>' +
     '</div>' +
     (c.submittedBy ? '<div class="contract-meta" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">' +
       '<span>📤 Сдал: <b>' + escapeHtml(c.submittedBy.login) + '</b></span>' +
@@ -272,17 +272,6 @@ function renderCard(c, users, me) {
       '<button class="btn small danger" onclick="window.__contractDelete(\'' + c.id + '\')">🗑 Удалить</button>' +
     '</div>' : '') +
   '</div>';
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function formatDate(ts) {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 }
 
 // ==================== СОЗДАНИЕ ====================
