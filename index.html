@@ -2,19 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LIVE RUSSIA // Панель семьи RESIDENT EVIL</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,10 90,85 10,85' fill='%2300c8d4'/></svg>">
-
-<!-- ==================== PWA ==================== -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#00c8d4">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="RESIDENT EVIL">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="RESIDENT EVIL">
 
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
@@ -29,7 +19,6 @@
 <link rel="stylesheet" href="css/album.css">
 <link rel="stylesheet" href="css/profile.css">
 <link rel="stylesheet" href="css/modal.css">
-<link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
 
@@ -348,6 +337,7 @@
       <div class="grid admin-sections" id="adminSectionsGrid"></div>
     </div>
 
+    <!-- РАЗДЕЛ: ЛОГИ СЕМЬИ -->
     <div class="admin-section-view" data-section-view="logs" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -366,6 +356,7 @@
       </div>
     </div>
 
+    <!-- РАЗДЕЛ: РЕЗЕРВНАЯ КОПИЯ -->
     <div class="admin-section-view" data-section-view="backup" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -405,6 +396,7 @@
       </div>
     </div>
 
+    <!-- РАЗДЕЛ: ОБЛАЧНЫЕ БЭКАПЫ -->
     <div class="admin-section-view" data-section-view="cloud" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -419,6 +411,7 @@
       </div>
     </div>
 
+    <!-- РАЗДЕЛ: УПРАВЛЕНИЕ УЧАСТНИКАМИ -->
     <div class="admin-section-view" data-section-view="users" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -427,6 +420,7 @@
       <div class="grid" id="adminUsersGrid"></div>
     </div>
 
+    <!-- РАЗДЕЛ: РЕДАКТОР РОЛЕЙ -->
     <div class="admin-section-view" data-section-view="roles" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -439,6 +433,7 @@
       <div class="roles-list" id="rolesList"></div>
     </div>
 
+    <!-- РАЗДЕЛ: РЕДАКТОР ПОДРАЗДЕЛЕНИЙ -->
     <div class="admin-section-view" data-section-view="divisions" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -451,6 +446,7 @@
       <div class="roles-list" id="divisionsList"></div>
     </div>
 
+    <!-- РАЗДЕЛ: РЕЕСТР УЧАСТНИКОВ -->
     <div class="admin-section-view" data-section-view="registry" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
@@ -475,6 +471,7 @@
       </div>
     </div>
 
+    <!-- РАЗДЕЛ: ПОЛНАЯ ИСТОРИЯ -->
     <div class="admin-section-view" data-section-view="history" style="display:none;">
       <div class="admin-section-head">
         <button class="btn secondary" onclick="window.__adminBack()">← Назад</button>
