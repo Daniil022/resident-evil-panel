@@ -10,6 +10,7 @@ import { setTyping, destroyPresence, setupPresence } from "./chat-presence.js";
 import { toggleReaction } from "./chat-reactions.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard.js";
+import { isMuted, getMuteRemaining } from "../../core/punishments.js";
 import {
   notifyNewMessage,
   resetUnread,
@@ -129,17 +130,10 @@ function initOneChat(chatId) {
   loadPinned(chatId);
 
   const msgsRef = collection(db, "chats", chatId, "messages");
-  const q = query(msgsRef, orderBy("createdAt", "asc"), limit(50));
+  const q = query(msgsRef, orderBy("createdAt", "asc"), limit(200));
 
   try {
     unsubscribers[chatId] = onSnapshot(q, (snapshot) => {
-      const snapshotIds = snapshot.docs.map(d => d.id).join(",");
-      if (snapshotIds === container.dataset.lastIds && currentMessages[chatId].length > 0) {
-        updateUnreadBadge(chatId, currentMessages[chatId]);
-        return;
-      }
-      container.dataset.lastIds = snapshotIds;
-
       container.innerHTML = "";
       let lastDate = null;
       let lastAuthor = null;
@@ -389,17 +383,14 @@ function updatePinBar(chatId, pinData) {
   };
 }
 
-// ==================== ПРОВЕРКА МУТА (БЕЗ ДИНАМИЧЕСКОГО ИМПОРТА) ====================
+// ==================== ПРОВЕРКА МУТА ====================
 async function checkMutedFresh(user) {
-  // Проверка из кэша сессии
-  const isMuted = user.muted && (!user.mutedUntil || Date.now() < user.mutedUntil);
-  if (isMuted) {
-    const left = user.mutedUntil ? Math.max(0, user.mutedUntil - Date.now()) : 0;
+  if (isMuted(user)) {
+    const left = getMuteRemaining(user);
     toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
     return true;
   }
 
-  // Перечитываем из Firestore (может быть рассинхрон)
   try {
     const snap = await getDoc(doc(db, "users", user.uid));
     if (!snap.exists()) return false;
@@ -416,9 +407,8 @@ async function checkMutedFresh(user) {
       };
       setCurrentUser(updated);
 
-      const stillMuted = updated.muted && (!updated.mutedUntil || Date.now() < updated.mutedUntil);
-      if (stillMuted) {
-        const left = updated.mutedUntil ? Math.max(0, updated.mutedUntil - Date.now()) : 0;
+      if (isMuted(updated)) {
+        const left = getMuteRemaining(updated);
         toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (updated.mutedReason ? ". Причина: " + updated.mutedReason : ""), "warn", 4000);
         return true;
       }
