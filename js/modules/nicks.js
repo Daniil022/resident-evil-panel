@@ -4,7 +4,7 @@ import { listRoles } from "../core/roles.js";
 import { listDivisions } from "../core/divisions.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName }
   from "../core/colorize.js";
-import { escapeHtml, hexRgba } from "./gestion.js";
+import { escapeHtml, hexRgba } from "../core/utils.js";
 
 // ==================== ИГРОВЫЕ НИКИ ====================
 export async function initNicks() {
