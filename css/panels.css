@@ -196,45 +196,6 @@ main {
   box-shadow: 0 0 10px rgba(0, 200, 212, 0.5);
 }
 
-/* ============ МУЗЫКА ============ */
-.music-player {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-  text-align: center;
-  max-width: 520px;
-}
-
-/* ============ АЛЬБОМ ============ */
-.album {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-}
-
-.photo {
-  aspect-ratio: 1/1;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.photo:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  transform: scale(1.02);
-  box-shadow: var(--shadow);
-}
-
 /* ============ ТАБЛИЦА ============ */
 .users-table {
   width: 100%;
