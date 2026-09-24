@@ -3,8 +3,8 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
-import { canEdit, requireEdit, escapeHtml, formatDate } from "./gestion.js";
+import { openModal, closeModal, toast, escapeHtml, formatDate } from "../core/utils.js";
+import { canEdit, requireEdit } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { addDashEvent } from "../core/dashboard-events.js";
 
@@ -82,7 +82,7 @@ function renderGrid() {
         <div class="stat">${escapeHtml(c.text)}</div>
         <div class="contract-meta">
           <span>👤 ${escapeHtml(c.authorLogin || "—")}</span>
-          <span>📅 ${formatDate(c.createdAt)}</span>
+          <span>📅 ${formatDate(c.createdAt, "short")}</span>
         </div>
         ${editable ? `
           <div style="display:flex;gap:6px;margin-top:12px;">
