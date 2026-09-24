@@ -91,9 +91,9 @@ async function savePoll(chatId, onSent) {
   if (!question) { err.textContent = "Введите вопрос"; err.style.display = "block"; return; }
   if (options.length < 2) { err.textContent = "Минимум 2 варианта"; err.style.display = "block"; return; }
 
-  // Проверка мута
-  const { isMuted } = await import("../../core/punishments.js");
-  if (isMuted(user)) {
+  // Проверка мута из кэша (без динамического импорта)
+  const isMuted = user.muted && (!user.mutedUntil || Date.now() < user.mutedUntil);
+  if (isMuted) {
     toast("Вы в муте", "warn");
     return;
   }
@@ -124,9 +124,6 @@ async function savePoll(chatId, onSent) {
   }
 }
 
-/**
- * Проголосовать в опросе.
- */
 export async function votePoll(chatId, msgId, optionId) {
   const user = getCurrentUser();
   if (!user) return;
@@ -150,11 +147,9 @@ export async function votePoll(chatId, msgId, optionId) {
       const idx = opt.votes.indexOf(user.uid);
 
       if (opt.id === optionId) {
-        // Клик по этому варианту — toggle
         if (idx >= 0) opt.votes.splice(idx, 1);
         else opt.votes.push(user.uid);
       } else if (!multi && idx >= 0) {
-        // Если не multi — убираем голос из других
         opt.votes.splice(idx, 1);
       }
     }
@@ -165,9 +160,6 @@ export async function votePoll(chatId, msgId, optionId) {
   }
 }
 
-/**
- * Закрыть опрос (только автор или админ).
- */
 export async function closePoll(chatId, msgId) {
   const user = getCurrentUser();
   if (!user) return;
