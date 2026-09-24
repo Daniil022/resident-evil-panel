@@ -3,8 +3,8 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
-import { canEdit, requireEdit, escapeHtml } from "./gestion.js";
+import { openModal, closeModal, toast, escapeHtml } from "../core/utils.js";
+import { canEdit, requireEdit } from "./gestion.js";
 
 const DEMO_KEY = "re_demo_rules";
 let rules = [];
@@ -131,6 +131,7 @@ window.__ruleEdit = function(id) {
   const r = rules.find(x => x.id === id);
   if (r) openRuleModal(r);
 };
+
 window.__ruleDelete = async function(id) {
   if (!requireEdit()) return;
   if (!confirm("Удалить правило?")) return;
