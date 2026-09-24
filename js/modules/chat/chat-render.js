@@ -1,8 +1,10 @@
 // js/modules/chat/chat-render.js
 import { getCurrentUser } from "../../core/state.js";
+import { escapeHtml, formatTime, sameDay, formatDate } from "../../core/utils.js";
 
 export function renderMessage(msg, grouped, handlers, currentUid) {
   const isOwn = msg.authorId === currentUid;
+  const chatId = handlers.chatId || msg.chatId || "residents";
 
   const wrap = document.createElement("div");
   wrap.className = "msg " + (isOwn ? "msg-own" : "msg-other");
@@ -73,7 +75,7 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   } else if (msg.type === "attachments" && msg.attachments) {
     body.appendChild(renderAttachments(msg));
   } else if (msg.type === "poll" && msg.poll) {
-    body.appendChild(renderPoll(msg, handlers));
+    body.appendChild(renderPoll(msg, handlers, chatId));
   } else {
     const text = document.createElement("div");
     text.className = "msg-text";
@@ -128,7 +130,6 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   actions.children[idx++].onclick = () => handlers.onDelete(msg);
 
   body.appendChild(actions);
-
   wrap.appendChild(body);
 
   if (!grouped && isOwn) {
@@ -285,7 +286,7 @@ function formatSize(bytes) {
 }
 
 // ==================== ОПРОСЫ ====================
-function renderPoll(msg, handlers) {
+function renderPoll(msg, handlers, chatId) {
   const wrap = document.createElement("div");
   wrap.className = "msg-poll";
 
@@ -318,11 +319,7 @@ function renderPoll(msg, handlers) {
 
     if (!poll.closed) {
       row.onclick = () => {
-        import("./chat-polls.js").then(m => m.votePoll(
-          msg.chatId || "residents",
-          msg.id,
-          opt.id
-        ));
+        import("./chat-polls.js").then(m => m.votePoll(chatId, msg.id, opt.id));
       };
     }
 
@@ -335,7 +332,6 @@ function renderPoll(msg, handlers) {
     '<span>Всего голосов: ' + total + '</span>' +
     (poll.multi ? '<span> · можно несколько</span>' : '');
 
-  // Кнопка закрытия для автора/админа
   const isAuthor = me && msg.authorId === me.uid;
   const isAdmin = me && ["emperor", "lord"].includes(me.role);
   if (!poll.closed && (isAuthor || isAdmin)) {
@@ -344,7 +340,7 @@ function renderPoll(msg, handlers) {
     closeBtn.textContent = "Закрыть опрос";
     closeBtn.onclick = (e) => {
       e.stopPropagation();
-      import("./chat-polls.js").then(m => m.closePoll(msg.chatId || "residents", msg.id));
+      import("./chat-polls.js").then(m => m.closePoll(chatId, msg.id));
     };
     footer.appendChild(closeBtn);
   }
@@ -386,14 +382,12 @@ function renderText(text) {
 export function renderDateSeparator(date) {
   const el = document.createElement("div");
   el.className = "chat-date-sep";
-  el.innerHTML = "<span>" + formatDate(date) + "</span>";
+  el.innerHTML = "<span>" + formatDate(date, "feed") + "</span>";
   return el;
 }
 
 export function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
+  return sameDay(a, b);
 }
 
 function quickReact(msgId, handlers) {
@@ -406,31 +400,10 @@ function quickReact(msgId, handlers) {
   }
 }
 
-function formatTime(ts) {
-  if (!ts) return "--:--";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return String(d.getHours()).padStart(2, "0") + ":" +
-         String(d.getMinutes()).padStart(2, "0");
-}
-
-function formatDate(d) {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (isSameDay(d, today)) return "Сегодня";
-  if (isSameDay(d, yesterday)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-}
-
 function roleToClass(role) {
   if (role === "emperor") return "gold";
   if (role === "lord") return "red";
   if (role === "knight" || role === "skeleton") return "blue";
   if (role === "ally") return "rainbow";
   return "";
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
