@@ -3,8 +3,8 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
-import { canEdit, requireEdit, escapeHtml } from "./gestion.js";
+import { openModal, closeModal, toast, escapeHtml } from "../core/utils.js";
+import { canEdit, requireEdit } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { uploadMedia } from "./contracts/contracts-upload.js";
 
@@ -333,7 +333,7 @@ async function saveAlbum() {
   closeModal();
 }
 
-// ✅ FIX: переименовано с __albumDelete, чтобы не конфликтовать с album.js
+// ✅ Переименовано с __albumDelete, чтобы не конфликтовать с album.js
 window.__musicAlbumDelete = async function(id) {
   if (!requireEdit()) return;
   if (!confirm("Удалить альбом? Треки останутся без альбома.")) return;
