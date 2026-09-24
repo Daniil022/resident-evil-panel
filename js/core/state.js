@@ -6,13 +6,13 @@ export function setCurrentUser(user) {
   currentUser = user;
   if (user) {
     localStorage.setItem(STATE_KEY, JSON.stringify({
-  uid: user.uid,
-  login: user.login,
-  role: user.role,
-  division: user.division,
-  avatar: user.avatar,
-  sessionAt: Date.now()
-}));
+      uid: user.uid,
+      login: user.login,
+      role: user.role,
+      division: user.division,
+      avatar: user.avatar,
+      sessionAt: Date.now()
+    }));
   } else {
     localStorage.removeItem(STATE_KEY);
   }
@@ -38,12 +38,13 @@ export function restoreSession() {
   }
 }
 
+// ✅ FIX: сравниваем с ID ролей, а не с русскими названиями
 export function isAdmin() {
-  return currentUser && ["Император", "Лорд Тьмы"].includes(currentUser.role);
+  return !!currentUser && ["emperor", "lord"].includes(currentUser.role);
 }
 
 export function isLeader() {
-  return currentUser && currentUser.role === "Император";
+  return !!currentUser && currentUser.role === "emperor";
 }
 
 export function clearSession() {
