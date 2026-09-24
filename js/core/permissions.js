@@ -1,6 +1,9 @@
 // js/core/permissions.js
 // Система прав: список прав + проверка у текущего юзера.
 
+import { getCurrentUser } from "./state.js";
+import { getRolePermissionsCache, getDivisionPermissionsCache } from "./permissions-cache.js";
+
 // ==================== РЕЕСТР ПРАВ ====================
 export const PERMISSIONS = {
   // Вкладки
@@ -60,19 +63,19 @@ export const PERMISSIONS = {
   "chat.delete_all": { group: "Чат", label: "Удалять чужие" },
 
   // ADMIN
-  "admin.users":     { group: "ADMIN", label: "Управление участниками" },
-  "admin.roles":     { group: "ADMIN", label: "Редактор ролей" },
-  "admin.divisions": { group: "ADMIN", label: "Редактор подразделений" },
-  "admin.registry":  { group: "ADMIN", label: "Реестр участников" },
-  "admin.logs":      { group: "ADMIN", label: "Логи" },
-  "admin.backups":   { group: "ADMIN", label: "Бэкапы" },
+  "admin.users":        { group: "ADMIN", label: "Управление участниками" },
+  "admin.roles":        { group: "ADMIN", label: "Редактор ролей" },
+  "admin.divisions":    { group: "ADMIN", label: "Редактор подразделений" },
+  "admin.registry":     { group: "ADMIN", label: "Реестр участников" },
+  "admin.logs":         { group: "ADMIN", label: "Логи" },
+  "admin.backups":      { group: "ADMIN", label: "Бэкапы" },
   "admin.applications": { group: "ADMIN", label: "Заявки" }
 };
 
 // ==================== ПРАВА ПО УМОЛЧАНИЮ ====================
-// Что даётся роли, если в Firestore пусто
+// Что даётся роли, если в Firestore нет field "permissions"
 export const DEFAULT_ROLE_PERMS = {
-  emperor: "*",  // всё
+  emperor: "*",
   lord: "*",
   knight: [
     "tab.dashboard", "tab.nicks", "tab.ranks", "tab.contracts",
@@ -106,9 +109,6 @@ export const DEFAULT_ROLE_PERMS = {
 };
 
 // ==================== ПРОВЕРКА ====================
-import { getCurrentUser } from "./state.js";
-import { getRolePermissionsCache, getDivisionPermissionsCache } from "./permissions-cache.js";
-
 /**
  * Проверяет, есть ли у текущего юзера право.
  * @param {string} perm — например "contracts.create"
@@ -119,15 +119,24 @@ export function can(perm) {
   if (!me) return false;
 
   // Собираем все права: от роли + от подразделения
-  const rolePerms = getRolePermissionsCache(me.role) || DEFAULT_ROLE_PERMS[me.role] || [];
-  const divPerms = me.division ? (getDivisionPermissionsCache(me.division) || []) : [];
+  const rolePerms = getRolePermissionsCache(me.role);
+  const divPerms = me.division ? getDivisionPermissionsCache(me.division) : null;
 
-  // Если хоть где-то "*" — разрешено всё
-  if (rolePerms === "*" || divPerms === "*") return true;
-  if (rolePerms.includes("*") || divPerms.includes("*")) return true;
+  // Если явно не задано в Firestore — используем DEFAULT_ROLE_PERMS
+  const effectiveRolePerms = rolePerms !== null && rolePerms !== undefined
+    ? rolePerms
+    : (DEFAULT_ROLE_PERMS[me.role] || []);
 
-  // Иначе — ищем конкретное право
-  return rolePerms.includes(perm) || divPerms.includes(perm);
+  // "*" — разрешено всё
+  if (effectiveRolePerms === "*" || divPerms === "*") return true;
+
+  // Массивы
+  const roleArr = Array.isArray(effectiveRolePerms) ? effectiveRolePerms : [];
+  const divArr = Array.isArray(divPerms) ? divPerms : [];
+
+  if (roleArr.includes("*") || divArr.includes("*")) return true;
+
+  return roleArr.includes(perm) || divArr.includes(perm);
 }
 
 /**
