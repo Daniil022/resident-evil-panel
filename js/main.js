@@ -2,12 +2,12 @@
 import { tryRestoreSession, login } from "./core/auth.js";
 import { submitRegistrationRequest } from "./modules/registration.js";
 import { initRouter } from "./core/router.js";
-import { toast } from "./core/utils.js";
+import { toast, initGlobalErrorHandler } from "./core/utils.js";
 import { initDashboard } from "./core/dashboard.js";
 import { initSounds } from "./core/sounds.js";
 import { setupSoundButton } from "./core/sounds-panel.js";
-import { initPWA } from "./core/pwa.js"; // ✅ НОВОЕ
-import { startAutoBackupTimer } from "./core/backup-manager.js"; // ✅ НОВОЕ
+import { initPWA } from "./core/pwa.js";
+import { startAutoBackupTimer } from "./core/backup-manager.js";
 import { initAdmin } from "./admin/admin-panel.js";
 import { initApplicationsPage } from "./modules/applications-page.js";
 import { initChat, destroyChat } from "./modules/chat/chat.js";
@@ -26,8 +26,11 @@ import { initOnline, renderOnline } from "./modules/online.js";
 import { preloadColorData, applyColorsToDOM, getRoleColor, getRoleName } from "./core/colorize.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ✅ Глобальная обработка ошибок
+  initGlobalErrorHandler();
+
   initSounds();
-  initPWA(); // ✅ НОВОЕ: регистрируем Service Worker
+  initPWA();
   setupAuthScreen();
   preloadColorData().catch(e => console.warn("Roles preload failed:", e));
   const session = tryRestoreSession();
@@ -192,9 +195,8 @@ function enterApp(user) {
   setupProfileClicks();
   if (user.avatar) updateDashAvatar(user);
 
-  // ✅ НОВОЕ: авто-бэкап только для админов
   if (isAdminRole) {
-    startAutoBackupTimer(6 * 60 * 60 * 1000); // каждые 6 часов
+    startAutoBackupTimer(6 * 60 * 60 * 1000);
   }
 
   const inited = {
