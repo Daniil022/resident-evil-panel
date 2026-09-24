@@ -5,19 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 import { getCurrentUser } from "../core/state.js";
-
-const COLLECTIONS = [
-  "users",
-  "roles",
-  "divisions",
-  "music_albums",
-  "captas",
-  "warehouse",
-  "allies",
-  "rules",
-  "accolades",
-  "album"
-];
+import { BACKUP_COLLECTIONS } from "../core/backup-manager.js";
 
 const ADMIN_ROLES = ["emperor", "lord"];
 
@@ -39,7 +27,7 @@ export async function downloadBackup() {
   };
 
   try {
-    for (const col of COLLECTIONS) {
+    for (const col of BACKUP_COLLECTIONS) {
       try {
         const snap = await getDocs(collection(db, col));
         backup.data[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -48,7 +36,6 @@ export async function downloadBackup() {
       }
     }
 
-    // Скачиваем файл
     const json = JSON.stringify(backup, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -139,7 +126,6 @@ async function restoreFromFile() {
 
       prog.textContent = "Обработка: " + col + " (" + records.length + ")...";
 
-      // Если стоит галочка "удалить существующее" — чистим коллекцию
       if (wipe) {
         try {
           const existing = await getDocs(collection(db, col));
@@ -152,7 +138,6 @@ async function restoreFromFile() {
         }
       }
 
-      // Загружаем записи
       for (const record of records) {
         if (!record.id) continue;
         const { id, ...data } = record;
