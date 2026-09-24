@@ -10,6 +10,7 @@ import { escapeHtml, formatDate } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { listUsers } from "../core/auth.js";
 import { playSound } from "../core/sounds.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 
 const DEMO_KEY = "re_demo_premiums";
 let premiums = [];
@@ -204,6 +205,7 @@ async function savePremium() {
   }
 
   playSound("contract");
+  addDashEvent("🏆", me.login + " выдал премию " + target.login + " — " + formatMoney(amount) + " ₽", { type: "premium" }).catch(() => {});
   toast("Премия выдана: " + target.login + " — " + formatMoney(amount) + " ₽", "ok");
 
   renderGrid();
@@ -226,5 +228,8 @@ window.__premiumDelete = async function(id) {
   premiums = premiums.filter(x => x.id !== id);
   saveDemoPremiums();
   renderGrid();
+
+  const me = getCurrentUser();
+  addDashEvent("🗑", (me?.login || "—") + " удалил премию: " + p.title, { type: "premium" }).catch(() => {});
   toast("Премия удалена", "ok");
 };
