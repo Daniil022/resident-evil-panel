@@ -6,6 +6,7 @@ import {
 import { openModal, closeModal, toast } from "../core/utils.js";
 import { canEdit, requireEdit, escapeHtml, formatDate } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 
 const DEMO_KEY = "re_demo_captas";
 let captas = [];
@@ -153,15 +154,18 @@ async function saveCapta(existing) {
     if (existing?.source === "firebase") {
       await updateDoc(doc(db, "captas", existing.id), data);
       Object.assign(existing, data);
+      addDashEvent("✏️", me.login + " отредактировал новость: " + title, { type: "news" }).catch(() => {});
     } else {
       const ref = await addDoc(collection(db, "captas"), data);
       captas.unshift({ id: ref.id, ...data, source: "firebase" });
+      addDashEvent("📢", me.login + " добавил новость: " + title, { type: "news" }).catch(() => {});
     }
     toast(existing ? "Новость обновлена" : "Новость создана", "ok");
   } catch (e) {
     if (existing) Object.assign(existing, data);
     else captas.unshift({ id: "demo-cp-" + Date.now(), ...data, source: "demo" });
     saveDemoCaptas();
+    addDashEvent(existing ? "✏️" : "📢", (me?.login || "—") + " " + (existing ? "обновил" : "добавил") + " новость: " + title, { type: "news" }).catch(() => {});
     toast("Готово (демо)", "ok");
   }
   renderGrid();
@@ -187,5 +191,8 @@ window.__captaDelete = async function(id) {
   captas = captas.filter(x => x.id !== id);
   saveDemoCaptas();
   renderGrid();
+
+  const me = getCurrentUser();
+  addDashEvent("🗑", (me?.login || "—") + " удалил новость: " + c.title, { type: "news" }).catch(() => {});
   toast("Новость удалена", "ok");
 };
