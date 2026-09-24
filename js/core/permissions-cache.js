@@ -16,7 +16,10 @@ export async function loadPermissionsCache() {
     rolePerms = {};
     rolesSnap.forEach(d => {
       const data = d.data();
-      rolePerms[d.id] = data.permissions || null;
+      // permissions может быть undefined / null / "*" / массив
+      if (data.permissions !== undefined) {
+        rolePerms[d.id] = data.permissions;
+      }
     });
   } catch (e) {
     console.warn("[Perms] roles failed:", e);
@@ -27,7 +30,9 @@ export async function loadPermissionsCache() {
     divPerms = {};
     divsSnap.forEach(d => {
       const data = d.data();
-      divPerms[d.id] = data.permissions || null;
+      if (data.permissions !== undefined) {
+        divPerms[d.id] = data.permissions;
+      }
     });
   } catch (e) {
     console.warn("[Perms] divisions failed:", e);
@@ -35,11 +40,14 @@ export async function loadPermissionsCache() {
 }
 
 export function getRolePermissionsCache(roleId) {
-  return rolePerms[roleId] || null;
+  // Возвращаем null если явно не задано (тогда сработает DEFAULT)
+  if (!(roleId in rolePerms)) return null;
+  return rolePerms[roleId];
 }
 
 export function getDivisionPermissionsCache(divId) {
-  return divPerms[divId] || null;
+  if (!(divId in divPerms)) return null;
+  return divPerms[divId];
 }
 
 export function setRolePermissionsCache(roleId, perms) {
@@ -53,4 +61,15 @@ export function setDivisionPermissionsCache(divId, perms) {
 export function clearPermissionsCache() {
   rolePerms = {};
   divPerms = {};
+}
+
+/**
+ * Проверяет, заданы ли права для роли/подразделения явно.
+ */
+export function hasExplicitRolePermissions(roleId) {
+  return roleId in rolePerms;
+}
+
+export function hasExplicitDivisionPermissions(divId) {
+  return divId in divPerms;
 }
