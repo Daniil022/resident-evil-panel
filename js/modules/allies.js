@@ -3,8 +3,8 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
-import { canEdit, requireEdit, escapeHtml } from "./gestion.js";
+import { openModal, closeModal, toast, escapeHtml } from "../core/utils.js";
+import { canEdit, requireEdit } from "./gestion.js";
 import { getCurrentUser } from "../core/state.js";
 import { addDashEvent } from "../core/dashboard-events.js";
 
@@ -127,16 +127,17 @@ async function saveAlly(existing) {
 
   const me = getCurrentUser();
   const data = { name, status, note };
+  const statusLabel = STATUSES.find(s => s.id === status)?.label || status;
 
   try {
     if (existing?.source === "firebase") {
       await updateDoc(doc(db, "allies", existing.id), data);
       Object.assign(existing, data);
-      addDashEvent("✏️", me.login + " изменил статус фамы " + name + " → " + STATUSES.find(s => s.id === status)?.label, { type: "allies" }).catch(() => {});
+      addDashEvent("✏️", (me?.login || "—") + " изменил статус фамы " + name + " → " + statusLabel, { type: "allies" }).catch(() => {});
     } else {
       const ref = await addDoc(collection(db, "allies"), data);
       allies.push({ id: ref.id, ...data, source: "firebase" });
-      addDashEvent("🤝", me.login + " добавил фаму " + name + " (" + STATUSES.find(s => s.id === status)?.label + ")", { type: "allies" }).catch(() => {});
+      addDashEvent("🤝", (me?.login || "—") + " добавил фаму " + name + " (" + statusLabel + ")", { type: "allies" }).catch(() => {});
     }
     toast(existing ? "Обновлено" : "Добавлено", "ok");
   } catch (e) {
@@ -153,6 +154,7 @@ window.__allyEdit = function(id) {
   const a = allies.find(x => x.id === id);
   if (a) openAllyModal(a);
 };
+
 window.__allyDelete = async function(id) {
   if (!requireEdit()) return;
   if (!confirm("Удалить?")) return;
