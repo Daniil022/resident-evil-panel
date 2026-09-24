@@ -14,7 +14,6 @@ export async function initApplicationsPage() {
   await initAdminRegistration();
 }
 
-// Отписка при уходе со страницы
 window.addEventListener("beforeunload", () => {
   try { destroyRegistrationSub(); } catch (e) {}
 });
