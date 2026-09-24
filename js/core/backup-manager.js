@@ -11,7 +11,7 @@ import { toast } from "./utils.js";
 const BACKUP_COLLECTION = "backups";
 const KEEP_DAYS = 7;
 
-// ✅ FIX: экспортируем — используется в backup.js
+// ✅ УБРАН "warehouse" — модуль не нужен
 export const BACKUP_COLLECTIONS = [
   "users",
   "roles",
@@ -26,7 +26,6 @@ export const BACKUP_COLLECTIONS = [
   "captas",
   "accolades",
   "premiums",
-  "warehouse",
   "registration_requests",
   "applications",
   "applications_nicks",
@@ -88,6 +87,30 @@ export async function checkAutoBackup() {
     console.log("[Backup] Авто-бэкап создан");
   } catch (e) {
     console.warn("[Backup] Авто-бэкап не удался:", e);
+  }
+}
+
+// ✅ НОВОЕ: запускаем периодический авто-бэкап
+let autoBackupTimer = null;
+
+export function startAutoBackupTimer(intervalMs = 6 * 60 * 60 * 1000) {
+  if (autoBackupTimer) return;
+
+  // Проверяем сразу при старте
+  checkAutoBackup().catch(() => {});
+
+  // И далее каждые intervalMs (по умолчанию 6 часов)
+  autoBackupTimer = setInterval(() => {
+    checkAutoBackup().catch(() => {});
+  }, intervalMs);
+
+  console.log("[Backup] Таймер авто-бэкапа запущен (каждые " + Math.round(intervalMs / 3600000) + " ч)");
+}
+
+export function stopAutoBackupTimer() {
+  if (autoBackupTimer) {
+    clearInterval(autoBackupTimer);
+    autoBackupTimer = null;
   }
 }
 
