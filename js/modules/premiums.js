@@ -5,8 +5,7 @@ import { db } from "../firebase-init.js";
 import {
   collection, addDoc, getDocs, doc, deleteDoc, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { openModal, closeModal, toast } from "../core/utils.js";
-import { escapeHtml, formatDate } from "./gestion.js";
+import { openModal, closeModal, toast, escapeHtml, formatDate } from "../core/utils.js";
 import { getCurrentUser } from "../core/state.js";
 import { listUsers } from "../core/auth.js";
 import { playSound } from "../core/sounds.js";
@@ -103,7 +102,7 @@ function renderGrid() {
       '</div>' +
       '<div class="contract-meta">' +
         '<span>👤 Выдал: <b>' + escapeHtml(p.givenBy || "—") + '</b></span>' +
-        '<span>📅 ' + formatDate(p.createdAt) + '</span>' +
+        '<span>📅 ' + formatDate(p.createdAt, "short") + '</span>' +
       '</div>' +
     '</div>';
   }).join("");
