@@ -133,7 +133,6 @@ function initOneChat(chatId) {
 
   try {
     unsubscribers[chatId] = onSnapshot(q, (snapshot) => {
-      // Оптимизация: не перерисовываем, если ничего не изменилось
       const snapshotIds = snapshot.docs.map(d => d.id).join(",");
       if (snapshotIds === container.dataset.lastIds && currentMessages[chatId].length > 0) {
         updateUnreadBadge(chatId, currentMessages[chatId]);
@@ -390,15 +389,17 @@ function updatePinBar(chatId, pinData) {
   };
 }
 
+// ==================== ПРОВЕРКА МУТА (БЕЗ ДИНАМИЧЕСКОГО ИМПОРТА) ====================
 async function checkMutedFresh(user) {
-  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
-
-  if (isMuted(user)) {
-    const left = getMuteRemaining(user);
+  // Проверка из кэша сессии
+  const isMuted = user.muted && (!user.mutedUntil || Date.now() < user.mutedUntil);
+  if (isMuted) {
+    const left = user.mutedUntil ? Math.max(0, user.mutedUntil - Date.now()) : 0;
     toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (user.mutedReason ? ". Причина: " + user.mutedReason : ""), "warn", 4000);
     return true;
   }
 
+  // Перечитываем из Firestore (может быть рассинхрон)
   try {
     const snap = await getDoc(doc(db, "users", user.uid));
     if (!snap.exists()) return false;
@@ -415,8 +416,9 @@ async function checkMutedFresh(user) {
       };
       setCurrentUser(updated);
 
-      if (isMuted(updated)) {
-        const left = getMuteRemaining(updated);
+      const stillMuted = updated.muted && (!updated.mutedUntil || Date.now() < updated.mutedUntil);
+      if (stillMuted) {
+        const left = updated.mutedUntil ? Math.max(0, updated.mutedUntil - Date.now()) : 0;
         toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : "") + (updated.mutedReason ? ". Причина: " + updated.mutedReason : ""), "warn", 4000);
         return true;
       }
@@ -428,6 +430,7 @@ async function checkMutedFresh(user) {
   return false;
 }
 
+// ==================== ОТПРАВКА ТЕКСТА ====================
 async function sendMessageTo(chatId, text) {
   const user = getCurrentUser();
   if (!user || !text.trim()) return;
@@ -467,6 +470,7 @@ async function sendMessageTo(chatId, text) {
   }
 }
 
+// ==================== ОТПРАВКА ГОЛОСОВОГО ====================
 async function sendVoiceTo(chatId, blob, durationMs, mime) {
   const user = getCurrentUser();
   if (!user) return;
@@ -479,7 +483,6 @@ async function sendVoiceTo(chatId, blob, durationMs, mime) {
     return;
   }
 
-  // Определяем расширение по mime
   const ext = (mime && mime.includes("ogg")) ? "ogg"
             : (mime && mime.includes("webm")) ? "webm"
             : (mime && mime.includes("mp4")) ? "m4a"
