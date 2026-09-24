@@ -34,22 +34,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Чат",
-      "url": "/#chat",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Контракты",
-      "url": "/#contracts",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Заявки",
-      "url": "/#applications",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    }
   ]
 }
