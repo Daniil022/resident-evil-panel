@@ -22,6 +22,9 @@
   --red-dark: #dc2626;
   --purple: #a855f7;
 
+  /* ✅ FIX: добавлен — используется в contracts.css */
+  --accent: #00c8d4;
+
   --radius: 8px;
   --radius-sm: 6px;
   --radius-lg: 12px;
