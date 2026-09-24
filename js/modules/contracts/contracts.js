@@ -7,6 +7,7 @@ import { getCurrentUser } from "../../core/state.js";
 import { listUsers, incrementContracts } from "../../core/auth.js";
 import { toast, openModal, closeModal } from "../../core/utils.js";
 import { playSound } from "../../core/sounds.js";
+import { addDashEvent } from "../../core/dashboard-events.js";
 import { uploadMedia } from "./contracts-upload.js";
 import { getNextReward, getEarnedRewards } from "./contracts-rewards.js";
 
@@ -24,13 +25,17 @@ export async function initContracts() {
   const grid = document.getElementById("contractsGrid");
   if (!grid) return;
 
+  if (unsub) {
+    try { unsub(); } catch (e) {}
+    unsub = null;
+  }
+
   loadSettings();
   scheduleReset();
 
   const me = getCurrentUser();
   const isAdmin = me && ["emperor", "lord"].includes(me.role);
 
-  // Toolbar
   const toolbar = document.querySelector("#contracts .contracts-head");
   if (toolbar && !toolbar.__bound) {
     toolbar.__bound = true;
@@ -43,7 +48,6 @@ export async function initContracts() {
     if (sb) sb.addEventListener("click", openSettingsModal);
   }
 
-  // Прогресс
   const progressEl = document.getElementById("contractProgress");
   if (progressEl && me) {
     const users = await listUsers();
@@ -51,7 +55,6 @@ export async function initContracts() {
     progressEl.innerHTML = renderProgress(fullMe || me);
   }
 
-  // Подписка на Firestore
   try {
     const q = query(collection(db, "contracts"), orderBy("createdAt", "desc"));
     unsub = onSnapshot(q, (snap) => {
@@ -101,8 +104,6 @@ function scheduleReset() {
   if (next <= now) next.setDate(next.getDate() + 1);
 
   const msUntil = next - now;
-  console.log("Contracts reset in", Math.round(msUntil / 1000 / 60), "min");
-
   resetTimer = setTimeout(async () => {
     await resetCompletedContracts();
     scheduleReset();
@@ -110,8 +111,6 @@ function scheduleReset() {
 }
 
 async function resetCompletedContracts() {
-  console.log("Автообновление контрактов...");
-
   const toReset = currentContracts.filter(c => c.status === "approved" || c.status === "review");
 
   for (const c of toReset) {
@@ -132,12 +131,13 @@ async function resetCompletedContracts() {
           currentContracts[idx].resetAt = Date.now();
         }
       }
-    } catch (e) {
-      console.warn("Reset failed for", c.id, e);
-    }
+    } catch (e) {}
   }
 
   if (demoMode) saveDemo();
+  if (toReset.length > 0) {
+    addDashEvent("🔄", "Контракты обновлены (" + toReset.length + " шт.)", { type: "contract" }).catch(() => {});
+  }
   toast("Контракты обновлены", "ok");
 }
 
@@ -326,6 +326,7 @@ export function openCreateContract() {
         if (demoMode) throw new Error("demo");
         await addDoc(collection(db, "contracts"), contract);
         playSound("contract");
+        addDashEvent("📜", me.login + " создал контракт: " + title, { type: "contract" }).catch(() => {});
         toast("Контракт создан", "ok");
         closeModal();
       } catch (e) {
@@ -334,6 +335,7 @@ export function openCreateContract() {
         saveDemo();
         renderAll();
         playSound("contract");
+        addDashEvent("📜", me.login + " создал контракт: " + title, { type: "contract" }).catch(() => {});
         toast("Контракт создан", "ok");
         closeModal();
       }
@@ -462,6 +464,7 @@ window.__contractSubmit = function(contractId) {
         renderAll();
       }
       playSound("contract");
+      addDashEvent("📤", nick + " сдал отчёт по контракту: " + c.title, { type: "contract" }).catch(() => {});
       toast("Отчёт отправлен на проверку", "ok");
       closeModal();
     }
@@ -502,6 +505,7 @@ window.__contractApprove = async function(contractId) {
   if (progressEl && fullMe) progressEl.innerHTML = renderProgress(fullMe);
 
   playSound("contract");
+  addDashEvent("✅", me.login + " одобрил контракт " + c.submittedBy.login + " (+" + count + ")", { type: "contract" }).catch(() => {});
   toast("Одобрено: +" + count + " контрактов для " + c.submittedBy.login, "ok");
 };
 
@@ -528,6 +532,11 @@ window.__contractReject = async function(contractId) {
     if (demoMode) saveDemo();
     renderAll();
   }
+
+  const c = currentContracts.find(x => x.id === contractId);
+  if (c) {
+    addDashEvent("❌", me.login + " отклонил контракт " + (c.submittedBy?.login || "—"), { type: "contract" }).catch(() => {});
+  }
   toast("Отчёт отклонён", "warn");
 };
 
@@ -546,9 +555,14 @@ window.__contractDelete = async function(contractId) {
     }
   } catch (e) {}
 
+  const c = currentContracts.find(x => x.id === contractId);
   currentContracts = currentContracts.filter(c => c.id !== contractId);
   if (demoMode) saveDemo();
   renderAll();
+
+  if (c) {
+    addDashEvent("🗑", me.login + " удалил контракт: " + c.title, { type: "contract" }).catch(() => {});
+  }
   toast("Контракт удалён", "ok");
 };
 
