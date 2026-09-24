@@ -5,6 +5,8 @@ import {
 import { clearRoleFromUsers } from "../core/auth.js";
 import { toast, openModal, closeModal } from "../core/utils.js";
 import { preloadColorData, applyColorsToDOM } from "../core/colorize.js";
+import { getCurrentUser } from "../core/state.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 
 let editingRoleId = null;
 
@@ -30,9 +32,15 @@ async function renderRolesList() {
 
   container.innerHTML = roles.map((r, idx) => {
     // Считаем права
-    let permsLabel = "—";
-    if (r.permissions === "*") permsLabel = "ВСЕ";
-    else if (Array.isArray(r.permissions) && r.permissions.length > 0) permsLabel = r.permissions.length + " шт.";
+    let permsLabel = "по умолчанию";
+    let permsColor = "var(--muted)";
+    if (r.permissions === "*") {
+      permsLabel = "ВСЕ";
+      permsColor = "var(--gold)";
+    } else if (Array.isArray(r.permissions)) {
+      permsLabel = r.permissions.length + " шт.";
+      permsColor = "var(--cyan)";
+    }
 
     return `
     <div class="role-row" data-role-id="${r.id}">
@@ -43,7 +51,7 @@ async function renderRolesList() {
           ${r.system ? `<span class="badge-system">Системная</span>` : ""}
         </div>
         <div class="desc">${escapeHtml(r.desc || "Без описания")}</div>
-        <div class="desc" style="font-size:10.5px;color:var(--cyan);">🔐 Права: ${permsLabel}</div>
+        <div class="desc" style="font-size:10.5px;color:${permsColor};">🔐 Права: ${permsLabel}</div>
       </div>
       <div class="role-actions">
         <button onclick="window.__roleMove('${r.id}','up')" ${idx === 0 ? "disabled" : ""} title="Вверх">⬆</button>
@@ -64,7 +72,8 @@ window.__rolePermissions = async function(roleId) {
   if (!role) return;
 
   const { openPermissionsEditor } = await import("./admin-permissions.js");
-  openPermissionsEditor("role", roleId, role.name, role.permissions || null);
+  const perms = ("permissions" in role) ? role.permissions : null;
+  openPermissionsEditor("role", roleId, role.name, perms);
 };
 
 // ==================== СОЗДАНИЕ ====================
@@ -173,13 +182,17 @@ async function saveRole() {
 
   err.style.display = "none";
 
+  const me = getCurrentUser();
+
   try {
     if (editingRoleId) {
       await updateRole(editingRoleId, { name, color, desc });
       toast("Роль обновлена", "ok");
+      addDashEvent("🎖", `${me?.login || "—"} обновил роль «${name}»`, { type: "user" }).catch(() => {});
     } else {
       await createRole({ name, color, desc });
       toast("Роль создана", "ok");
+      addDashEvent("🎖", `${me?.login || "—"} создал роль «${name}»`, { type: "user" }).catch(() => {});
     }
     await preloadColorData();
     applyColorsToDOM();
@@ -210,6 +223,9 @@ window.__roleDelete = async function(roleId) {
     await preloadColorData();
     applyColorsToDOM();
     await renderRolesList();
+
+    const me = getCurrentUser();
+    addDashEvent("🗑", `${me?.login || "—"} удалил роль «${role.name}»`, { type: "user" }).catch(() => {});
   } catch (e) {
     toast(e.message, "warn");
   }
