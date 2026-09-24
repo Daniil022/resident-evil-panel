@@ -10,7 +10,7 @@ import { uploadMedia } from "../contracts/contracts-upload.js";
 import { addDashEvent } from "../../core/dashboard.js";
 import { compressImage } from "../../core/image-compress.js";
 
-const MAX_SIZE = 50 * 1024 * 1024; // 50 МБ
+const MAX_SIZE = 50 * 1024 * 1024;
 const MAX_FILES = 5;
 
 export function setupFileButton(chatId, onSent) {
@@ -37,7 +37,6 @@ export function setupFileButton(chatId, onSent) {
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.multiple = true;
-  // ВАЖНО: без capture — на телефоне откроется выбор источник (камера/галерея)
   fileInput.accept = "image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.rar,.txt";
   fileInput.style.display = "none";
   fileInput.id = "fileInput-" + chatId;
@@ -57,10 +56,10 @@ async function sendFiles(chatId, files, onSent) {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Проверка мута
-  const { isMuted, getMuteRemaining } = await import("../../core/punishments.js");
-  if (isMuted(user)) {
-    const left = getMuteRemaining(user);
+  // Проверка мута из кэша сессии (без динамического импорта)
+  const isMuted = user.muted && (!user.mutedUntil || Date.now() < user.mutedUntil);
+  if (isMuted) {
+    const left = user.mutedUntil ? Math.max(0, user.mutedUntil - Date.now()) : 0;
     toast("Вы в муте" + (left ? " ещё " + formatDuration(left) : ""), "warn", 4000);
     return;
   }
@@ -88,13 +87,12 @@ async function sendFiles(chatId, files, onSent) {
 
   for (const file of files) {
     try {
-      // Сжимаем фото (только изображения)
       let processedFile = file;
       if (file.type.startsWith("image/")) {
         try {
           processedFile = await compressImage(file);
         } catch (e) {
-          console.warn("Compress failed, upload original:", e);
+          console.warn("Compress failed:", e);
           processedFile = file;
         }
       }
