@@ -14,6 +14,8 @@ export function initPWA() {
           console.warn("[PWA] SW ошибка:", err);
         });
     });
+  } else {
+    console.log("[PWA] Service Worker не поддерживается браузером");
   }
 
   // Показ кнопки «Установить»
@@ -28,6 +30,7 @@ export function initPWA() {
   window.addEventListener("appinstalled", () => {
     console.log("[PWA] Приложение установлено");
     hideInstallButton();
+    deferredPrompt = null;
   });
 }
 
