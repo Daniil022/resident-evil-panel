@@ -4,6 +4,8 @@ import {
 } from "../modules/registration.js";
 import { toast } from "../core/utils.js";
 import { playSound } from "../core/sounds.js";
+import { getCurrentUser } from "../core/state.js";
+import { addDashEvent } from "../core/dashboard-events.js";
 import { escapeHtml, formatDate } from "../modules/gestion.js";
 
 let currentRequests = [];
@@ -13,7 +15,10 @@ export async function initAdminRegistration() {
   const container = document.getElementById("registrationList");
   if (!container) return;
 
+  // Если уже подписаны — не подписываемся повторно
   if (unsub) return;
+
+  container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;grid-column:1/-1;">Загрузка...</div>';
 
   unsub = subscribeToRequests((requests) => {
     currentRequests = requests;
@@ -93,6 +98,9 @@ window.__regApprove = async function(id) {
     const req = await approveRegistration(id);
     playSound("application");
     toast("Аккаунт «" + req.nick + "» создан как " + (req.type === "ally" ? "Союзник" : "Резидент"), "ok");
+
+    const me = getCurrentUser();
+    addDashEvent("✅", `${me?.login || "—"} одобрил регистрацию ${req.nick}`, { type: "user" }).catch(() => {});
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
   }
@@ -105,6 +113,10 @@ window.__regReject = async function(id) {
     await rejectRegistration(id, reason.trim());
     playSound("application");
     toast("Заявка отклонена", "warn");
+
+    const me = getCurrentUser();
+    const req = currentRequests.find(r => r.id === id);
+    addDashEvent("❌", `${me?.login || "—"} отклонил регистрацию ${req?.nick || "—"}`, { type: "user" }).catch(() => {});
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
   }
