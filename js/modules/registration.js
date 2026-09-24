@@ -4,18 +4,9 @@ import {
   collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { createUser } from "../core/auth.js";
+import { safeFirestore } from "../core/utils.js";
 
 const DEMO_KEY = "re_demo_registration_requests";
-const TIMEOUT = 4000;
-
-function withTimeout(promise) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Firestore timeout")), TIMEOUT)
-    )
-  ]);
-}
 
 // ==================== ПОДАЧА ЗАЯВКИ ====================
 export async function submitRegistrationRequest(nick, pin, type = "resident") {
@@ -23,51 +14,64 @@ export async function submitRegistrationRequest(nick, pin, type = "resident") {
   if (!/^[0-9]{4,8}$/.test(pin)) throw new Error("PIN: 4-8 цифр");
   if (!["ally", "resident"].includes(type)) type = "resident";
 
-  try {
-    const usersSnap = await withTimeout(
-      getDocs(query(collection(db, "users"), where("login", "==", nick)))
-    );
-    if (!usersSnap.empty) throw new Error("Такой ник уже занят");
-  } catch (e) {
-    if (e.message === "Такой ник уже занят") throw e;
-  }
+  // Проверка: не занят ли ник
+  const usersSnap = await safeFirestore(
+    getDocs(query(collection(db, "users"), where("login", "==", nick))),
+    null,
+    4000,
+    "reg-check-users"
+  );
+  if (usersSnap && !usersSnap.empty) throw new Error("Такой ник уже занят");
 
-  try {
-    const reqSnap = await withTimeout(
-      getDocs(query(collection(db, "registration_requests"), where("nick", "==", nick)))
-    );
+  // Проверка: нет ли pending-заявки
+  const reqSnap = await safeFirestore(
+    getDocs(query(collection(db, "registration_requests"), where("nick", "==", nick))),
+    null,
+    4000,
+    "reg-check-requests"
+  );
+  if (reqSnap) {
     let hasPending = false;
     reqSnap.forEach(d => { if (d.data().status === "pending") hasPending = true; });
     if (hasPending) throw new Error("Заявка с таким ником уже на рассмотрении");
-  } catch (e) {
-    if (e.message === "Заявка с таким ником уже на рассмотрении") throw e;
   }
 
   const data = { nick, pin, type, status: "pending", createdAt: Date.now() };
 
-  try {
-    const ref = await withTimeout(addDoc(collection(db, "registration_requests"), data));
-    return { id: ref.id, ...data };
-  } catch (e) {
-    const demo = JSON.parse(localStorage.getItem(DEMO_KEY) || "[]");
-    const req = { id: "demo-reg-" + Date.now(), ...data };
-    demo.push(req);
-    localStorage.setItem(DEMO_KEY, JSON.stringify(demo));
-    return req;
-  }
+  const ref = await safeFirestore(
+    addDoc(collection(db, "registration_requests"), data),
+    null,
+    5000,
+    "reg-submit"
+  );
+
+  if (ref) return { id: ref.id, ...data };
+
+  // Демо
+  const demo = JSON.parse(localStorage.getItem(DEMO_KEY) || "[]");
+  const req = { id: "demo-reg-" + Date.now(), ...data };
+  demo.push(req);
+  localStorage.setItem(DEMO_KEY, JSON.stringify(demo));
+  return req;
 }
 
-// ==================== СПИСОК ЗАЯВОК (одноразово) ====================
+// ==================== СПИСОК (одноразово) ====================
 export async function listRegistrationRequests() {
-  try {
-    const snap = await withTimeout(getDocs(collection(db, "registration_requests")));
+  const snap = await safeFirestore(
+    getDocs(collection(db, "registration_requests")),
+    null,
+    5000,
+    "reg-list"
+  );
+
+  if (snap) {
     const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), source: "firebase" }));
     requests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     return requests;
-  } catch (e) {
-    console.warn("Firestore failed, demo mode:", e.message);
-    return getDemoRequests();
   }
+
+  console.warn("Firestore failed, demo mode");
+  return getDemoRequests();
 }
 
 function getDemoRequests() {
@@ -78,7 +82,7 @@ function saveDemoRequests(list) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(list));
 }
 
-// ==================== LIVE-ПОДПИСКА НА ЗАЯВКИ ====================
+// ==================== LIVE-ПОДПИСКА ====================
 let unsubRequests = null;
 
 export function subscribeToRequests(callback) {
@@ -124,12 +128,17 @@ export async function approveRegistration(reqId) {
 
   await createUser({ login: req.nick, pin: req.pin, role, division: null });
 
-  try {
-    await withTimeout(updateDoc(doc(db, "registration_requests", reqId), {
+  const result = await safeFirestore(
+    updateDoc(doc(db, "registration_requests", reqId), {
       status: "approved",
       approvedAt: Date.now()
-    }));
-  } catch (e) {
+    }),
+    null,
+    4000,
+    "reg-approve"
+  );
+
+  if (result === null) {
     const demo = getDemoRequests();
     const idx = demo.findIndex(r => r.id === reqId);
     if (idx >= 0) {
@@ -144,13 +153,18 @@ export async function approveRegistration(reqId) {
 
 // ==================== ОТКЛОНЕНИЕ ====================
 export async function rejectRegistration(reqId, reason = "") {
-  try {
-    await withTimeout(updateDoc(doc(db, "registration_requests", reqId), {
+  const result = await safeFirestore(
+    updateDoc(doc(db, "registration_requests", reqId), {
       status: "rejected",
       rejectedAt: Date.now(),
       reason: reason
-    }));
-  } catch (e) {
+    }),
+    null,
+    4000,
+    "reg-reject"
+  );
+
+  if (result === null) {
     const demo = getDemoRequests();
     const idx = demo.findIndex(r => r.id === reqId);
     if (idx >= 0) {
@@ -164,9 +178,14 @@ export async function rejectRegistration(reqId, reason = "") {
 
 // ==================== УДАЛЕНИЕ ====================
 export async function deleteRegistration(reqId) {
-  try {
-    await withTimeout(deleteDoc(doc(db, "registration_requests", reqId)));
-  } catch (e) {
+  const result = await safeFirestore(
+    deleteDoc(doc(db, "registration_requests", reqId)),
+    null,
+    4000,
+    "reg-delete"
+  );
+
+  if (result === null) {
     const demo = getDemoRequests().filter(r => r.id !== reqId);
     saveDemoRequests(demo);
   }
