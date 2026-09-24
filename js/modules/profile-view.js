@@ -3,12 +3,10 @@ import { listUsers } from "../core/auth.js";
 import { listRoles } from "../core/roles.js";
 import { listDivisions } from "../core/divisions.js";
 import { getRoleColor, getRoleName, getDivisionColor, getDivisionName } from "../core/colorize.js";
-import { openModal, closeModal } from "../core/utils.js";
-import { escapeHtml, hexRgba, formatDate } from "./gestion.js";
+import { openModal, closeModal, escapeHtml, hexRgba, formatDate } from "../core/utils.js";
 import { getCurrentUser } from "../core/state.js";
 
 export function setupProfileClicks() {
-  // Клик по нику в чате
   document.addEventListener("click", async (e) => {
     const author = e.target.closest(".msg-author");
     if (author) {
@@ -17,7 +15,6 @@ export function setupProfileClicks() {
       return;
     }
 
-    // Клик по аватарке в чате
     const avatar = e.target.closest(".msg-avatar");
     if (avatar && avatar.parentElement) {
       const msg = avatar.parentElement;
@@ -52,7 +49,6 @@ export async function openProfileByLogin(login) {
     ? '<img src="' + user.avatar + '" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--border);">'
     : '<div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#4a4a4a,#2a2a2a);display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;font-weight:700;border:3px solid var(--border);">' + escapeHtml(user.login.charAt(0).toUpperCase()) + '</div>';
 
-  // Информация о наказаниях
   const { isBanned, isMuted, getBanRemaining, getMuteRemaining, getPunishments, formatPunishmentType }
     = await import("../core/punishments.js");
 
@@ -82,7 +78,7 @@ export async function openProfileByLogin(login) {
             '<span style="flex-shrink:0;">' + meta.icon + '</span>' +
             '<div style="flex:1;min-width:0;">' +
               '<div style="color:#fff;font-weight:600;">' + meta.label + (p.reason ? ' — ' + escapeHtml(p.reason) : '') + '</div>' +
-              '<div style="color:var(--muted);font-size:11px;">' + escapeHtml(p.by || '—') + ' · ' + formatDate(p.at) + '</div>' +
+              '<div style="color:var(--muted);font-size:11px;">' + escapeHtml(p.by || '—') + ' · ' + formatDate(p.at, "short") + '</div>' +
             '</div>' +
           '</div>';
         }).join('') +
