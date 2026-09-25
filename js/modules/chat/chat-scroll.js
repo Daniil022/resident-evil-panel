@@ -7,10 +7,6 @@ const scrollState = {
 };
 
 // ==================== НАСТРОЙКА ====================
-/**
- * Настраивает скролл для чата.
- * @param {string} chatId — "residents" | "allies"
- */
 export function setupScrollForChat(chatId) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -19,11 +15,9 @@ export function setupScrollForChat(chatId) {
   const newBtn = document.getElementById(cfg.newBtnId);
   if (!container) return;
 
-  // Не навешиваем повторно
   if (container.__scrollBound) return;
   container.__scrollBound = true;
 
-  // Отслеживаем скролл
   container.addEventListener("scroll", () => {
     const atBottom = isAtBottom(container);
 
@@ -37,7 +31,6 @@ export function setupScrollForChat(chatId) {
     }
   });
 
-  // Клик по кнопке «Новые сообщения»
   if (newBtn) {
     newBtn.addEventListener("click", () => {
       scrollToBottom(chatId, true);
@@ -47,9 +40,6 @@ export function setupScrollForChat(chatId) {
 }
 
 // ==================== СКРОЛЛ ====================
-/**
- * Прокрутка вниз (если autoScroll или force).
- */
 export function scrollToBottom(chatId, force = false) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -58,7 +48,6 @@ export function scrollToBottom(chatId, force = false) {
   if (!container) return;
 
   if (scrollState[chatId].autoScroll || force) {
-    // Плавно, если force; мгновенно, если autoScroll
     container.scrollTo({
       top: container.scrollHeight,
       behavior: force ? "smooth" : "instant"
@@ -69,15 +58,11 @@ export function scrollToBottom(chatId, force = false) {
     hideNewButton(chatId);
 
     if (force) {
-      // Убираем разделитель через небольшую задержку
       setTimeout(() => removeNewSeparator(chatId), 500);
     }
   }
 }
 
-/**
- * Прокрутка к конкретному сообщению.
- */
 export function scrollToMessage(chatId, msgId) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -93,33 +78,21 @@ export function scrollToMessage(chatId, msgId) {
   setTimeout(() => el.classList.remove("msg-highlight"), 1500);
 }
 
-/**
- * Проверка: пользователь внизу?
- */
 function isAtBottom(container, threshold = 80) {
   return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
 }
 
 // ==================== СЧЁТЧИК НЕПРОЧИТАННЫХ ====================
-/**
- * Увеличить счётчик непрочитанных (когда пришло новое сообщение, а юзер не внизу).
- */
 export function incrementUnread(chatId) {
   scrollState[chatId].unreadCount++;
   showNewButton(chatId, scrollState[chatId].unreadCount);
 }
 
-/**
- * Сбросить счётчик.
- */
 export function resetUnread(chatId) {
   scrollState[chatId].unreadCount = 0;
   hideNewButton(chatId);
 }
 
-/**
- * Показать кнопку «↓ Новые сообщения (N)».
- */
 function showNewButton(chatId, count) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -142,10 +115,7 @@ function hideNewButton(chatId) {
   newBtn.innerHTML = "↓ Новые сообщения";
 }
 
-// ==================== РАЗДЕЛИТЕЛЬ «НОВЫЕ СООБЩЕНИЯ» ====================
-/**
- * Добавить разделитель перед первым новым сообщением.
- */
+// ==================== РАЗДЕЛИТЕЛЬ ====================
 export function addNewSeparator(chatId) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -153,13 +123,11 @@ export function addNewSeparator(chatId) {
   const container = document.getElementById(cfg.containerId);
   if (!container) return;
 
-  // Убираем старый разделитель
   removeNewSeparator(chatId);
 
   const messages = container.querySelectorAll(".msg");
   if (messages.length === 0) return;
 
-  // Находим последнее прочитанное сообщение
   const lastReadId = scrollState[chatId].lastReadId;
   let targetMsg = null;
 
@@ -172,18 +140,15 @@ export function addNewSeparator(chatId) {
     }
   }
 
-  // Если не нашли — ставим перед последним сообщением
   if (!targetMsg) {
     targetMsg = messages[messages.length - 1];
   }
 
-  // Создаём разделитель
   const sep = document.createElement("div");
   sep.className = "chat-new-separator";
   sep.id = "chatNewSeparator-" + chatId;
   sep.innerHTML = '<span>Новые сообщения</span>';
 
-  // Вставляем перед targetMsg
   targetMsg.parentNode.insertBefore(sep, targetMsg);
 }
 
@@ -193,9 +158,6 @@ function removeNewSeparator(chatId) {
 }
 
 // ==================== ПОДСВЕТКА ====================
-/**
- * Подсветить новые сообщения (после клика «Новые»).
- */
 function flashNewMessages(chatId) {
   const cfg = getChatConfig(chatId);
   if (!cfg) return;
@@ -217,7 +179,6 @@ function flashNewMessages(chatId) {
       return;
     }
 
-    // Подсвечиваем с задержкой
     setTimeout(() => {
       m.classList.add("msg-flash");
       setTimeout(() => m.classList.remove("msg-flash"), 1200);
@@ -226,21 +187,14 @@ function flashNewMessages(chatId) {
   });
 }
 
-// ==================== СОХРАНЕНИЕ «ПРОЧИТАНО ДО» ====================
-/**
- * Запомнить последнее прочитанное сообщение.
- */
+// ==================== LAST READ ====================
 export function setLastRead(chatId, msgId) {
   scrollState[chatId].lastReadId = msgId;
-  // Сохраняем в localStorage
   try {
     localStorage.setItem("chat_last_read_id_" + chatId, msgId || "");
   } catch (e) {}
 }
 
-/**
- * Восстановить последнее прочитанное сообщение.
- */
 export function restoreLastRead(chatId) {
   try {
     const saved = localStorage.getItem("chat_last_read_id_" + chatId);
@@ -250,7 +204,6 @@ export function restoreLastRead(chatId) {
 
 // ==================== ХЕЛПЕРЫ ====================
 function getChatConfig(chatId) {
-  // Импортируем лениво — избегаем цикличности
   if (chatId === "residents") {
     return {
       containerId: "chatMessages",
@@ -266,9 +219,6 @@ function getChatConfig(chatId) {
   return null;
 }
 
-/**
- * Экспорт состояния (для отладки).
- */
 export function getScrollState(chatId) {
   return { ...scrollState[chatId] };
 }
