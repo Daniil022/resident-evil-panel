@@ -1,7 +1,5 @@
 // sw.js — Service Worker для PWA
-// Кэширует статику, работает офлайн, обновляется автоматически.
-
-const CACHE_NAME = "re-panel-v3";
+const CACHE_NAME = "re-panel-v4";
 
 const OFFLINE_URLS = [
   "/",
@@ -33,7 +31,6 @@ self.addEventListener("activate", (event) => {
 
 // ==================== FETCH ====================
 self.addEventListener("fetch", (event) => {
-  // Только GET
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
@@ -48,26 +45,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Только свои
   if (url.origin !== self.location.origin) return;
 
-  // ✅ НАВИГАЦИЯ (HTML) — всегда network-first, БЕЗ кэша
-  // Это критично: не кэшируем HTML, иначе сайт может сломаться
+  // Навигация — всегда network-first, БЕЗ кэша HTML
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request)
-        .then((res) => {
-          // Не кэшируем HTML — всегда свежий
-          return res;
-        })
-        .catch(() => {
-          return caches.match("/index.html");
-        })
+      fetch(event.request).catch(() => caches.match("/index.html"))
     );
     return;
   }
 
-  // ✅ JS/CSS — stale-while-revalidate
+  // JS/CSS — stale-while-revalidate
   if (url.pathname.match(/\.(js|css)$/)) {
     event.respondWith(
       caches.match(event.request).then((cached) => {
@@ -78,14 +66,13 @@ self.addEventListener("fetch", (event) => {
           }
           return res;
         }).catch(() => cached);
-
         return cached || fetchPromise;
       })
     );
     return;
   }
 
-  // Всё остальное — network-first
+  // Остальное — network-first
   event.respondWith(
     fetch(event.request)
       .then((res) => {
@@ -95,15 +82,11 @@ self.addEventListener("fetch", (event) => {
         }
         return res;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-        });
-      })
+      .catch(() => caches.match(event.request))
   );
 });
 
-// ==================== PUSH ====================
+// Push-уведомления (без иконок, т.к. их нет в проекте)
 self.addEventListener("push", (event) => {
   let data = { title: "RESIDENT EVIL", body: "Новое уведомление" };
   try {
@@ -113,8 +96,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      badge: undefined,
+      icon: undefined,
       vibrate: [200, 100, 200]
     })
   );
