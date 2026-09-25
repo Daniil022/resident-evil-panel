@@ -59,12 +59,16 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
         escapeHtml(msg.replyTo.text || (msg.type === "voice" ? "🎤 Голосовое" : "📎 Файл")) +
       '</div>';
     reply.addEventListener("click", () => {
-      const targetId = msg.replyTo.id;
-      const el = document.querySelector('[data-id="' + targetId + '"]');
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("msg-highlight");
-        setTimeout(() => el.classList.remove("msg-highlight"), 1500);
+      if (handlers.onScrollToMessage) {
+        handlers.onScrollToMessage(msg.replyTo.id);
+      } else {
+        const targetId = msg.replyTo.id;
+        const el = document.querySelector('[data-id="' + targetId + '"]');
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("msg-highlight");
+          setTimeout(() => el.classList.remove("msg-highlight"), 1500);
+        }
       }
     });
     body.appendChild(reply);
