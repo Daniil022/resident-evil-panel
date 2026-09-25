@@ -31,8 +31,8 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     wrap.appendChild(av);
   } else if (!isOwn) {
     const spacer = document.createElement("div");
-    spacer.style.width = "42px";
-    spacer.style.minWidth = "42px";
+    spacer.style.width = "40px";
+    spacer.style.minWidth = "40px";
     wrap.appendChild(spacer);
   }
 
@@ -55,28 +55,16 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
     reply.title = "Перейти к сообщению";
     reply.innerHTML =
       '<div class="reply-author">' + escapeHtml(msg.replyTo.author) + '</div>' +
-      '<div class="reply-text">' +
-        escapeHtml(msg.replyTo.text || (msg.type === "voice" ? "🎤 Голосовое" : "📎 Файл")) +
-      '</div>';
+      '<div class="reply-text">' + escapeHtml(msg.replyTo.text || "📎 Файл") + '</div>';
     reply.addEventListener("click", () => {
       if (handlers.onScrollToMessage) {
         handlers.onScrollToMessage(msg.replyTo.id);
-      } else {
-        const targetId = msg.replyTo.id;
-        const el = document.querySelector('[data-id="' + targetId + '"]');
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.classList.add("msg-highlight");
-          setTimeout(() => el.classList.remove("msg-highlight"), 1500);
-        }
       }
     });
     body.appendChild(reply);
   }
 
-  if (msg.type === "voice" && msg.voiceUrl) {
-    body.appendChild(renderVoice(msg));
-  } else if (msg.type === "attachments" && msg.attachments) {
+  if (msg.type === "attachments" && msg.attachments) {
     body.appendChild(renderAttachments(msg));
   } else if (msg.type === "poll" && msg.poll) {
     body.appendChild(renderPoll(msg, handlers, chatId));
@@ -151,87 +139,6 @@ export function renderMessage(msg, grouped, handlers, currentUid) {
   }
 
   return wrap;
-}
-
-// ==================== ГОЛОСОВЫЕ ====================
-function renderVoice(msg) {
-  const wrap = document.createElement("div");
-  wrap.className = "voice-msg";
-
-  const btn = document.createElement("button");
-  btn.className = "voice-play";
-  btn.type = "button";
-  btn.innerHTML = "▶";
-
-  const bars = document.createElement("div");
-  bars.className = "voice-bars";
-
-  const BAR_COUNT = 28;
-  const seed = String(msg.id || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-  for (let i = 0; i < BAR_COUNT; i++) {
-    const bar = document.createElement("span");
-    const h = 20 + ((seed * (i + 3)) % 60);
-    bar.style.height = h + "%";
-    bars.appendChild(bar);
-  }
-
-  const time = document.createElement("span");
-  time.className = "voice-time";
-  time.textContent = formatVoiceDuration(msg.voiceDuration || 0);
-
-  const audio = document.createElement("audio");
-  audio.src = msg.voiceUrl;
-  audio.preload = "none";
-
-  let playing = false;
-
-  audio.addEventListener("timeupdate", () => {
-    const progress = audio.duration ? (audio.currentTime / audio.duration) : 0;
-    const spans = bars.querySelectorAll("span");
-    spans.forEach((b, i) => {
-      b.classList.toggle("played", i / BAR_COUNT <= progress);
-    });
-    time.textContent = formatVoiceDuration(audio.currentTime * 1000);
-  });
-
-  audio.addEventListener("ended", () => {
-    playing = false;
-    btn.innerHTML = "▶";
-    bars.querySelectorAll("span").forEach(b => b.classList.remove("played"));
-    time.textContent = formatVoiceDuration(msg.voiceDuration || 0);
-  });
-
-  btn.addEventListener("click", () => {
-    if (playing) {
-      audio.pause();
-      playing = false;
-      btn.innerHTML = "▶";
-    } else {
-      audio.play().catch(err => console.warn("Voice play failed:", err));
-      playing = true;
-      btn.innerHTML = "❚❚";
-    }
-  });
-
-  bars.addEventListener("click", (e) => {
-    if (!audio.duration) return;
-    const rect = bars.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = audio.duration * ratio;
-  });
-
-  wrap.appendChild(btn);
-  wrap.appendChild(bars);
-  wrap.appendChild(time);
-  wrap.appendChild(audio);
-  return wrap;
-}
-
-function formatVoiceDuration(ms) {
-  const total = Math.floor(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return m + ":" + String(s).padStart(2, "0");
 }
 
 // ==================== ФАЙЛЫ ====================
