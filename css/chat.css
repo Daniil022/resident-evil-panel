@@ -57,6 +57,7 @@ body[data-chat-theme-allies="dark"] {
   flex-direction: column;
   gap: 6px;
   scroll-behavior: smooth;
+  position: relative;
 }
 
 .chat-date-sep { text-align: center; margin: 20px 0 12px; position: relative; }
@@ -93,6 +94,17 @@ body[data-chat-theme-allies="dark"] {
 @keyframes msgHighlight {
   0%, 100% { background: transparent; }
   30% { background: rgba(0, 200, 212, 0.25); border-radius: 12px; }
+}
+
+/* ============ ПОДСВЕТКА НОВЫХ СООБЩЕНИЙ ============ */
+.msg.msg-flash {
+  animation: msgFlash 1.2s ease;
+}
+
+@keyframes msgFlash {
+  0% { background: transparent; }
+  30% { background: rgba(0, 200, 212, 0.3); border-radius: 12px; }
+  100% { background: transparent; }
 }
 
 .msg-avatar {
@@ -537,26 +549,95 @@ nav button .badge {
   50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 48, 64, 0.9); }
 }
 
+/* ============ КНОПКА «НОВЫЕ СООБЩЕНИЯ» ============ */
 .chat-new-btn {
   position: absolute;
   bottom: 110px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--cyan);
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
   color: #001417;
   border: none;
-  padding: 9px 20px;
-  border-radius: 20px;
+  padding: 10px 22px;
+  border-radius: 22px;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  box-shadow: 0 4px 20px var(--cyan-glow);
+  box-shadow: 0 6px 24px rgba(0, 200, 212, 0.5), 0 0 0 1px rgba(0, 200, 212, 0.3);
   z-index: 5;
   display: none;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
-.chat-new-btn.show { display: block; animation: fadeIn 0.2s; }
-.chat-new-btn:hover { background: #00e0ee; }
+
+.chat-new-btn.show {
+  display: flex;
+  animation: newBtnSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes newBtnSlide {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.chat-new-btn:hover {
+  background: linear-gradient(135deg, #00e0ee, #4a8ff7);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 200, 212, 0.7), 0 0 0 1px rgba(0, 200, 212, 0.5);
+}
+
+.chat-new-btn .new-count {
+  background: #001417;
+  color: var(--cyan);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ============ РАЗДЕЛИТЕЛЬ «НОВЫЕ СООБЩЕНИЯ» ============ */
+.chat-new-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0 12px;
+  position: relative;
+  z-index: 1;
+  animation: separatorFadeIn 0.4s ease;
+}
+
+@keyframes separatorFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-new-separator::before,
+.chat-new-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0.5;
+}
+
+.chat-new-separator span {
+  color: var(--cyan);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  background: rgba(0, 200, 212, 0.1);
+  border: 1px solid rgba(0, 200, 212, 0.3);
+  border-radius: 12px;
+  white-space: nowrap;
+}
 
 /* ============ PIN ============ */
 .chat-pin-bar {
