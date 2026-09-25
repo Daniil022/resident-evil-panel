@@ -12,8 +12,17 @@ import { toast, openModal, closeModal } from "../../core/utils.js";
 import { addDashEvent } from "../../core/dashboard-events.js";
 import { isMuted, getMuteRemaining } from "../../core/punishments.js";
 import {
-  notifyNewMessage,
+  setupScrollForChat,
+  scrollToBottom,
+  scrollToMessage,
+  incrementUnread,
   resetUnread,
+  setLastRead,
+  restoreLastRead
+} from "./chat-scroll.js";
+import {
+  notifyNewMessage,
+  resetUnread as resetChatUnread,
   initChatNotifications,
   updateUnreadBadge,
   markChatAsRead
@@ -59,7 +68,6 @@ const CHATS = {
 const unsubscribers = { residents: null, allies: null };
 const lastMessageId = { residents: null, allies: null };
 const firstLoad = { residents: true, allies: true };
-const autoScroll = { residents: true, allies: true };
 const hiddenMessages = { residents: new Set(), allies: new Set() };
 const currentMessages = { residents: [], allies: [] };
 
@@ -108,11 +116,13 @@ export function initChat() {
   window.addEventListener("tabChange", (e) => {
     if (e.detail.tab === "chat") {
       markChatAsRead("residents");
-      resetUnread("chat");
+      resetChatUnread("chat");
+      scrollToBottom("residents", true);
     }
     if (e.detail.tab === "chat-allies") {
       markChatAsRead("allies");
-      resetUnread("chat-allies");
+      resetChatUnread("chat-allies");
+      scrollToBottom("allies", true);
     }
   });
 }
@@ -125,7 +135,7 @@ function initOneChat(chatId) {
   if (!container) return;
 
   setupInputForChat(chatId);
-  setupScrollForChat(chatId);
+  setupScroll(chatId);
   initThemeForChat(chatId);
   loadPinned(chatId);
 
@@ -170,7 +180,8 @@ function initOneChat(chatId) {
           onReact: (id, emoji) => toggleReaction(id, emoji, chatId),
           onEdit: (m) => openEditModal(m, chatId),
           onDelete: (m) => openDeleteModal(m, chatId),
-          onPin: (m) => pinMessage(chatId, m)
+          onPin: (m) => pinMessage(chatId, m),
+          onScrollToMessage: (msgId) => scrollToMessage(chatId, msgId)
         }, user.uid);
 
         container.appendChild(msgEl);
@@ -189,15 +200,34 @@ function initOneChat(chatId) {
         container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">' + emptyMsg + '</div>';
       }
 
+      // Проверка на новое сообщение
       if (newestMsg && !firstLoad[chatId] && newestMsg.id !== lastMessageId[chatId]) {
         const isOwn = newestMsg.authorId === getCurrentUser().uid;
         notifyNewMessage(newestMsg, isOwn, chatId);
+
+        // Если это чужое сообщение и юзер не внизу — увеличиваем счётчик
+        if (!isOwn) {
+          const cont = document.getElementById(cfg.containerId);
+          if (cont) {
+            const atBottom = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
+            if (!atBottom) {
+              incrementUnread(chatId);
+            }
+          }
+        }
       }
 
       if (newestMsg) lastMessageId[chatId] = newestMsg.id;
       firstLoad[chatId] = false;
 
+      // Автоскролл (если юзер внизу)
       scrollToBottomForChat(chatId);
+
+      // Обновляем «прочитано до»
+      if (newestMsg && !hiddenMessages[chatId].has(newestMsg.id)) {
+        setLastRead(chatId, newestMsg.id);
+      }
+
       updateUnreadBadge(chatId, currentMessages[chatId]);
     }, (err) => {
       console.warn("Firebase offline для " + chatId, err);
@@ -375,12 +405,7 @@ function updatePinBar(chatId, pinData) {
 
   bar.onclick = (e) => {
     if (e.target.classList.contains("pin-close")) return;
-    const msgEl = document.querySelector('[data-id="' + pinData.msgId + '"]');
-    if (msgEl) {
-      msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      msgEl.classList.add("msg-highlight");
-      setTimeout(() => msgEl.classList.remove("msg-highlight"), 1500);
-    }
+    scrollToMessage(chatId, pinData.msgId);
   };
 }
 
@@ -452,11 +477,13 @@ async function sendMessageTo(chatId, text) {
   };
 
   try {
-    await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
+    const ref = await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
     markChatAsRead(chatId);
 
-    // ✅ Записываем в ленту событий
+    // Своё сообщение — «прочитано»
+    if (ref && ref.id) setLastRead(chatId, ref.id);
+
     const chatLabel = chatId === "allies" ? "Союз-чат" : "Чат";
     addDashEvent("💬", user.login + " (" + chatLabel + "): " + text.substring(0, 60), { type: "chat" })
       .catch(() => {});
@@ -516,9 +543,10 @@ async function sendVoiceTo(chatId, blob, durationMs, mime) {
   };
 
   try {
-    await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
+    const ref = await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     clearReplyForChat(chatId);
     markChatAsRead(chatId);
+    if (ref && ref.id) setLastRead(chatId, ref.id);
     addDashEvent("🎤", user.login + ": голосовое " + Math.round(durationMs / 1000) + "с", { type: "chat" })
       .catch(() => {});
   } catch (e) {
@@ -598,6 +626,17 @@ function setupInputForChat(chatId) {
     .catch(err => console.warn("Poll btn init failed:", err));
 }
 
+// ==================== СКРОЛЛ ====================
+function setupScroll(chatId) {
+  setupScrollForChat(chatId);
+  restoreLastRead(chatId);
+}
+
+function scrollToBottomForChat(chatId, force = false) {
+  scrollToBottom(chatId, force);
+}
+
+// ==================== REPLY ====================
 function setReplyToChat(chatId, msg) {
   const cfg = CHATS[chatId];
   if (!cfg) return;
@@ -628,43 +667,7 @@ function clearReplyForChat(chatId) {
 window.__clearReply = function() { clearReplyForChat("residents"); };
 window.__clearReplyAllies = function() { clearReplyForChat("allies"); };
 
-function setupScrollForChat(chatId) {
-  const cfg = CHATS[chatId];
-  if (!cfg) return;
-
-  const container = document.getElementById(cfg.containerId);
-  const newBtn = document.getElementById(cfg.newBtnId);
-  if (!container) return;
-
-  container.addEventListener("scroll", () => {
-    const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
-    autoScroll[chatId] = atBottom;
-    if (autoScroll[chatId] && newBtn) newBtn.classList.remove("show");
-  });
-
-  if (newBtn) {
-    newBtn.addEventListener("click", () => {
-      container.scrollTop = container.scrollHeight;
-      autoScroll[chatId] = true;
-      newBtn.classList.remove("show");
-    });
-  }
-}
-
-function scrollToBottomForChat(chatId, force = false) {
-  const cfg = CHATS[chatId];
-  if (!cfg) return;
-  const container = document.getElementById(cfg.containerId);
-  const newBtn = document.getElementById(cfg.newBtnId);
-  if (!container) return;
-
-  if (autoScroll[chatId] || force) {
-    container.scrollTop = container.scrollHeight;
-  } else if (newBtn) {
-    newBtn.classList.add("show");
-  }
-}
-
+// ==================== ТЕМА ====================
 function initThemeForChat(chatId) {
   const cfg = CHATS[chatId];
   if (!cfg) return;
@@ -688,6 +691,7 @@ function initThemeForChat(chatId) {
   });
 }
 
+// ==================== ХЕЛПЕРЫ ====================
 function formatDuration(ms) {
   const total = Math.floor(ms / 1000);
   const m = Math.floor(total / 60);
