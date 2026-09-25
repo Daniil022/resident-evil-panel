@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp }
 import { getCurrentUser } from "../../core/state.js";
 import { toast } from "../../core/utils.js";
 import { uploadMedia } from "../contracts/contracts-upload.js";
-import { addDashEvent } from "../../core/dashboard.js";
+import { addDashEvent } from "../../core/dashboard-events.js";
 import { compressImage } from "../../core/image-compress.js";
 
 const MAX_SIZE = 50 * 1024 * 1024;
@@ -56,7 +56,6 @@ async function sendFiles(chatId, files, onSent) {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Проверка мута из кэша сессии (без динамического импорта)
   const isMuted = user.muted && (!user.mutedUntil || Date.now() < user.mutedUntil);
   if (isMuted) {
     const left = user.mutedUntil ? Math.max(0, user.mutedUntil - Date.now()) : 0;
@@ -147,7 +146,7 @@ async function sendFiles(chatId, files, onSent) {
   try {
     await addDoc(collection(db, "chats", chatId, "messages"), newMsg);
     if (onSent) onSent();
-    addDashEvent("📎", user.login + ": " + attachments.length + " файл(ов)");
+    addDashEvent("📎", user.login + ": " + attachments.length + " файл(ов)", { type: "chat" });
   } catch (e) {
     toast("Ошибка: " + e.message, "warn");
   }
