@@ -1,8 +1,7 @@
 // sw.js — Service Worker для PWA
 // Кэширует статику, работает офлайн, обновляется автоматически.
 
-// ✅ Меняй версию при каждом деплое, чтобы сбросить старый кэш
-const CACHE_NAME = "re-panel-v2";
+const CACHE_NAME = "re-panel-v3";
 
 const OFFLINE_URLS = [
   "/",
@@ -52,7 +51,41 @@ self.addEventListener("fetch", (event) => {
   // Только свои
   if (url.origin !== self.location.origin) return;
 
-  // Network-first (свежие данные в приоритете)
+  // ✅ НАВИГАЦИЯ (HTML) — всегда network-first, БЕЗ кэша
+  // Это критично: не кэшируем HTML, иначе сайт может сломаться
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          // Не кэшируем HTML — всегда свежий
+          return res;
+        })
+        .catch(() => {
+          return caches.match("/index.html");
+        })
+    );
+    return;
+  }
+
+  // ✅ JS/CSS — stale-while-revalidate
+  if (url.pathname.match(/\.(js|css)$/)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const fetchPromise = fetch(event.request).then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return res;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Всё остальное — network-first
   event.respondWith(
     fetch(event.request)
       .then((res) => {
@@ -63,18 +96,14 @@ self.addEventListener("fetch", (event) => {
         return res;
       })
       .catch(() => {
-        // Офлайн — из кэша
         return caches.match(event.request).then((cached) => {
           if (cached) return cached;
-          if (event.request.mode === "navigate") {
-            return caches.match("/index.html");
-          }
         });
       })
   );
 });
 
-// ==================== PUSH (опционально) ====================
+// ==================== PUSH ====================
 self.addEventListener("push", (event) => {
   let data = { title: "RESIDENT EVIL", body: "Новое уведомление" };
   try {
